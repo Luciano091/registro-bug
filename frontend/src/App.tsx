@@ -39,12 +39,12 @@ function App() {
         
         {/* Global Background Image */}
         <div 
-          className="absolute inset-0 z-0 opacity-60 pointer-events-none bg-no-repeat bg-center bg-cover mix-blend-screen"
+          className="absolute inset-0 z-0 opacity-70 pointer-events-none bg-no-repeat bg-center bg-cover mix-blend-screen"
           style={{ backgroundImage: "url('https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=2000&q=80')" }}
         ></div>
         {/* Soft Vignette */}
-        <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.8)_100%)] pointer-events-none"></div>
-        <div className="absolute inset-0 z-0 bg-black/40 pointer-events-none"></div>
+        <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.75)_100%)] pointer-events-none"></div>
+        <div className="absolute inset-0 z-0 bg-black/30 pointer-events-none"></div>
 
         {/* Ambient Background Glows */}
         <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-brand-500/15 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0"></div>
