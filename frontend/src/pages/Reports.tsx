@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Calendar, Download, DollarSign, Package, Receipt, ShoppingCart, TrendingUp, TrendingDown, Info } from 'lucide-react';
+import { Calendar, Download, DollarSign, Package, Receipt, ShoppingCart, TrendingUp, TrendingDown } from 'lucide-react';
 import api from '../services/api';
 
 const CAT_COLORS = ['#f97316', '#3b82f6', '#f59e0b', '#8b5cf6', '#10b981'];
@@ -232,7 +232,7 @@ const Reports = () => {
       </div>
 
       {/* Row 3: Tables and Summary */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         
         {/* Produtos Mais Vendidos */}
         <div className="glass-card p-5 rounded-xl flex flex-col">
@@ -309,43 +309,6 @@ const Reports = () => {
                 })}
               </tbody>
             </table>
-          </div>
-        </div>
-
-        {/* Resumo Financeiro */}
-        <div className="glass-card p-5 rounded-xl flex flex-col relative">
-          <h3 className="text-sm font-bold text-white font-heading mb-4 border-b border-white/5 pb-3">Resumo Financeiro</h3>
-          
-          <div className="flex-1 flex flex-col justify-center space-y-4 text-sm">
-            <div className="flex justify-between items-center">
-              <span className="text-zinc-400">Faturamento Bruto</span>
-              <span className="text-white font-medium">{data.financeiro.bruto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
-            </div>
-            
-            <div className="flex justify-between items-center">
-              <span className="text-zinc-400">(-) Descontos</span>
-              <span className="text-rose-400 font-medium">- {data.financeiro.descontos.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
-            </div>
-            
-            <div className="flex justify-between items-center pb-4 border-b border-white/5 border-dashed">
-              <span className="text-zinc-400">(-) Custos Estimados</span>
-              <span className="text-rose-400 font-medium">- {data.financeiro.custos.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
-            </div>
-            
-            <div className="flex justify-between items-center pt-2">
-              <span className="text-zinc-300 font-bold">Lucro Líquido</span>
-              <span className="text-emerald-400 font-bold text-lg">{data.financeiro.liquido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
-            </div>
-            
-            <div className="flex justify-between items-center">
-              <span className="text-zinc-400">Margem de Lucro</span>
-              <span className="text-emerald-500 font-medium">{data.financeiro.margem.toFixed(1)}%</span>
-            </div>
-          </div>
-
-          <div className="absolute bottom-4 left-5 right-5 flex items-start gap-2 text-[10px] text-zinc-500 mt-4">
-             <Info size={12} className="shrink-0 mt-0.5" />
-             <p>Os custos são valores simulados referentes ao período selecionado e podem diferir do balanço contábil real.</p>
           </div>
         </div>
 

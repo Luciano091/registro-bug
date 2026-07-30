@@ -144,17 +144,13 @@ def get_dashboard_relatorios(periodo: str = "mes", db: Session = Depends(get_db)
         return ((curr - ant) / ant) * 100
 
     # Pagamentos & Categorias
-    pagamentos = {"Pix": 0, "Cartão Crédito": 0, "Cartão Débito": 0, "Dinheiro": 0}
+    pagamentos = {}
     categorias = {"Lanches": 0, "Bebidas": 0, "Acompanhamentos": 0, "Sobremesas": 0, "Outros": 0}
     
     for p in pedidos_periodo:
-        if p.forma_pagamento == "Cartão":
-            pagamentos["Cartão Crédito"] += p.total * 0.6  # mock split
-            pagamentos["Cartão Débito"] += p.total * 0.4
-        elif p.forma_pagamento in pagamentos:
-            pagamentos[p.forma_pagamento] += p.total
-        else:
-            pagamentos["Dinheiro"] += p.total # fallback
+        if p.forma_pagamento not in pagamentos:
+            pagamentos[p.forma_pagamento] = 0
+        pagamentos[p.forma_pagamento] += p.total
 
         for item in p.itens:
             if item.produto:
@@ -226,12 +222,6 @@ def get_dashboard_relatorios(periodo: str = "mes", db: Session = Depends(get_db)
         
     heatmap_list = [{"turno": k, **v} for k, v in heatmap.items()]
 
-    # Resumo Financeiro
-    descontos = faturamento_total * 0.02 # Simulated 2%
-    custos = faturamento_total * 0.40 # Simulated 40%
-    lucro = faturamento_total - descontos - custos
-    margem = (lucro / faturamento_total * 100) if faturamento_total > 0 else 0
-
     return {
         "resumo": {
             "faturamento": {"atual": faturamento_total, "crescimento": calc_growth(faturamento_total, fat_ant)},
@@ -243,13 +233,6 @@ def get_dashboard_relatorios(periodo: str = "mes", db: Session = Depends(get_db)
         "vendas_categoria": vendas_categoria,
         "vendas_pagamento": vendas_pagamento,
         "produtos_top": produtos_ord,
-        "heatmap": heatmap_list,
-        "financeiro": {
-            "bruto": faturamento_total,
-            "descontos": descontos,
-            "custos": custos,
-            "liquido": lucro,
-            "margem": margem
-        }
+        "heatmap": heatmap_list
     }
 
