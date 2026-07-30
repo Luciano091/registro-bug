@@ -99,11 +99,21 @@ def get_dashboard_resumo(db: Session = Depends(get_db)):
     }
 
 @app.get("/dashboard/relatorios")
-def get_dashboard_relatorios(periodo: str = "mes", db: Session = Depends(get_db)):
+def get_dashboard_relatorios(periodo: str = "mes", start: str = None, end: str = None, db: Session = Depends(get_db)):
     from datetime import timedelta
+    import datetime
     hoje = datetime.datetime.utcnow().date()
     
-    if periodo == "hoje":
+    if periodo == "custom" and start and end:
+        inicio_data = datetime.datetime.strptime(start, "%Y-%m-%d").date()
+        fim_data = datetime.datetime.strptime(end, "%Y-%m-%d").date()
+        inicio = datetime.datetime.combine(inicio_data, datetime.time.min)
+        fim = datetime.datetime.combine(fim_data, datetime.time.max)
+        delta = fim - inicio
+        # Same duration prior period
+        fim_ant = inicio - timedelta(seconds=1)
+        inicio_ant = fim_ant - delta
+    elif periodo == "hoje":
         inicio = datetime.datetime.combine(hoje, datetime.time.min)
         fim = datetime.datetime.combine(hoje, datetime.time.max)
         inicio_ant = inicio - timedelta(days=1)

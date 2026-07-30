@@ -17,14 +17,23 @@ const GrowthBadge = ({ value }: { value: number }) => {
 
 const Reports = () => {
   const [periodo, setPeriodo] = useState('mes');
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
+      if (periodo === 'custom' && (!customStart || !customEnd)) {
+        return;
+      }
       setIsLoading(true);
       try {
-        const response = await api.get(`/dashboard/relatorios?periodo=${periodo}`);
+        let url = `/dashboard/relatorios?periodo=${periodo}`;
+        if (periodo === 'custom') {
+          url += `&start=${customStart}&end=${customEnd}`;
+        }
+        const response = await api.get(url);
         setData(response.data);
       } catch (error) {
         console.error("Erro ao carregar relatórios:", error);
@@ -33,7 +42,7 @@ const Reports = () => {
       }
     };
     fetchData();
-  }, [periodo]);
+  }, [periodo, customStart, customEnd]);
 
   const exportPDF = () => {
     window.print();
@@ -60,17 +69,46 @@ const Reports = () => {
           <p className="text-zinc-400 mt-1 text-sm">Acompanhe o desempenho completo do seu negócio.</p>
         </div>
         
-        <div className="flex items-center gap-3 w-full md:w-auto">
+        <div className="flex items-center gap-3 w-full md:w-auto flex-wrap">
+          {periodo === 'custom' && (
+            <div className="flex items-center bg-dark-900/60 border border-white/5 rounded-lg p-1.5 backdrop-blur-md gap-2 px-3">
+              <input 
+                type="date" 
+                value={customStart} 
+                onChange={(e) => setCustomStart(e.target.value)} 
+                className="bg-transparent text-sm text-zinc-300 outline-none cursor-pointer"
+                style={{ colorScheme: 'dark' }}
+              />
+              <span className="text-zinc-500 text-xs">até</span>
+              <input 
+                type="date" 
+                value={customEnd} 
+                onChange={(e) => setCustomEnd(e.target.value)} 
+                className="bg-transparent text-sm text-zinc-300 outline-none cursor-pointer"
+                style={{ colorScheme: 'dark' }}
+              />
+            </div>
+          )}
+
           <div className="flex items-center bg-dark-900/60 border border-white/5 rounded-lg p-1 backdrop-blur-md">
              <Calendar size={16} className="text-zinc-400 ml-2 mr-1" />
              <select 
                value={periodo} 
-               onChange={(e) => setPeriodo(e.target.value)}
+               onChange={(e) => {
+                 setPeriodo(e.target.value);
+                 if (e.target.value === 'custom') {
+                   const today = new Date();
+                   const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+                   setCustomStart(firstDay.toISOString().split('T')[0]);
+                   setCustomEnd(today.toISOString().split('T')[0]);
+                 }
+               }}
                className="bg-transparent text-sm text-zinc-300 py-1.5 px-2 outline-none cursor-pointer"
              >
                <option value="hoje">Hoje</option>
                <option value="7d">Últimos 7 Dias</option>
                <option value="mes">Este Mês</option>
+               <option value="custom">Personalizado</option>
              </select>
           </div>
           
