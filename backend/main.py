@@ -4,8 +4,8 @@ from sqlalchemy.orm import Session
 from typing import List
 import datetime
 
-from . import models, schemas, crud
-from .database import engine, get_db
+import models, schemas, crud
+from database import engine, get_db
 
 models.Base.metadata.create_all(bind=engine)
 

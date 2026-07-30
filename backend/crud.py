@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from . import models, schemas
+import models, schemas
 import datetime
 
 # --- Produtos ---
