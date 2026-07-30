@@ -54,12 +54,19 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight text-white drop-shadow-sm">Dashboard</h2>
-          <p className="text-zinc-400 mt-1">Visão geral do desempenho de hoje.</p>
-        </div>
+    <div className="relative min-h-[calc(100vh-2rem)] p-6 md:p-10 max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* Imagem de fundo de hamburguer suave */}
+      <div 
+        className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none bg-no-repeat bg-center bg-cover"
+        style={{ backgroundImage: "url('https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=2000&q=80')" }}
+      ></div>
+      
+      <div className="relative z-10 space-y-8">
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight text-white drop-shadow-sm">Dashboard</h2>
+            <p className="text-zinc-400 mt-1">Visão geral do desempenho de hoje.</p>
+          </div>
         <button 
           onClick={handleFecharCaixa}
           className="premium-btn px-6 py-2.5 rounded-xl font-semibold flex items-center justify-center gap-2 w-full md:w-auto"
@@ -227,8 +234,9 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-      )}
+      </div>
 
+      </div>
     </div>
   );
 };
