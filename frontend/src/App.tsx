@@ -1,0 +1,81 @@
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { Home, PlusCircle, ListOrdered, Utensils, BarChart3, Settings as SettingsIcon } from 'lucide-react';
+import Dashboard from './pages/Dashboard';
+import NewOrder from './pages/NewOrder';
+import Orders from './pages/Orders';
+import Menu from './pages/Menu';
+import Reports from './pages/Reports';
+import Settings from './pages/Settings';
+
+const NavLink = ({ to, icon: Icon, children }: { to: string, icon: any, children: React.ReactNode }) => {
+  const location = useLocation();
+  const isActive = location.pathname === to;
+  return (
+    <Link 
+      to={to} 
+      className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 font-medium relative group ${isActive ? 'text-white' : 'text-zinc-400 hover:text-white'}`}
+    >
+      {isActive && (
+        <div className="absolute inset-0 bg-gradient-to-r from-brand-500/20 to-transparent rounded-xl border border-brand-500/30 shadow-[inset_0px_1px_1px_rgba(255,255,255,0.1)]"></div>
+      )}
+      {!isActive && (
+        <div className="absolute inset-0 bg-white/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+      )}
+      <Icon size={20} className={`relative z-10 transition-colors ${isActive ? 'text-brand-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
+      <span className="relative z-10">{children}</span>
+      {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-brand-500 rounded-r-full shadow-[0_0_10px_rgba(249,115,22,0.8)]"></div>}
+    </Link>
+  );
+};
+
+function App() {
+  return (
+    <Router>
+      <div className="flex h-screen bg-dark-900 text-zinc-50 overflow-hidden font-sans relative">
+        
+        {/* Ambient Background Glows */}
+        <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-brand-500/15 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
+        <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-rose-500/10 rounded-full blur-[150px] translate-x-1/3 translate-y-1/3 pointer-events-none"></div>
+
+        {/* Sidebar */}
+        <aside className="w-64 glass border-r border-white/5 flex flex-col hidden md:flex z-10">
+          <div className="p-6">
+            <h1 className="text-2xl font-bold gradient-text flex items-center gap-2 drop-shadow-sm">
+              <span className="text-3xl drop-shadow-md">🍔</span> Burger House
+            </h1>
+          </div>
+          
+          <nav className="flex-1 px-4 py-6 flex flex-col gap-2">
+            <NavLink to="/" icon={Home}>Dashboard</NavLink>
+            <NavLink to="/novo-pedido" icon={PlusCircle}>Novo Pedido</NavLink>
+            <NavLink to="/pedidos" icon={ListOrdered}>Pedidos</NavLink>
+            <NavLink to="/cardapio" icon={Utensils}>Cardápio</NavLink>
+            <NavLink to="/relatorios" icon={BarChart3}>Relatórios</NavLink>
+            <NavLink to="/configuracoes" icon={SettingsIcon}>Configurações</NavLink>
+          </nav>
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto relative pb-20 md:pb-0 z-10">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/novo-pedido" element={<NewOrder />} />
+            <Route path="/pedidos" element={<Orders />} />
+            <Route path="/cardapio" element={<Menu />} />
+            <Route path="/relatorios" element={<Reports />} />
+            <Route path="/configuracoes" element={<Settings />} />
+          </Routes>
+        </main>
+
+        {/* Mobile Bottom Nav */}
+        <nav className="md:hidden fixed bottom-0 w-full glass border-t border-white/10 flex justify-around p-2 z-50">
+          <Link to="/" className="p-3 text-zinc-400 hover:text-brand-400 transition-colors"><Home size={24} /></Link>
+          <Link to="/novo-pedido" className="p-4 premium-btn rounded-full -mt-8 shadow-xl"><PlusCircle size={28} /></Link>
+          <Link to="/pedidos" className="p-3 text-zinc-400 hover:text-brand-400 transition-colors"><ListOrdered size={24} /></Link>
+        </nav>
+      </div>
+    </Router>
+  );
+}
+
+export default App;
