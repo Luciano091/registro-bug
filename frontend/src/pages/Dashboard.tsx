@@ -57,7 +57,7 @@ const Dashboard = () => {
     <div className="relative min-h-[calc(100vh-2rem)] p-6 md:p-10 max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Imagem de fundo de hamburguer suave */}
       <div 
-        className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none bg-no-repeat bg-center bg-cover"
+        className="absolute inset-0 z-0 opacity-15 mix-blend-overlay pointer-events-none bg-no-repeat bg-center bg-cover"
         style={{ backgroundImage: "url('https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=2000&q=80')" }}
       ></div>
       
