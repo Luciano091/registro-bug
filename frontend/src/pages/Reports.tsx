@@ -42,11 +42,11 @@ const Reports = () => {
           <div className="grid grid-cols-2 gap-4 relative z-10">
             <div className="bg-dark-900/50 p-4 rounded-xl border border-white/5 transition-all duration-300 group-hover:border-white/10">
               <p className="text-xs text-zinc-500">Pedidos</p>
-              <p className="text-2xl font-bold text-white font-heading mt-1">{data.resumo_diario.pedidos}</p>
+              <p className="text-xl sm:text-2xl font-bold text-white font-heading mt-1">{data.resumo_diario.pedidos}</p>
             </div>
             <div className="bg-dark-900/50 p-4 rounded-xl border border-white/5 transition-all duration-300 group-hover:border-white/10">
               <p className="text-xs text-zinc-500">Faturamento</p>
-              <p className="text-2xl font-bold gradient-text font-heading mt-1">
+              <p className="text-lg sm:text-xl font-bold gradient-text font-heading mt-1">
                 {data.resumo_diario.faturamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
               </p>
             </div>
