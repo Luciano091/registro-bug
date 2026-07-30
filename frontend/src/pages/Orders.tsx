@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Filter, Clock, CheckCircle2, Truck, Loader2 } from 'lucide-react';
+import { Search, Clock, CheckCircle2, Truck, Loader2 } from 'lucide-react';
 import api from '../services/api';
 
 const statusColors: any = {

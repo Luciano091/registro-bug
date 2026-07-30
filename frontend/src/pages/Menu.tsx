@@ -24,11 +24,7 @@ const Menu = () => {
     fetchProdutos();
   }, []);
 
-  const openNewProductModal = () => {
-    setNovoProduto({ nome: '', preco: '', categoria: '' });
-    setEditingId(null);
-    setShowModal(true);
-  };
+
 
   const openEditProductModal = (item: any) => {
     setNovoProduto({ nome: item.nome, preco: item.preco.toString(), categoria: item.categoria });

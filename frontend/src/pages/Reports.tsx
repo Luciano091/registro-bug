@@ -66,7 +66,7 @@ const Reports = () => {
                      paddingAngle={5}
                      dataKey="value"
                    >
-                     {data.resumo_diario.vendas_pagamento.map((entry: any, index: number) => (
+                     {data.resumo_diario.vendas_pagamento.map((_: any, index: number) => (
                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                      ))}
                    </Pie>
@@ -99,6 +99,7 @@ const Reports = () => {
                 <RechartsTooltip 
                   cursor={{fill: '#ffffff08'}}
                   contentStyle={{ backgroundColor: '#121214cc', backdropFilter: 'blur(10px)', borderColor: '#ffffff10', borderRadius: '12px', color: '#fff', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)' }}
+                  // @ts-ignore
                   formatter={(value: number) => [value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 'Vendas']}
                 />
                 <Bar dataKey="vendas" fill="#f97316" radius={[6, 6, 0, 0]} />

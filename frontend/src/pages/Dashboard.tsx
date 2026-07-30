@@ -145,6 +145,7 @@ const Dashboard = () => {
                 <Tooltip 
                   contentStyle={{ backgroundColor: '#121214cc', backdropFilter: 'blur(10px)', borderColor: '#ffffff10', borderRadius: '12px', color: '#fff', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)' }}
                   itemStyle={{ color: '#f97316', fontWeight: 'bold' }}
+                  // @ts-ignore
                   formatter={(value: number) => [value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 'Vendas']}
                 />
                 <Area type="monotone" dataKey="vendas" stroke="#f97316" strokeWidth={3} fillOpacity={1} fill="url(#colorVendas)" />
