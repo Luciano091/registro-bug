@@ -99,17 +99,30 @@ def get_dashboard_resumo(db: Session = Depends(get_db)):
     }
 
 @app.get("/dashboard/relatorios")
-def get_dashboard_relatorios(db: Session = Depends(get_db)):
+def get_dashboard_relatorios(periodo: str = "mes", db: Session = Depends(get_db)):
+    from datetime import timedelta
     hoje = datetime.datetime.utcnow().date()
-    inicio_mes = hoje.replace(day=1)
     
-    # Real data for today
-    inicio_dia = datetime.datetime.combine(hoje, datetime.time.min)
-    fim_dia = datetime.datetime.combine(hoje, datetime.time.max)
-    pedidos_hoje = crud.get_pedidos_by_date_range(db, inicio_dia, fim_dia)
+    if periodo == "hoje":
+        inicio = datetime.datetime.combine(hoje, datetime.time.min)
+        fim = datetime.datetime.combine(hoje, datetime.time.max)
+    elif periodo == "7d":
+        inicio = datetime.datetime.combine(hoje - timedelta(days=6), datetime.time.min)
+        fim = datetime.datetime.combine(hoje, datetime.time.max)
+    else: # mes
+        inicio = datetime.datetime.combine(hoje.replace(day=1), datetime.time.min)
+        fim = datetime.datetime.combine(hoje, datetime.time.max)
+        
+    pedidos_periodo = crud.get_pedidos_by_date_range(db, inicio, fim)
     
+    # Resumo do periodo
+    faturamento_total = sum(p.total for p in pedidos_periodo)
+    total_pedidos = len(pedidos_periodo)
+    ticket_medio = faturamento_total / total_pedidos if total_pedidos > 0 else 0
+    
+    # Pagamentos
     pagamentos = {"Pix": 0, "Cartão": 0, "Dinheiro": 0}
-    for p in pedidos_hoje:
+    for p in pedidos_periodo:
         if p.forma_pagamento in pagamentos:
             pagamentos[p.forma_pagamento] += p.total
             
@@ -119,51 +132,59 @@ def get_dashboard_relatorios(db: Session = Depends(get_db)):
         {"name": "Dinheiro", "value": pagamentos["Dinheiro"]},
     ]
     
-    # Calculate last 7 days including today
-    dias_semana = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]
-    inicio_semana = hoje - datetime.timedelta(days=6)
-    pedidos_semana = crud.get_pedidos_by_date_range(db, datetime.datetime.combine(inicio_semana, datetime.time.min), datetime.datetime.combine(hoje, datetime.time.max))
-    
-    vendas_semana_dict = {dias_semana[(hoje - datetime.timedelta(days=i)).weekday()]: 0 for i in range(6, -1, -1)}
-    
-    for p in pedidos_semana:
-        nome_dia = dias_semana[p.data.weekday()]
-        if nome_dia in vendas_semana_dict:
-            vendas_semana_dict[nome_dia] += p.total
+    # Vendas no tempo (Gráfico de linha)
+    vendas_tempo = {}
+    if periodo == "hoje":
+        # Agrupar por hora
+        for h in range(8, 24):
+            vendas_tempo[f"{h:02d}:00"] = 0
+        for p in pedidos_periodo:
+            hora = f"{p.data.hour:02d}:00"
+            if hora in vendas_tempo:
+                vendas_tempo[hora] += p.total
+        vendas_grafico = [{"name": k, "vendas": v} for k, v in vendas_tempo.items()]
+    else:
+        # Agrupar por dia
+        dias_semana = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]
+        current_date = inicio.date()
+        while current_date <= fim.date():
+            if periodo == "mes":
+                nome_dia = f"{current_date.day:02d}/{current_date.month:02d}"
+            else:
+                nome_dia = dias_semana[current_date.weekday()]
+            vendas_tempo[current_date.strftime("%Y-%m-%d")] = {"name": nome_dia, "vendas": 0}
+            current_date += timedelta(days=1)
             
-    vendas_semana = []
-    for i in range(6, -1, -1):
-        d = hoje - datetime.timedelta(days=i)
-        nome_dia = dias_semana[d.weekday()]
-        vendas_semana.append({"name": nome_dia, "vendas": vendas_semana_dict[nome_dia]})
-    
-    # Monthly stats
-    pedidos_mes = db.query(models.Pedido).filter(models.Pedido.data >= datetime.datetime.combine(inicio_mes, datetime.time.min)).all()
-    
-    faturamento_mes = sum(p.total for p in pedidos_mes)
-    total_mes = len(pedidos_mes)
-    
+        for p in pedidos_periodo:
+            dia_str = p.data.date().strftime("%Y-%m-%d")
+            if dia_str in vendas_tempo:
+                vendas_tempo[dia_str]["vendas"] += p.total
+                
+        vendas_grafico = list(vendas_tempo.values())
+
+    # Produtos mais vendidos (Top 10)
     vendas_produtos = {}
-    for p in pedidos_mes:
+    for p in pedidos_periodo:
         for item in p.itens:
             if item.produto:
-                vendas_produtos[item.produto.nome] = vendas_produtos.get(item.produto.nome, 0) + item.quantidade
+                if item.produto.nome not in vendas_produtos:
+                    vendas_produtos[item.produto.nome] = {"qtd": 0, "receita": 0}
+                vendas_produtos[item.produto.nome]["qtd"] += item.quantidade
+                vendas_produtos[item.produto.nome]["receita"] += (item.quantidade * item.preco_unitario)
                 
-    produtos_ord = sorted([{"nome": k, "qtd": v} for k, v in vendas_produtos.items()], key=lambda x: x["qtd"], reverse=True)[:5]
-    max_qtd = produtos_ord[0]["qtd"] if produtos_ord else 1
-    produtos_mes = [{"nome": p["nome"], "qtd": p["qtd"], "pct": int((p["qtd"] / max_qtd) * 100)} for p in produtos_ord]
+    produtos_ord = sorted([{"nome": k, "qtd": v["qtd"], "receita": v["receita"]} for k, v in vendas_produtos.items()], key=lambda x: x["receita"], reverse=True)[:10]
+    
+    max_receita = produtos_ord[0]["receita"] if produtos_ord else 1
+    produtos_top = [{"nome": p["nome"], "qtd": p["qtd"], "receita": p["receita"], "pct": int((p["receita"] / max_receita) * 100)} for p in produtos_ord]
     
     return {
-        "resumo_diario": {
-            "pedidos": len(pedidos_hoje),
-            "faturamento": sum(p.total for p in pedidos_hoje),
+        "resumo": {
+            "pedidos": total_pedidos,
+            "faturamento": faturamento_total,
+            "ticket_medio": ticket_medio,
             "vendas_pagamento": vendas_pagamento
         },
-        "vendas_semana": vendas_semana,
-        "produtos_mes": produtos_mes,
-        "metricas_mes": {
-            "total_pedidos": total_mes,
-            "faturamento": faturamento_mes,
-            "ticket_medio": faturamento_mes / total_mes if total_mes > 0 else 0
-        }
+        "vendas_grafico": vendas_grafico,
+        "produtos_top": produtos_top
     }
+
