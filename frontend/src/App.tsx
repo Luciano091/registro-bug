@@ -35,11 +35,19 @@ function App() {
 
   return (
     <Router>
-      <div className="flex h-screen bg-dark-900 text-zinc-50 overflow-hidden font-sans relative">
+      <div className="flex h-screen bg-black text-zinc-50 overflow-hidden font-sans relative">
         
+        {/* Global Background Image */}
+        <div 
+          className="absolute inset-0 z-0 opacity-30 pointer-events-none bg-no-repeat bg-center bg-cover"
+          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=2000&q=80')" }}
+        ></div>
+        <div className="absolute inset-0 z-0 bg-gradient-to-r from-black/80 to-black/40 pointer-events-none"></div>
+        <div className="absolute inset-0 z-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
+
         {/* Ambient Background Glows */}
-        <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-brand-500/15 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
-        <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-rose-500/10 rounded-full blur-[150px] translate-x-1/3 translate-y-1/3 pointer-events-none"></div>
+        <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-brand-500/10 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0"></div>
+        <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-rose-500/5 rounded-full blur-[150px] translate-x-1/3 translate-y-1/3 pointer-events-none z-0"></div>
 
         {/* Sidebar */}
         <aside className={`${isCollapsed ? 'w-24' : 'w-64'} transition-all duration-300 ease-in-out glass border-r border-white/5 flex flex-col hidden md:flex z-10 relative`}>

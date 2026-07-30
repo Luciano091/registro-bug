@@ -33,10 +33,10 @@
 /* Utilities for glassmorphism */
 @layer utilities {
   .glass {
-    @apply bg-dark-800/70 backdrop-blur-xl border border-white/5 shadow-2xl;
+    @apply bg-[#09090b]/50 backdrop-blur-[24px] border border-white/[0.08] shadow-2xl;
   }
   .glass-card {
-    @apply bg-dark-800/40 backdrop-blur-md border border-white/5 shadow-xl hover:bg-dark-800/60 transition-all duration-300;
+    @apply bg-[#09090b]/30 backdrop-blur-[16px] border border-white/[0.08] shadow-xl hover:bg-[#09090b]/50 transition-all duration-300;
   }
   .gradient-text {
     @apply bg-gradient-to-r from-orange-400 to-rose-500 bg-clip-text text-transparent;
