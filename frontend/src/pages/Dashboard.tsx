@@ -182,7 +182,8 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-
+      </div>
+      
       {showFechamento && fechamentoData && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="glass border border-white/10 rounded-3xl p-8 w-full max-w-sm animate-in zoom-in-95 shadow-2xl relative overflow-hidden">
@@ -232,11 +233,11 @@ const Dashboard = () => {
                 Voltar ao Painel
               </button>
             </div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      </div>
     </div>
   );
 };
