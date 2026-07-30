@@ -46,7 +46,8 @@ function App() {
           <div className={`pt-6 px-4 pb-2 h-24 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
             {!isCollapsed && (
               <h1 className="text-lg font-bold gradient-text flex items-center gap-2 drop-shadow-sm whitespace-nowrap overflow-hidden">
-                <span className="text-2xl drop-shadow-md">🍔</span> Burger House
+                <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=100&q=80" alt="Logo Burger House" className="w-8 h-8 rounded-full object-cover shadow-lg border border-brand-500/50" />
+                Burger House
               </h1>
             )}
             
