@@ -52,9 +52,7 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate):
                 )
             )
             
-    # Obter configuracao para taxa de entrega
-    config = db.query(models.Configuracao).first()
-    taxa_entrega = config.taxa_entrega if config and pedido.tipo_entrega == "Delivery" else 0.0
+    taxa_entrega = 0.0
     
     total = subtotal + taxa_entrega
     
