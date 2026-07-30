@@ -158,7 +158,7 @@ def get_dashboard_relatorios(periodo: str = "mes", db: Session = Depends(get_db)
 
         for item in p.itens:
             if item.produto:
-                nome = item.produto.nome.lower()
+                nome = (item.produto.nome or "").lower()
                 cat = "Outros"
                 if "burger" in nome or "lanche" in nome or "x-" in nome or "smash" in nome:
                     cat = "Lanches"
@@ -169,7 +169,7 @@ def get_dashboard_relatorios(periodo: str = "mes", db: Session = Depends(get_db)
                 elif "sorvete" in nome or "doce" in nome or "brownie" in nome:
                     cat = "Sobremesas"
                 
-                categorias[cat] += (item.quantidade * item.preco_unitario)
+                categorias[cat] += (item.quantidade * item.valor_unitario)
             
     vendas_pagamento = [{"name": k, "value": v} for k, v in pagamentos.items() if v > 0]
     vendas_categoria = [{"name": k, "value": v} for k, v in categorias.items() if v > 0]
@@ -197,9 +197,10 @@ def get_dashboard_relatorios(periodo: str = "mes", db: Session = Depends(get_db)
     for p in pedidos_periodo:
         for item in p.itens:
             if item.produto:
-                if item.produto.nome not in vendas_produtos:
-                    vendas_produtos[item.produto.nome] = 0
-                vendas_produtos[item.produto.nome] += item.quantidade
+                nome_prod = item.produto.nome or "Produto Sem Nome"
+                if nome_prod not in vendas_produtos:
+                    vendas_produtos[nome_prod] = 0
+                vendas_produtos[nome_prod] += item.quantidade
                 
     produtos_ord = sorted([{"nome": k, "qtd": v} for k, v in vendas_produtos.items()], key=lambda x: x["qtd"], reverse=True)[:5]
     
