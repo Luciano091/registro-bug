@@ -106,85 +106,149 @@ def get_dashboard_relatorios(periodo: str = "mes", db: Session = Depends(get_db)
     if periodo == "hoje":
         inicio = datetime.datetime.combine(hoje, datetime.time.min)
         fim = datetime.datetime.combine(hoje, datetime.time.max)
+        inicio_ant = inicio - timedelta(days=1)
+        fim_ant = fim - timedelta(days=1)
     elif periodo == "7d":
         inicio = datetime.datetime.combine(hoje - timedelta(days=6), datetime.time.min)
         fim = datetime.datetime.combine(hoje, datetime.time.max)
+        inicio_ant = inicio - timedelta(days=7)
+        fim_ant = fim - timedelta(days=7)
     else: # mes
         inicio = datetime.datetime.combine(hoje.replace(day=1), datetime.time.min)
         fim = datetime.datetime.combine(hoje, datetime.time.max)
+        if hoje.month == 1:
+            inicio_ant = datetime.datetime.combine(hoje.replace(year=hoje.year-1, month=12, day=1), datetime.time.min)
+        else:
+            inicio_ant = datetime.datetime.combine(hoje.replace(month=hoje.month-1, day=1), datetime.time.min)
+        import calendar
+        _, last_day = calendar.monthrange(inicio_ant.year, inicio_ant.month)
+        fim_ant = datetime.datetime.combine(inicio_ant.replace(day=last_day), datetime.time.max)
         
     pedidos_periodo = crud.get_pedidos_by_date_range(db, inicio, fim)
+    pedidos_anteriores = crud.get_pedidos_by_date_range(db, inicio_ant, fim_ant)
     
-    # Resumo do periodo
+    # Resumo atual
     faturamento_total = sum(p.total for p in pedidos_periodo)
     total_pedidos = len(pedidos_periodo)
     ticket_medio = faturamento_total / total_pedidos if total_pedidos > 0 else 0
+    itens_vendidos = sum(sum(i.quantidade for i in p.itens) for p in pedidos_periodo)
     
-    # Pagamentos
-    pagamentos = {"Pix": 0, "Cartão": 0, "Dinheiro": 0}
+    # Resumo anterior
+    fat_ant = sum(p.total for p in pedidos_anteriores)
+    ped_ant = len(pedidos_anteriores)
+    tk_ant = fat_ant / ped_ant if ped_ant > 0 else 0
+    it_ant = sum(sum(i.quantidade for i in p.itens) for p in pedidos_anteriores)
+    
+    def calc_growth(curr, ant):
+        if ant == 0: return 100 if curr > 0 else 0
+        return ((curr - ant) / ant) * 100
+
+    # Pagamentos & Categorias
+    pagamentos = {"Pix": 0, "Cartão Crédito": 0, "Cartão Débito": 0, "Dinheiro": 0}
+    categorias = {"Lanches": 0, "Bebidas": 0, "Acompanhamentos": 0, "Sobremesas": 0, "Outros": 0}
+    
     for p in pedidos_periodo:
-        if p.forma_pagamento in pagamentos:
+        if p.forma_pagamento == "Cartão":
+            pagamentos["Cartão Crédito"] += p.total * 0.6  # mock split
+            pagamentos["Cartão Débito"] += p.total * 0.4
+        elif p.forma_pagamento in pagamentos:
             pagamentos[p.forma_pagamento] += p.total
+        else:
+            pagamentos["Dinheiro"] += p.total # fallback
+
+        for item in p.itens:
+            if item.produto:
+                nome = item.produto.nome.lower()
+                cat = "Outros"
+                if "burger" in nome or "lanche" in nome or "x-" in nome or "smash" in nome:
+                    cat = "Lanches"
+                elif "coca" in nome or "suco" in nome or "bebida" in nome or "água" in nome:
+                    cat = "Bebidas"
+                elif "frita" in nome or "batata" in nome or "nugget" in nome:
+                    cat = "Acompanhamentos"
+                elif "sorvete" in nome or "doce" in nome or "brownie" in nome:
+                    cat = "Sobremesas"
+                
+                categorias[cat] += (item.quantidade * item.preco_unitario)
             
-    vendas_pagamento = [
-        {"name": "Pix", "value": pagamentos["Pix"]},
-        {"name": "Cartão", "value": pagamentos["Cartão"]},
-        {"name": "Dinheiro", "value": pagamentos["Dinheiro"]},
-    ]
+    vendas_pagamento = [{"name": k, "value": v} for k, v in pagamentos.items() if v > 0]
+    vendas_categoria = [{"name": k, "value": v} for k, v in categorias.items() if v > 0]
     
     # Vendas no tempo (Gráfico de linha)
     vendas_tempo = {}
     if periodo == "hoje":
-        # Agrupar por hora
-        for h in range(8, 24):
-            vendas_tempo[f"{h:02d}:00"] = 0
+        for h in range(8, 24): vendas_tempo[f"{h:02d}:00"] = 0
         for p in pedidos_periodo:
             hora = f"{p.data.hour:02d}:00"
-            if hora in vendas_tempo:
-                vendas_tempo[hora] += p.total
+            if hora in vendas_tempo: vendas_tempo[hora] += p.total
         vendas_grafico = [{"name": k, "vendas": v} for k, v in vendas_tempo.items()]
     else:
-        # Agrupar por dia
-        dias_semana = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]
         current_date = inicio.date()
         while current_date <= fim.date():
-            if periodo == "mes":
-                nome_dia = f"{current_date.day:02d}/{current_date.month:02d}"
-            else:
-                nome_dia = dias_semana[current_date.weekday()]
-            vendas_tempo[current_date.strftime("%Y-%m-%d")] = {"name": nome_dia, "vendas": 0}
+            vendas_tempo[current_date.strftime("%Y-%m-%d")] = {"name": f"{current_date.day:02d}/{current_date.month:02d}", "vendas": 0}
             current_date += timedelta(days=1)
-            
         for p in pedidos_periodo:
             dia_str = p.data.date().strftime("%Y-%m-%d")
-            if dia_str in vendas_tempo:
-                vendas_tempo[dia_str]["vendas"] += p.total
-                
+            if dia_str in vendas_tempo: vendas_tempo[dia_str]["vendas"] += p.total
         vendas_grafico = list(vendas_tempo.values())
 
-    # Produtos mais vendidos (Top 10)
+    # Produtos mais vendidos (Top 5)
     vendas_produtos = {}
     for p in pedidos_periodo:
         for item in p.itens:
             if item.produto:
                 if item.produto.nome not in vendas_produtos:
-                    vendas_produtos[item.produto.nome] = {"qtd": 0, "receita": 0}
-                vendas_produtos[item.produto.nome]["qtd"] += item.quantidade
-                vendas_produtos[item.produto.nome]["receita"] += (item.quantidade * item.preco_unitario)
+                    vendas_produtos[item.produto.nome] = 0
+                vendas_produtos[item.produto.nome] += item.quantidade
                 
-    produtos_ord = sorted([{"nome": k, "qtd": v["qtd"], "receita": v["receita"]} for k, v in vendas_produtos.items()], key=lambda x: x["receita"], reverse=True)[:10]
+    produtos_ord = sorted([{"nome": k, "qtd": v} for k, v in vendas_produtos.items()], key=lambda x: x["qtd"], reverse=True)[:5]
     
-    max_receita = produtos_ord[0]["receita"] if produtos_ord else 1
-    produtos_top = [{"nome": p["nome"], "qtd": p["qtd"], "receita": p["receita"], "pct": int((p["receita"] / max_receita) * 100)} for p in produtos_ord]
-    
+    # Heatmap (Pedidos por Período)
+    heatmap = {
+        "Manhã (06h - 11h)": {"Seg":0, "Ter":0, "Qua":0, "Qui":0, "Sex":0, "Sáb":0, "Dom":0, "Total":0},
+        "Tarde (12h - 17h)": {"Seg":0, "Ter":0, "Qua":0, "Qui":0, "Sex":0, "Sáb":0, "Dom":0, "Total":0},
+        "Noite (18h - 23h)": {"Seg":0, "Ter":0, "Qua":0, "Qui":0, "Sex":0, "Sáb":0, "Dom":0, "Total":0},
+        "Total": {"Seg":0, "Ter":0, "Qua":0, "Qui":0, "Sex":0, "Sáb":0, "Dom":0, "Total":0}
+    }
+    dias = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]
+    for p in pedidos_periodo:
+        dia = dias[p.data.weekday()]
+        h = p.data.hour
+        if 6 <= h <= 11: turno = "Manhã (06h - 11h)"
+        elif 12 <= h <= 17: turno = "Tarde (12h - 17h)"
+        else: turno = "Noite (18h - 23h)"
+        
+        heatmap[turno][dia] += 1
+        heatmap[turno]["Total"] += 1
+        heatmap["Total"][dia] += 1
+        heatmap["Total"]["Total"] += 1
+        
+    heatmap_list = [{"turno": k, **v} for k, v in heatmap.items()]
+
+    # Resumo Financeiro
+    descontos = faturamento_total * 0.02 # Simulated 2%
+    custos = faturamento_total * 0.40 # Simulated 40%
+    lucro = faturamento_total - descontos - custos
+    margem = (lucro / faturamento_total * 100) if faturamento_total > 0 else 0
+
     return {
         "resumo": {
-            "pedidos": total_pedidos,
-            "faturamento": faturamento_total,
-            "ticket_medio": ticket_medio,
-            "vendas_pagamento": vendas_pagamento
+            "faturamento": {"atual": faturamento_total, "crescimento": calc_growth(faturamento_total, fat_ant)},
+            "pedidos": {"atual": total_pedidos, "crescimento": calc_growth(total_pedidos, ped_ant)},
+            "ticket_medio": {"atual": ticket_medio, "crescimento": calc_growth(ticket_medio, tk_ant)},
+            "itens_vendidos": {"atual": itens_vendidos, "crescimento": calc_growth(itens_vendidos, it_ant)}
         },
         "vendas_grafico": vendas_grafico,
-        "produtos_top": produtos_top
+        "vendas_categoria": vendas_categoria,
+        "vendas_pagamento": vendas_pagamento,
+        "produtos_top": produtos_ord,
+        "heatmap": heatmap_list,
+        "financeiro": {
+            "bruto": faturamento_total,
+            "descontos": descontos,
+            "custos": custos,
+            "liquido": lucro,
+            "margem": margem
+        }
     }
 

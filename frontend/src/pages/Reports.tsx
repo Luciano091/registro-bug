@@ -1,17 +1,23 @@
 import { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Printer, Package, DollarSign, Receipt } from 'lucide-react';
+import { Calendar, Download, DollarSign, Package, Receipt, ShoppingCart, TrendingUp, TrendingDown, Info } from 'lucide-react';
 import api from '../services/api';
 
-const COLORS = ['#10b981', '#3b82f6', '#f59e0b'];
+const CAT_COLORS = ['#f97316', '#3b82f6', '#f59e0b', '#8b5cf6', '#10b981'];
+
+const GrowthBadge = ({ value }: { value: number }) => {
+  const isPositive = value >= 0;
+  return (
+    <div className={`flex items-center gap-1 text-xs font-medium ${isPositive ? 'text-emerald-500' : 'text-rose-500'}`}>
+      {isPositive ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+      <span>{isPositive ? '+' : ''}{value.toFixed(1)}% vs período anterior</span>
+    </div>
+  );
+};
 
 const Reports = () => {
   const [periodo, setPeriodo] = useState('mes');
-  const [data, setData] = useState({
-    resumo: { pedidos: 0, faturamento: 0, ticket_medio: 0, vendas_pagamento: [] as any[] },
-    vendas_grafico: [] as any[],
-    produtos_top: [] as any[]
-  });
+  const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -33,229 +39,318 @@ const Reports = () => {
     window.print();
   };
 
+  if (isLoading || !data) {
+    return (
+      <div className="flex items-center justify-center h-full min-h-[600px]">
+        <div className="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  // Calculate Pagamento max for progress bars
+  const totalPagamentos = data.vendas_pagamento.reduce((acc: any, curr: any) => acc + curr.value, 0);
+
   return (
-    <div className="p-6 md:p-10 max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-8 custom-scrollbar">
+    <div className="p-4 md:p-8 max-w-[1600px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-6 custom-scrollbar text-zinc-200">
       
-      {/* Header & Filters */}
+      {/* Header */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-white font-heading drop-shadow-sm">Relatórios Gerenciais</h2>
-          <p className="text-zinc-400 mt-1">Análise detalhada de vendas e produtos.</p>
+          <h2 className="text-3xl font-bold tracking-tight text-white font-heading">Relatórios</h2>
+          <p className="text-zinc-400 mt-1 text-sm">Acompanhe o desempenho completo do seu negócio.</p>
         </div>
         
-        <div className="flex items-center gap-3 w-full md:w-auto bg-dark-900/40 p-1.5 rounded-xl border border-white/5 backdrop-blur-md">
-          <button 
-            onClick={() => setPeriodo('hoje')}
-            className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-all ${periodo === 'hoje' ? 'bg-white/10 text-white shadow-sm' : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'}`}
-          >
-            Hoje
-          </button>
-          <button 
-            onClick={() => setPeriodo('7d')}
-            className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-all ${periodo === '7d' ? 'bg-white/10 text-white shadow-sm' : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'}`}
-          >
-            7 Dias
-          </button>
-          <button 
-            onClick={() => setPeriodo('mes')}
-            className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-all ${periodo === 'mes' ? 'bg-white/10 text-white shadow-sm' : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'}`}
-          >
-            Este Mês
-          </button>
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="flex items-center bg-dark-900/60 border border-white/5 rounded-lg p-1 backdrop-blur-md">
+             <Calendar size={16} className="text-zinc-400 ml-2 mr-1" />
+             <select 
+               value={periodo} 
+               onChange={(e) => setPeriodo(e.target.value)}
+               className="bg-transparent text-sm text-zinc-300 py-1.5 px-2 outline-none cursor-pointer"
+             >
+               <option value="hoje">Hoje</option>
+               <option value="7d">Últimos 7 Dias</option>
+               <option value="mes">Este Mês</option>
+             </select>
+          </div>
           
-          <button onClick={exportPDF} className="hidden md:flex ml-2 p-2 rounded-lg text-brand-400 hover:bg-brand-500/10 transition-colors" title="Imprimir Relatório">
-            <Printer size={18} />
+          <button onClick={exportPDF} className="flex items-center gap-2 bg-dark-900/60 border border-white/5 hover:bg-white/5 transition-colors px-4 py-2 rounded-lg text-sm text-zinc-300 backdrop-blur-md">
+            <Download size={16} />
+            <span>Exportar</span>
           </button>
         </div>
       </header>
 
-      {/* Loading Overlay */}
-      {isLoading && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm rounded-xl">
-          <div className="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      )}
-
-      {/* Main KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="glass-card p-6 rounded-2xl flex items-center justify-between group">
-          <div>
-            <p className="text-sm font-medium text-zinc-400 mb-1">Total Faturado</p>
-            <h3 className="text-3xl font-bold gradient-text font-heading group-hover:scale-105 transition-transform origin-left">
-              {data.resumo.faturamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-            </h3>
-          </div>
-          <div className="w-14 h-14 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center border border-emerald-500/20 group-hover:bg-emerald-500 group-hover:text-white transition-all shadow-[0_0_15px_rgba(16,185,129,0.15)]">
+      {/* Row 1: KPIs */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="glass-card p-5 rounded-xl flex items-start gap-4">
+          <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
             <DollarSign size={24} />
           </div>
+          <div>
+            <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-1">Faturamento Total</p>
+            <h3 className="text-2xl font-bold text-white font-heading mb-1">
+              {data.resumo.faturamento.atual.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            </h3>
+            <GrowthBadge value={data.resumo.faturamento.crescimento} />
+          </div>
         </div>
 
-        <div className="glass-card p-6 rounded-2xl flex items-center justify-between group">
-          <div>
-            <p className="text-sm font-medium text-zinc-400 mb-1">Pedidos Realizados</p>
-            <h3 className="text-3xl font-bold text-white font-heading group-hover:text-brand-400 transition-colors">
-              {data.resumo.pedidos}
-            </h3>
-          </div>
-          <div className="w-14 h-14 rounded-full bg-brand-500/10 text-brand-500 flex items-center justify-center border border-brand-500/20 group-hover:bg-brand-500 group-hover:text-white transition-all shadow-[0_0_15px_rgba(249,115,22,0.15)]">
+        <div className="glass-card p-5 rounded-xl flex items-start gap-4">
+          <div className="w-12 h-12 rounded-full bg-brand-500/10 text-brand-500 flex items-center justify-center shrink-0">
             <Package size={24} />
           </div>
+          <div>
+            <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-1">Total de Pedidos</p>
+            <h3 className="text-2xl font-bold text-white font-heading mb-1">{data.resumo.pedidos.atual}</h3>
+            <GrowthBadge value={data.resumo.pedidos.crescimento} />
+          </div>
         </div>
 
-        <div className="glass-card p-6 rounded-2xl flex items-center justify-between group">
-          <div>
-            <p className="text-sm font-medium text-zinc-400 mb-1">Ticket Médio</p>
-            <h3 className="text-3xl font-bold text-blue-400 font-heading group-hover:text-blue-300 transition-colors">
-              {data.resumo.ticket_medio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-            </h3>
-          </div>
-          <div className="w-14 h-14 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center border border-blue-500/20 group-hover:bg-blue-500 group-hover:text-white transition-all shadow-[0_0_15px_rgba(59,130,246,0.15)]">
+        <div className="glass-card p-5 rounded-xl flex items-start gap-4">
+          <div className="w-12 h-12 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
             <Receipt size={24} />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-1">Ticket Médio</p>
+            <h3 className="text-2xl font-bold text-white font-heading mb-1">
+              {data.resumo.ticket_medio.atual.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            </h3>
+            <GrowthBadge value={data.resumo.ticket_medio.crescimento} />
+          </div>
+        </div>
+
+        <div className="glass-card p-5 rounded-xl flex items-start gap-4">
+          <div className="w-12 h-12 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center shrink-0">
+            <ShoppingCart size={24} />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-1">Itens Vendidos</p>
+            <h3 className="text-2xl font-bold text-white font-heading mb-1">{data.resumo.itens_vendidos.atual}</h3>
+            <GrowthBadge value={data.resumo.itens_vendidos.crescimento} />
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      {/* Row 2: Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         
-        {/* Curva de Faturamento */}
-        <div className="xl:col-span-2 glass-card p-6 rounded-2xl relative overflow-hidden group">
-          <div className="absolute -top-16 -left-16 w-48 h-48 bg-brand-500/10 rounded-full blur-3xl pointer-events-none transition-all duration-500 group-hover:bg-brand-500/20"></div>
-          
-          <h3 className="text-xl font-bold text-white font-heading mb-6 relative z-10 flex items-center justify-between">
-            <span>Evolução do Faturamento</span>
-            <span className="text-xs font-normal text-zinc-500 bg-white/5 px-2 py-1 rounded-md border border-white/5">{periodo.toUpperCase()}</span>
-          </h3>
-          
-          <div className="h-80 relative z-10">
+        {/* Faturamento Diário */}
+        <div className="lg:col-span-1 glass-card p-5 rounded-xl flex flex-col">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-sm font-bold text-white font-heading">Faturamento Diário</h3>
+            <span className="text-xs text-zinc-500 bg-black/40 px-2 py-1 rounded border border-white/5">Por dia</span>
+          </div>
+          <div className="flex-1 min-h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data.vendas_grafico} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <AreaChart data={data.vendas_grafico} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="colorFaturamento" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f97316" stopOpacity={0.6}/>
+                  <linearGradient id="colorOrange" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f97316" stopOpacity={0.3}/>
                     <stop offset="95%" stopColor="#f97316" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-                <XAxis dataKey="name" stroke="#a1a1aa" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="#a1a1aa" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `R$${val}`} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff0a" vertical={false} />
+                <XAxis dataKey="name" stroke="#71717a" fontSize={10} tickLine={false} axisLine={false} />
+                <YAxis stroke="#71717a" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => `R$ ${val}`} />
                 <RechartsTooltip 
-                  contentStyle={{ backgroundColor: 'rgba(15, 10, 5, 0.8)', backdropFilter: 'blur(16px)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px', color: '#fff', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)' }}
-                  itemStyle={{ color: '#f97316', fontWeight: 'bold' }}
+                  contentStyle={{ backgroundColor: '#18181b', borderColor: '#ffffff1a', borderRadius: '8px', color: '#fff', fontSize: '12px' }}
+                  itemStyle={{ color: '#f97316' }}
                   // @ts-ignore
                   formatter={(value: number) => [value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 'Faturamento']}
                 />
-                <Area type="monotone" dataKey="vendas" stroke="#f97316" strokeWidth={4} fillOpacity={1} fill="url(#colorFaturamento)" />
+                <Area type="monotone" dataKey="vendas" stroke="#f97316" strokeWidth={2} fillOpacity={1} fill="url(#colorOrange)" activeDot={{ r: 4, fill: '#f97316', stroke: '#fff' }} dot={{ r: 2, fill: '#f97316', strokeWidth: 0 }} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Divisão de Pagamentos */}
-        <div className="glass-card p-6 rounded-2xl relative overflow-hidden group flex flex-col">
-          <div className="absolute -bottom-16 -right-16 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none transition-all duration-500 group-hover:bg-emerald-500/20"></div>
-          
-          <h3 className="text-xl font-bold text-white font-heading mb-2 relative z-10">Formas de Pagamento</h3>
-          <p className="text-sm text-zinc-400 mb-6 relative z-10">Distribuição da receita no período</p>
-          
-          <div className="flex-1 min-h-[250px] relative z-10">
-             <ResponsiveContainer width="100%" height="100%">
-               <PieChart>
-                 <Pie
-                   data={data.resumo.vendas_pagamento}
-                   cx="50%"
-                   cy="50%"
-                   innerRadius={60}
-                   outerRadius={90}
-                   paddingAngle={8}
-                   dataKey="value"
-                   stroke="rgba(255,255,255,0.05)"
-                 >
-                   {data.resumo.vendas_pagamento.map((_: any, index: number) => (
-                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                   ))}
-                 </Pie>
-                 <RechartsTooltip 
-                   contentStyle={{ backgroundColor: 'rgba(15, 10, 5, 0.8)', backdropFilter: 'blur(16px)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px', color: '#fff' }}
-                   itemStyle={{ color: '#fff' }}
-                   // @ts-ignore
-                   formatter={(value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                 />
-               </PieChart>
-             </ResponsiveContainer>
-             
-             {/* Totals overlay in center of pie chart */}
-             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-xs text-zinc-500">Receita</span>
-                <span className="text-lg font-bold text-white font-heading">
-                   {data.resumo.vendas_pagamento.reduce((acc, curr) => acc + curr.value, 0) > 0 ? '100%' : '0%'}
-                </span>
-             </div>
-          </div>
-          
-          <div className="grid grid-cols-3 gap-2 mt-4 relative z-10">
-             {data.resumo.vendas_pagamento.map((metodo, idx) => (
-                <div key={idx} className="bg-black/30 p-2 rounded-lg border border-white/5 text-center">
-                   <div className="flex items-center justify-center gap-1.5 text-xs text-zinc-400 mb-1">
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[idx % COLORS.length], boxShadow: `0 0 8px ${COLORS[idx % COLORS.length]}80` }}></div>
-                      {metodo.name}
-                   </div>
-                   <div className="font-semibold text-white text-sm truncate" title={metodo.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}>
-                      {metodo.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                   </div>
+        {/* Vendas por Categoria */}
+        <div className="glass-card p-5 rounded-xl flex flex-col">
+          <h3 className="text-sm font-bold text-white font-heading mb-4">Vendas por Categoria</h3>
+          <div className="flex-1 flex items-center justify-between">
+            <div className="w-1/2 h-[180px] relative">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={data.vendas_categoria}
+                    cx="50%" cy="50%" innerRadius={45} outerRadius={70}
+                    paddingAngle={2} dataKey="value" stroke="transparent"
+                  >
+                    {data.vendas_categoria.map((_: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={CAT_COLORS[index % CAT_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip formatter={(value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} contentStyle={{ backgroundColor: '#18181b', borderColor: '#ffffff1a', borderRadius: '8px', fontSize: '12px' }} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                 <span className="text-xs text-white font-bold">{data.resumo.faturamento.atual.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                 <span className="text-[10px] text-zinc-500">Total</span>
+              </div>
+            </div>
+            
+            <div className="w-1/2 flex flex-col gap-3 pl-2">
+              {data.vendas_categoria.map((cat: any, idx: number) => (
+                <div key={idx} className="flex justify-between items-start text-xs">
+                  <div>
+                    <div className="flex items-center gap-1.5 text-zinc-300">
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: CAT_COLORS[idx % CAT_COLORS.length] }}></div>
+                      {cat.name}
+                    </div>
+                    <div className="text-zinc-500 text-[10px] ml-3.5 mt-0.5">{cat.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+                  </div>
+                  <div className="font-medium text-white">{((cat.value / data.resumo.faturamento.atual) * 100).toFixed(1)}%</div>
                 </div>
-             ))}
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Formas de Pagamento */}
+        <div className="glass-card p-5 rounded-xl flex flex-col">
+          <h3 className="text-sm font-bold text-white font-heading mb-4">Formas de Pagamento</h3>
+          <div className="flex-1 flex flex-col justify-center gap-4">
+            {data.vendas_pagamento.map((pag: any, idx: number) => {
+              const pct = totalPagamentos > 0 ? (pag.value / totalPagamentos) * 100 : 0;
+              return (
+                <div key={idx} className="flex flex-col gap-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-zinc-300">{pag.name}</span>
+                    <div className="text-right">
+                      <span className="text-white font-medium">{pct.toFixed(1)}%</span>
+                      <span className="text-zinc-500 ml-2 text-[10px]">{pag.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                    </div>
+                  </div>
+                  <div className="w-full bg-black/40 h-2 rounded-full overflow-hidden border border-white/5">
+                    <div className="h-full rounded-full bg-brand-500" style={{ width: `${pct}%` }}></div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
 
-      {/* Tabela de Produtos Mais Vendidos */}
-      <div className="glass-card p-6 rounded-2xl relative overflow-hidden group">
-        <h3 className="text-xl font-bold text-white font-heading mb-6 relative z-10">Top 10 Produtos Mais Vendidos</h3>
+      {/* Row 3: Tables and Summary */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         
-        <div className="overflow-x-auto relative z-10">
-          <table className="w-full text-left border-collapse min-w-[600px]">
-            <thead>
-              <tr className="border-b border-white/10 text-sm font-medium text-zinc-400 uppercase tracking-wider">
-                <th className="pb-4 pl-4 font-heading">Ranking</th>
-                <th className="pb-4 font-heading">Produto</th>
-                <th className="pb-4 text-center font-heading">Quantidade</th>
-                <th className="pb-4 text-right pr-4 font-heading">Receita Gerada</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.produtos_top.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="py-8 text-center text-zinc-500">Nenhum produto vendido neste período.</td>
-                </tr>
-              ) : (
-                data.produtos_top.map((produto: any, index: number) => (
-                  <tr key={index} className="border-b border-white/5 hover:bg-white/5 transition-colors group/row">
-                    <td className="py-4 pl-4 w-24">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${index < 3 ? 'bg-gradient-to-br from-brand-400 to-rose-500 text-white shadow-lg shadow-brand-500/20' : 'bg-white/10 text-zinc-400'}`}>
-                        #{index + 1}
-                      </div>
-                    </td>
-                    <td className="py-4">
-                      <span className="font-medium text-zinc-200 group-hover/row:text-white transition-colors">{produto.nome}</span>
-                    </td>
-                    <td className="py-4 text-center">
-                      <span className="inline-flex items-center justify-center bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg text-white font-medium min-w-[60px]">
-                        {produto.qtd} un
-                      </span>
-                    </td>
-                    <td className="py-4 text-right pr-4">
-                      <span className="font-bold text-emerald-400 font-heading">
-                        {produto.receita.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                      </span>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+        {/* Produtos Mais Vendidos */}
+        <div className="glass-card p-5 rounded-xl flex flex-col">
+          <div className="flex justify-between items-center mb-4 border-b border-white/5 pb-3">
+             <h3 className="text-sm font-bold text-white font-heading">Produtos Mais Vendidos</h3>
+             <span className="text-xs text-zinc-500">Quantidade</span>
+          </div>
+          <div className="flex-1 flex flex-col gap-3">
+             {data.produtos_top.length === 0 ? (
+               <p className="text-xs text-zinc-500 text-center py-4">Nenhum dado</p>
+             ) : (
+               data.produtos_top.map((p: any, idx: number) => (
+                 <div key={idx} className="flex items-center justify-between group cursor-default">
+                   <div className="flex items-center gap-3">
+                     <span className="text-xs font-bold text-zinc-500 w-3">{idx + 1}</span>
+                     <div className="w-8 h-8 rounded-full bg-dark-900 border border-white/5 flex items-center justify-center overflow-hidden shrink-0">
+                       <span className="text-lg">🍔</span>
+                     </div>
+                     <span className="text-sm font-medium text-zinc-200 group-hover:text-white transition-colors line-clamp-1">{p.nome}</span>
+                   </div>
+                   <span className="text-xs text-zinc-400">{p.qtd} unidades</span>
+                 </div>
+               ))
+             )}
+          </div>
         </div>
+
+        {/* Pedidos por Período (Heatmap) */}
+        <div className="glass-card p-5 rounded-xl flex flex-col">
+          <h3 className="text-sm font-bold text-white font-heading mb-4 border-b border-white/5 pb-3">Pedidos por Período</h3>
+          <div className="flex-1 overflow-x-auto custom-scrollbar">
+            <table className="w-full text-xs text-center border-separate border-spacing-1">
+              <thead>
+                <tr className="text-zinc-500">
+                  <th className="font-normal text-left pb-2 w-1/4"></th>
+                  <th className="font-normal pb-2">Seg</th>
+                  <th className="font-normal pb-2">Ter</th>
+                  <th className="font-normal pb-2">Qua</th>
+                  <th className="font-normal pb-2">Qui</th>
+                  <th className="font-normal pb-2">Sex</th>
+                  <th className="font-normal pb-2">Sáb</th>
+                  <th className="font-normal pb-2">Dom</th>
+                  <th className="font-normal pb-2 text-white">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.heatmap.map((row: any, rIdx: number) => {
+                  const isTotal = row.turno === "Total";
+                  return (
+                    <tr key={rIdx} className={isTotal ? "font-bold text-white" : "text-zinc-300"}>
+                      <td className={`text-left py-1.5 ${isTotal ? 'pt-4' : ''}`}>{row.turno}</td>
+                      {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom', 'Total'].map((col, cIdx) => {
+                        const val = row[col];
+                        const isColTotal = col === 'Total';
+                        let bgColor = 'transparent';
+                        if (!isTotal && !isColTotal && val > 0) {
+                          // Opacity based on value (mocked simple scale)
+                          const opacity = Math.min(0.2 + (val * 0.1), 1);
+                          bgColor = `rgba(249, 115, 22, ${opacity})`;
+                        }
+                        
+                        return (
+                          <td 
+                            key={cIdx} 
+                            className={`py-1.5 ${(!isTotal && !isColTotal) ? 'rounded-sm' : ''} ${isColTotal ? 'text-white' : ''} ${isTotal ? 'pt-4' : ''}`}
+                            style={{ backgroundColor: bgColor }}
+                          >
+                            {val}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Resumo Financeiro */}
+        <div className="glass-card p-5 rounded-xl flex flex-col relative">
+          <h3 className="text-sm font-bold text-white font-heading mb-4 border-b border-white/5 pb-3">Resumo Financeiro</h3>
+          
+          <div className="flex-1 flex flex-col justify-center space-y-4 text-sm">
+            <div className="flex justify-between items-center">
+              <span className="text-zinc-400">Faturamento Bruto</span>
+              <span className="text-white font-medium">{data.financeiro.bruto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+            </div>
+            
+            <div className="flex justify-between items-center">
+              <span className="text-zinc-400">(-) Descontos</span>
+              <span className="text-rose-400 font-medium">- {data.financeiro.descontos.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+            </div>
+            
+            <div className="flex justify-between items-center pb-4 border-b border-white/5 border-dashed">
+              <span className="text-zinc-400">(-) Custos Estimados</span>
+              <span className="text-rose-400 font-medium">- {data.financeiro.custos.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+            </div>
+            
+            <div className="flex justify-between items-center pt-2">
+              <span className="text-zinc-300 font-bold">Lucro Líquido</span>
+              <span className="text-emerald-400 font-bold text-lg">{data.financeiro.liquido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+            </div>
+            
+            <div className="flex justify-between items-center">
+              <span className="text-zinc-400">Margem de Lucro</span>
+              <span className="text-emerald-500 font-medium">{data.financeiro.margem.toFixed(1)}%</span>
+            </div>
+          </div>
+
+          <div className="absolute bottom-4 left-5 right-5 flex items-start gap-2 text-[10px] text-zinc-500 mt-4">
+             <Info size={12} className="shrink-0 mt-0.5" />
+             <p>Os custos são valores simulados referentes ao período selecionado e podem diferir do balanço contábil real.</p>
+          </div>
+        </div>
+
       </div>
-      
     </div>
   );
 };
