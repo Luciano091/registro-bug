@@ -233,7 +233,6 @@ const Dashboard = () => {
                 Voltar ao Painel
               </button>
             </div>
-            </div>
           </div>
         </div>
       )}
