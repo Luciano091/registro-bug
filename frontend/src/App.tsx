@@ -43,14 +43,20 @@ function App() {
 
         {/* Sidebar */}
         <aside className={`${isCollapsed ? 'w-24' : 'w-64'} transition-all duration-300 ease-in-out glass border-r border-white/5 flex flex-col hidden md:flex z-10 relative`}>
-          <div className={`p-6 flex items-center h-24 ${isCollapsed ? 'justify-center' : 'justify-start'}`}>
-            {!isCollapsed ? (
-              <h1 className="text-2xl font-bold gradient-text flex items-center gap-2 drop-shadow-sm whitespace-nowrap">
-                <span className="text-3xl drop-shadow-md">🍔</span> Burger House
+          <div className={`pt-6 px-4 pb-2 h-24 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
+            {!isCollapsed && (
+              <h1 className="text-lg font-bold gradient-text flex items-center gap-2 drop-shadow-sm whitespace-nowrap overflow-hidden">
+                <span className="text-2xl drop-shadow-md">🍔</span> Burger House
               </h1>
-            ) : (
-              <span className="text-3xl drop-shadow-md" title="Burger House">🍔</span>
             )}
+            
+            <button 
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-zinc-400 hover:text-white transition-colors flex-shrink-0"
+              title={isCollapsed ? "Expandir" : "Recolher"}
+            >
+              {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+            </button>
           </div>
           
           <nav className="flex-1 px-4 py-6 flex flex-col gap-2 overflow-x-hidden overflow-y-auto custom-scrollbar">
@@ -60,18 +66,6 @@ function App() {
             <NavLink to="/cardapio" icon={Utensils} isCollapsed={isCollapsed}>Cardápio</NavLink>
             <NavLink to="/relatorios" icon={BarChart3} isCollapsed={isCollapsed}>Relatórios</NavLink>
             <NavLink to="/configuracoes" icon={SettingsIcon} isCollapsed={isCollapsed}>Configurações</NavLink>
-          </nav>
-
-          {/* Toggle Button */}
-          <div className="p-4 border-t border-white/5 flex justify-center">
-            <button 
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              className="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-zinc-400 hover:text-white transition-colors flex items-center justify-center w-full"
-              title={isCollapsed ? "Expandir" : "Recolher"}
-            >
-              {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-            </button>
-          </div>
         </aside>
 
         {/* Main Content */}
