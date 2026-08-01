@@ -9,7 +9,7 @@ from database import engine, get_db
 
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Burger House API")
+app = FastAPI(title="Lanches Burger API")
 
 app.add_middleware(
     CORSMiddleware,
