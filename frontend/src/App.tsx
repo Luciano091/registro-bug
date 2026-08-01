@@ -60,7 +60,7 @@ function App() {
                   <h1 className="text-lg font-bold gradient-text drop-shadow-[0_0_8px_rgba(249,115,22,0.8)] whitespace-nowrap leading-tight">
                     Burger Hause
                   </h1>
-                  <span className="text-[10px] text-zinc-300 font-medium tracking-[0.2em] uppercase drop-shadow-[0_0_5px_rgba(255,255,255,0.5)]">O Lanche</span>
+                  <span className="text-[10px] text-white font-bold tracking-[0.2em] uppercase drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]">O Lanche</span>
                 </div>
               </div>
             )}
