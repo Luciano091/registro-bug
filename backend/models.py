@@ -48,7 +48,7 @@ class Configuracao(Base):
     __tablename__ = "configuracoes"
 
     id = Column(Integer, primary_key=True, index=True)
-    nome_empresa = Column(String, default="Lanches Burger")
+    nome_empresa = Column(String, default="Burger Hause")
     telefone = Column(String, nullable=True)
     endereco = Column(String, nullable=True)
     logo = Column(String, nullable=True)

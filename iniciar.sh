@@ -1,5 +1,5 @@
 #!/bin/bash
-echo "🍔 Iniciando Lanches Burger..."
+echo "🍔 Iniciando Burger Hause..."
 echo ""
 
 # Diretório do projeto
@@ -29,12 +29,12 @@ echo "🌐 Abrindo o navegador..."
 xdg-open "http://127.0.0.1:5180" 2>/dev/null || echo "Acesse: http://127.0.0.1:5180"
 
 echo ""
-echo "✅ Lanches Burger está rodando!"
+echo "✅ Burger Hause está rodando!"
 echo "   Para encerrar, feche esta janela ou pressione Ctrl+C"
 echo ""
 
 # Quando o usuário apertar Ctrl+C, matar os dois processos
-trap "echo ''; echo '👋 Encerrando Lanches Burger...'; kill $BACKEND_PID $FRONTEND_PID 2>/dev/null; exit" INT TERM
+trap "echo ''; echo '👋 Encerrando Burger Hause...'; kill $BACKEND_PID $FRONTEND_PID 2>/dev/null; exit" INT TERM
 
 # Manter o script rodando
 wait
