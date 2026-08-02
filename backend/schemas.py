@@ -38,8 +38,9 @@ class ItemPedido(ItemPedidoBase):
 
 # --- Pedido ---
 class PedidoBase(BaseModel):
+    uuid: Optional[str] = None
     cliente: str
-    telefone: Optional[str] = None
+    telefone: str
     endereco: Optional[str] = None
     tipo_entrega: str
     forma_pagamento: str

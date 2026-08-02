@@ -34,6 +34,11 @@ def get_pedidos_by_date_range(db: Session, start_date: datetime.datetime, end_da
     return db.query(models.Pedido).filter(models.Pedido.data >= start_date, models.Pedido.data <= end_date).all()
 
 def create_pedido(db: Session, pedido: schemas.PedidoCreate):
+    if pedido.uuid:
+        existing = db.query(models.Pedido).filter(models.Pedido.uuid == pedido.uuid).first()
+        if existing:
+            return existing
+
     # Calcular totais
     subtotal = 0.0
     db_itens = []
@@ -62,6 +67,7 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate):
     numero_pedido = f"{hoje.strftime('%Y%m%d')}-{count_hoje:03d}"
 
     db_pedido = models.Pedido(
+        uuid=pedido.uuid,
         numero=numero_pedido,
         cliente=pedido.cliente,
         telefone=pedido.telefone,

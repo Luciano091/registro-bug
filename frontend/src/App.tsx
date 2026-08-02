@@ -8,6 +8,28 @@ import Menu from './pages/Menu';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import CashFlow from './pages/CashFlow';
+import { NetworkProvider, useNetwork } from './contexts/NetworkContext';
+import { WifiOff, RefreshCcw } from 'lucide-react';
+
+const NetworkBanner = () => {
+  const { isOnline, isSyncing } = useNetwork();
+  
+  if (isOnline && !isSyncing) return null;
+  
+  return (
+    <div className={`absolute top-0 left-0 w-full z-[100] py-1.5 px-4 flex justify-center items-center gap-2 text-sm font-bold shadow-lg transition-colors ${!isOnline ? 'bg-red-500/90 backdrop-blur-sm text-white' : 'bg-emerald-500/90 backdrop-blur-sm text-white'}`}>
+      {!isOnline ? (
+        <>
+          <WifiOff size={16} /> Você está Offline. Os pedidos estão sendo salvos localmente no caixa.
+        </>
+      ) : (
+        <>
+          <RefreshCcw size={16} className="animate-spin" /> Restaurando conexão: sincronizando pedidos pendentes...
+        </>
+      )}
+    </div>
+  );
+};
 
 const NavLink = ({ to, icon: Icon, children, isCollapsed }: { to: string, icon: any, children: React.ReactNode, isCollapsed: boolean }) => {
   const location = useLocation();
@@ -35,9 +57,10 @@ function App() {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
-    <Router>
-      <div className="flex h-screen bg-[#0a0a0a] text-zinc-50 overflow-hidden font-sans relative">
-        
+    <NetworkProvider>
+      <Router>
+        <div className="flex h-screen bg-[#0a0a0a] text-zinc-50 overflow-hidden font-sans relative">
+          <NetworkBanner />
         {/* Global Background Image */}
         <div 
           className="absolute inset-0 z-0 opacity-70 pointer-events-none bg-no-repeat bg-center bg-cover mix-blend-screen"
@@ -106,7 +129,8 @@ function App() {
           <Link to="/pedidos" className="p-3 text-zinc-400 hover:text-brand-400 transition-colors"><ListOrdered size={24} /></Link>
         </nav>
       </div>
-    </Router>
+      </Router>
+    </NetworkProvider>
   );
 }
 

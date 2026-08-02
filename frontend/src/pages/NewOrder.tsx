@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Search, Plus, Minus, Trash2, ChevronRight, X } from 'lucide-react';
 import api from '../services/api';
+import { useNetwork } from '../contexts/NetworkContext';
+import { saveOfflineOrder } from '../services/db';
+import { v4 as uuidv4 } from 'uuid';
 
 const NewOrder = () => {
+  const { isOnline } = useNetwork();
   const [cliente, setCliente] = useState('');
   const [telefone, setTelefone] = useState('');
   const [endereco, setEndereco] = useState('');
@@ -58,7 +62,9 @@ const NewOrder = () => {
   const handleSubmitOrder = async () => {
     setIsSubmitting(true);
     try {
+      const orderUuid = uuidv4();
       const pedidoData = {
+        uuid: orderUuid,
         cliente,
         telefone: telefone || undefined,
         endereco: endereco || undefined,
@@ -70,18 +76,34 @@ const NewOrder = () => {
         }))
       };
 
-      await api.post('/pedidos', pedidoData);
+      if (!isOnline) {
+        await saveOfflineOrder(orderUuid, pedidoData);
+        alert('Você está offline. Pedido salvo localmente com sucesso! Ele será sincronizado automaticamente quando a conexão voltar.');
+      } else {
+        try {
+          await api.post('/pedidos', pedidoData);
+          alert('Pedido salvo com sucesso!');
+        } catch (error: any) {
+          if (!error.response || error.message === 'Network Error') {
+            await saveOfflineOrder(orderUuid, pedidoData);
+            alert('Falha na rede (Servidor indisponível). Pedido salvo localmente com sucesso! Será sincronizado depois.');
+          } else {
+            const detail = error.response?.data?.detail;
+            if (detail && detail.includes("Caixa está fechado")) {
+              alert("Ops! O Caixa está fechado. Vá no menu 'Caixa' e abra-o antes de registrar pedidos.");
+            } else {
+              alert(detail || 'Houve um erro ao salvar o pedido.');
+            }
+            setIsSubmitting(false);
+            return; // Impede limpar o form
+          }
+        }
+      }
       
-      alert('Pedido salvo com sucesso!');
       setCliente(''); setTelefone(''); setEndereco(''); setItens([]); setShowCheckout(false);
     } catch (error: any) {
       console.error(error);
-      const detail = error.response?.data?.detail;
-      if (detail && detail.includes("Caixa está fechado")) {
-        alert("Ops! O Caixa está fechado. Vá no menu 'Caixa' e abra-o antes de registrar pedidos.");
-      } else {
-        alert(detail || 'Houve um erro ao salvar o pedido.');
-      }
+      alert('Erro inesperado ao processar o pedido.');
     } finally {
       setIsSubmitting(false);
     }

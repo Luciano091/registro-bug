@@ -20,6 +20,7 @@ class Pedido(Base):
     __tablename__ = "pedidos"
 
     id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, unique=True, index=True, nullable=True)
     numero = Column(String, unique=True, index=True)
     cliente = Column(String, index=True)
     telefone = Column(String, nullable=True)
