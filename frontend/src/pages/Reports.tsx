@@ -237,7 +237,7 @@ const Reports = () => {
                     </div>
                     <div className="text-zinc-500 text-[10px] ml-3.5 mt-0.5">{cat.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
                   </div>
-                  <div className="font-medium text-white">{((cat.value / data.resumo.faturamento.atual) * 100).toFixed(1)}%</div>
+                  <div className="font-medium text-white">{data.resumo.faturamento.atual > 0 ? ((cat.value / data.resumo.faturamento.atual) * 100).toFixed(1) : 0}%</div>
                 </div>
               ))}
             </div>
