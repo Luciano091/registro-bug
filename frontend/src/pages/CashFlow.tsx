@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Wallet, DollarSign, ArrowDownCircle, ArrowUpCircle, Lock, LockOpen, History, Loader2, User } from 'lucide-react';
-import api from '../api';
+import api from '../services/api';
 
 interface Movimentacao {
   id: number;
