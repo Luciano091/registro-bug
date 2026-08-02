@@ -54,3 +54,29 @@ class Configuracao(Base):
     logo = Column(String, nullable=True)
     taxa_entrega = Column(Float, default=5.0)
     tempo_medio_preparo = Column(Integer, default=30)
+
+class Caixa(Base):
+    __tablename__ = "caixas"
+
+    id = Column(Integer, primary_key=True, index=True)
+    operador = Column(String)
+    data_abertura = Column(DateTime, default=datetime.datetime.utcnow)
+    data_fechamento = Column(DateTime, nullable=True)
+    saldo_inicial = Column(Float, default=0.0)
+    saldo_final = Column(Float, nullable=True)
+    status = Column(String, default="aberto") # "aberto" or "fechado"
+
+    movimentacoes = relationship("MovimentacaoCaixa", back_populates="caixa")
+
+class MovimentacaoCaixa(Base):
+    __tablename__ = "movimentacoes_caixa"
+
+    id = Column(Integer, primary_key=True, index=True)
+    caixa_id = Column(Integer, ForeignKey("caixas.id"))
+    tipo = Column(String) # "venda", "sangria", "suprimento"
+    valor = Column(Float, default=0.0)
+    forma_pagamento = Column(String)
+    descricao = Column(String, nullable=True)
+    data = Column(DateTime, default=datetime.datetime.utcnow)
+
+    caixa = relationship("Caixa", back_populates="movimentacoes")

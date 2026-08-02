@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Home, PlusCircle, ListOrdered, Utensils, BarChart3, Settings as SettingsIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Home, PlusCircle, ListOrdered, Utensils, BarChart3, Settings as SettingsIcon, ChevronLeft, ChevronRight, Wallet } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import NewOrder from './pages/NewOrder';
 import Orders from './pages/Orders';
 import Menu from './pages/Menu';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
+import CashFlow from './pages/CashFlow';
 
 const NavLink = ({ to, icon: Icon, children, isCollapsed }: { to: string, icon: any, children: React.ReactNode, isCollapsed: boolean }) => {
   const location = useLocation();
@@ -78,6 +79,7 @@ function App() {
             <NavLink to="/" icon={Home} isCollapsed={isCollapsed}>Dashboard</NavLink>
             <NavLink to="/novo-pedido" icon={PlusCircle} isCollapsed={isCollapsed}>Novo Pedido</NavLink>
             <NavLink to="/pedidos" icon={ListOrdered} isCollapsed={isCollapsed}>Pedidos</NavLink>
+            <NavLink to="/caixa" icon={Wallet} isCollapsed={isCollapsed}>Caixa</NavLink>
             <NavLink to="/cardapio" icon={Utensils} isCollapsed={isCollapsed}>Cardápio</NavLink>
             <NavLink to="/relatorios" icon={BarChart3} isCollapsed={isCollapsed}>Relatórios</NavLink>
             <NavLink to="/configuracoes" icon={SettingsIcon} isCollapsed={isCollapsed}>Configurações</NavLink>
@@ -90,6 +92,7 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/novo-pedido" element={<NewOrder />} />
             <Route path="/pedidos" element={<Orders />} />
+            <Route path="/caixa" element={<CashFlow />} />
             <Route path="/cardapio" element={<Menu />} />
             <Route path="/relatorios" element={<Reports />} />
             <Route path="/configuracoes" element={<Settings />} />

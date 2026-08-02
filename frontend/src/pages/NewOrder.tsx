@@ -74,9 +74,14 @@ const NewOrder = () => {
       
       alert('Pedido salvo com sucesso!');
       setCliente(''); setTelefone(''); setEndereco(''); setItens([]); setShowCheckout(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert('Houve um erro ao salvar o pedido.');
+      const detail = error.response?.data?.detail;
+      if (detail && detail.includes("Caixa está fechado")) {
+        alert("Ops! O Caixa está fechado. Vá no menu 'Caixa' e abra-o antes de registrar pedidos.");
+      } else {
+        alert(detail || 'Houve um erro ao salvar o pedido.');
+      }
     } finally {
       setIsSubmitting(false);
     }

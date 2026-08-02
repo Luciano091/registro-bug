@@ -77,3 +77,39 @@ class Configuracao(ConfiguracaoBase):
     id: int
     class Config:
         from_attributes = True
+
+# --- Caixa ---
+class MovimentacaoCaixaBase(BaseModel):
+    tipo: str
+    valor: float
+    forma_pagamento: str
+    descricao: Optional[str] = None
+
+class MovimentacaoCaixaCreate(MovimentacaoCaixaBase):
+    pass
+
+class MovimentacaoCaixa(MovimentacaoCaixaBase):
+    id: int
+    caixa_id: int
+    data: datetime
+
+    class Config:
+        from_attributes = True
+
+class CaixaBase(BaseModel):
+    operador: str
+    saldo_inicial: float
+
+class CaixaCreate(CaixaBase):
+    pass
+
+class Caixa(CaixaBase):
+    id: int
+    data_abertura: datetime
+    data_fechamento: Optional[datetime] = None
+    saldo_final: Optional[float] = None
+    status: str
+    movimentacoes: List[MovimentacaoCaixa] = []
+
+    class Config:
+        from_attributes = True

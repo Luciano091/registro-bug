@@ -116,3 +116,36 @@ def update_configuracao(db: Session, config: schemas.ConfiguracaoCreate):
     db.commit()
     db.refresh(db_config)
     return db_config
+
+# --- Caixa ---
+def get_caixa_aberto(db: Session):
+    return db.query(models.Caixa).filter(models.Caixa.status == "aberto").first()
+
+def abrir_caixa(db: Session, caixa: schemas.CaixaCreate):
+    db_caixa = models.Caixa(**caixa.model_dump())
+    db.add(db_caixa)
+    db.commit()
+    db.refresh(db_caixa)
+    return db_caixa
+
+def fechar_caixa(db: Session, caixa_id: int):
+    db_caixa = db.query(models.Caixa).filter(models.Caixa.id == caixa_id).first()
+    if db_caixa:
+        db_caixa.status = "fechado"
+        db_caixa.data_fechamento = datetime.datetime.utcnow()
+        
+        # Calcular saldo final
+        total_entradas = sum(m.valor for m in db_caixa.movimentacoes if m.tipo in ["venda", "suprimento"])
+        total_saidas = sum(m.valor for m in db_caixa.movimentacoes if m.tipo == "sangria")
+        db_caixa.saldo_final = db_caixa.saldo_inicial + total_entradas - total_saidas
+        
+        db.commit()
+        db.refresh(db_caixa)
+    return db_caixa
+
+def add_movimentacao(db: Session, caixa_id: int, movimentacao: schemas.MovimentacaoCaixaCreate):
+    db_mov = models.MovimentacaoCaixa(**movimentacao.model_dump(), caixa_id=caixa_id)
+    db.add(db_mov)
+    db.commit()
+    db.refresh(db_mov)
+    return db_mov

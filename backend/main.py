@@ -49,7 +49,22 @@ def read_pedido(pedido_id: int, db: Session = Depends(get_db)):
 
 @app.post("/pedidos", response_model=schemas.Pedido)
 def create_pedido(pedido: schemas.PedidoCreate, db: Session = Depends(get_db)):
-    return crud.create_pedido(db=db, pedido=pedido)
+    caixa_aberto = crud.get_caixa_aberto(db)
+    if not caixa_aberto:
+        raise HTTPException(status_code=400, detail="Não é possível registrar pedido: o Caixa está fechado.")
+        
+    db_pedido = crud.create_pedido(db=db, pedido=pedido)
+    
+    # Adicionar movimentação automática
+    mov = schemas.MovimentacaoCaixaCreate(
+        tipo="venda",
+        valor=db_pedido.total,
+        forma_pagamento=db_pedido.forma_pagamento,
+        descricao=f"Pedido #{db_pedido.numero}"
+    )
+    crud.add_movimentacao(db, caixa_aberto.id, mov)
+    
+    return db_pedido
 
 @app.put("/pedidos/{pedido_id}/status", response_model=schemas.Pedido)
 def update_pedido_status(pedido_id: int, status: str, db: Session = Depends(get_db)):
@@ -246,3 +261,31 @@ def get_dashboard_relatorios(periodo: str = "mes", start: str = None, end: str =
         "heatmap": heatmap_list
     }
 
+# --- Caixa ---
+@app.get("/caixa/status", response_model=schemas.Caixa)
+def get_caixa_status(db: Session = Depends(get_db)):
+    caixa = crud.get_caixa_aberto(db)
+    if not caixa:
+        raise HTTPException(status_code=404, detail="Nenhum caixa aberto no momento.")
+    return caixa
+
+@app.post("/caixa/abrir", response_model=schemas.Caixa)
+def abrir_caixa(caixa: schemas.CaixaCreate, db: Session = Depends(get_db)):
+    caixa_aberto = crud.get_caixa_aberto(db)
+    if caixa_aberto:
+        raise HTTPException(status_code=400, detail="Já existe um caixa aberto.")
+    return crud.abrir_caixa(db=db, caixa=caixa)
+
+@app.post("/caixa/{caixa_id}/fechar", response_model=schemas.Caixa)
+def fechar_caixa(caixa_id: int, db: Session = Depends(get_db)):
+    caixa = crud.fechar_caixa(db=db, caixa_id=caixa_id)
+    if not caixa:
+        raise HTTPException(status_code=404, detail="Caixa não encontrado.")
+    return caixa
+
+@app.post("/caixa/{caixa_id}/movimento", response_model=schemas.MovimentacaoCaixa)
+def add_movimento_caixa(caixa_id: int, movimento: schemas.MovimentacaoCaixaCreate, db: Session = Depends(get_db)):
+    caixa = crud.get_caixa_aberto(db)
+    if not caixa or caixa.id != caixa_id:
+        raise HTTPException(status_code=400, detail="Caixa não está aberto ou ID inválido.")
+    return crud.add_movimentacao(db=db, caixa_id=caixa_id, movimentacao=movimento)
