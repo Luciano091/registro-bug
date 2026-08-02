@@ -265,6 +265,14 @@ def get_dashboard_relatorios(periodo: str = "mes", start: str = None, end: str =
         "heatmap": heatmap_list
     }
 
+@app.get("/debug/relatorios")
+def debug_relatorios(db: Session = Depends(get_db)):
+    import traceback
+    try:
+        return get_dashboard_relatorios(periodo="mes", start=None, end=None, db=db)
+    except Exception as e:
+        return {"error": str(e), "traceback": traceback.format_exc()}
+
 # --- Caixa ---
 @app.get("/caixa/status", response_model=schemas.Caixa)
 def get_caixa_status(db: Session = Depends(get_db)):
