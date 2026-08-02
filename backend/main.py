@@ -147,7 +147,8 @@ def get_dashboard_relatorios(periodo: str = "mes", start: str = None, end: str =
             inicio_ant = datetime.datetime.combine(hoje.replace(month=hoje.month-1, day=1), datetime.time.min)
         import calendar
         _, last_day = calendar.monthrange(inicio_ant.year, inicio_ant.month)
-        fim_ant = datetime.datetime.combine(inicio_ant.replace(day=last_day), datetime.time.max)
+        fim_ant = datetime.datetime.combine(inicio_ant.date().replace(day=last_day), datetime.time.max)
+
         
     pedidos_periodo = crud.get_pedidos_by_date_range(db, inicio, fim)
     pedidos_anteriores = crud.get_pedidos_by_date_range(db, inicio_ant, fim_ant)
@@ -200,6 +201,7 @@ def get_dashboard_relatorios(periodo: str = "mes", start: str = None, end: str =
     if periodo == "hoje":
         for h in range(8, 24): vendas_tempo[f"{h:02d}:00"] = 0
         for p in pedidos_periodo:
+            if not p.data: continue
             hora = f"{p.data.hour:02d}:00"
             if hora in vendas_tempo: vendas_tempo[hora] += p.total
         vendas_grafico = [{"name": k, "vendas": v} for k, v in vendas_tempo.items()]
@@ -209,6 +211,7 @@ def get_dashboard_relatorios(periodo: str = "mes", start: str = None, end: str =
             vendas_tempo[current_date.strftime("%Y-%m-%d")] = {"name": f"{current_date.day:02d}/{current_date.month:02d}", "vendas": 0}
             current_date += timedelta(days=1)
         for p in pedidos_periodo:
+            if not p.data: continue
             dia_str = p.data.date().strftime("%Y-%m-%d")
             if dia_str in vendas_tempo: vendas_tempo[dia_str]["vendas"] += p.total
         vendas_grafico = list(vendas_tempo.values())
@@ -234,6 +237,7 @@ def get_dashboard_relatorios(periodo: str = "mes", start: str = None, end: str =
     }
     dias = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]
     for p in pedidos_periodo:
+        if not p.data: continue
         dia = dias[p.data.weekday()]
         h = p.data.hour
         if 6 <= h <= 11: turno = "Manhã (06h - 11h)"
