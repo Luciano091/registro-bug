@@ -9,6 +9,14 @@ from database import engine, get_db
 
 models.Base.metadata.create_all(bind=engine)
 
+# Auto-migrate uuid column for offline mode
+try:
+    with engine.begin() as conn:
+        from sqlalchemy import text
+        conn.execute(text("ALTER TABLE pedidos ADD COLUMN uuid VARCHAR;"))
+except Exception:
+    pass
+
 app = FastAPI(title="Burger Hause API")
 
 app.add_middleware(
