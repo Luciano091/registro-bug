@@ -21,6 +21,7 @@ const Reports = () => {
   const [customEnd, setCustomEnd] = useState('');
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -29,6 +30,7 @@ const Reports = () => {
       }
       setIsLoading(true);
       try {
+        setHasError(false);
         let url = `/dashboard/relatorios?periodo=${periodo}`;
         if (periodo === 'custom') {
           url += `&start=${customStart}&end=${customEnd}`;
@@ -37,6 +39,7 @@ const Reports = () => {
         setData(response.data);
       } catch (error) {
         console.error("Erro ao carregar relatórios:", error);
+        setHasError(true);
       } finally {
         setIsLoading(false);
       }
@@ -48,10 +51,20 @@ const Reports = () => {
     window.print();
   };
 
-  if (isLoading || !data) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full min-h-[600px]">
         <div className="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (hasError || !data) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full min-h-[600px] text-zinc-400 gap-4">
+        <p className="text-lg">Ocorreu um erro ao buscar os dados do relatório.</p>
+        <p className="text-sm">Por favor, verifique sua conexão ou tente novamente mais tarde.</p>
+        <button onClick={() => setPeriodo(periodo === 'custom' ? 'mes' : periodo)} className="px-4 py-2 mt-4 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors">Tentar Novamente</button>
       </div>
     );
   }
