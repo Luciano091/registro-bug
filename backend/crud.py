@@ -57,7 +57,7 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate):
     total = subtotal + taxa_entrega
     
     # Gerar numero do pedido baseado na data e id (simplificado: YYYYMMDD-COUNT)
-    hoje = datetime.datetime.utcnow().date()
+    hoje = (datetime.datetime.utcnow() - datetime.timedelta(hours=3)).date()
     count_hoje = db.query(models.Pedido).filter(func.date(models.Pedido.data) == hoje).count() + 1
     numero_pedido = f"{hoje.strftime('%Y%m%d')}-{count_hoje:03d}"
 
@@ -132,7 +132,7 @@ def fechar_caixa(db: Session, caixa_id: int):
     db_caixa = db.query(models.Caixa).filter(models.Caixa.id == caixa_id).first()
     if db_caixa:
         db_caixa.status = "fechado"
-        db_caixa.data_fechamento = datetime.datetime.utcnow()
+        db_caixa.data_fechamento = datetime.datetime.utcnow() - datetime.timedelta(hours=3)
         
         # Calcular saldo final
         total_entradas = sum(m.valor for m in db_caixa.movimentacoes if m.tipo in ["venda", "suprimento"])

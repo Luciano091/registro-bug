@@ -1,6 +1,10 @@
 from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 import datetime
+
+def get_now():
+    return datetime.datetime.utcnow() - datetime.timedelta(hours=3)
+
 from database import Base
 
 class Produto(Base):
@@ -27,7 +31,7 @@ class Pedido(Base):
     taxa_entrega = Column(Float, default=0.0)
     total = Column(Float, default=0.0)
     observacao = Column(String, nullable=True)
-    data = Column(DateTime, default=datetime.datetime.utcnow)
+    data = Column(DateTime, default=get_now)
 
     itens = relationship("ItemPedido", back_populates="pedido")
 
@@ -60,7 +64,7 @@ class Caixa(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     operador = Column(String)
-    data_abertura = Column(DateTime, default=datetime.datetime.utcnow)
+    data_abertura = Column(DateTime, default=get_now)
     data_fechamento = Column(DateTime, nullable=True)
     saldo_inicial = Column(Float, default=0.0)
     saldo_final = Column(Float, nullable=True)
@@ -77,6 +81,6 @@ class MovimentacaoCaixa(Base):
     valor = Column(Float, default=0.0)
     forma_pagamento = Column(String)
     descricao = Column(String, nullable=True)
-    data = Column(DateTime, default=datetime.datetime.utcnow)
+    data = Column(DateTime, default=get_now)
 
     caixa = relationship("Caixa", back_populates="movimentacoes")

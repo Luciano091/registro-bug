@@ -85,7 +85,7 @@ def update_configuracao(config: schemas.ConfiguracaoCreate, db: Session = Depend
 # --- Dashboard & Relatorios ---
 @app.get("/dashboard/resumo")
 def get_dashboard_resumo(db: Session = Depends(get_db)):
-    hoje = datetime.datetime.utcnow().date()
+    hoje = (datetime.datetime.utcnow() - datetime.timedelta(hours=3)).date()
     inicio_dia = datetime.datetime.combine(hoje, datetime.time.min)
     fim_dia = datetime.datetime.combine(hoje, datetime.time.max)
     
@@ -117,7 +117,7 @@ def get_dashboard_resumo(db: Session = Depends(get_db)):
 def get_dashboard_relatorios(periodo: str = "mes", start: str = None, end: str = None, db: Session = Depends(get_db)):
     from datetime import timedelta
     import datetime
-    hoje = datetime.datetime.utcnow().date()
+    hoje = (datetime.datetime.utcnow() - datetime.timedelta(hours=3)).date()
     
     if periodo == "custom" and start and end:
         inicio_data = datetime.datetime.strptime(start, "%Y-%m-%d").date()
