@@ -7,7 +7,7 @@ const Menu = () => {
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [novoProduto, setNovoProduto] = useState({ nome: '', preco: '', categoria: '' });
+  const [novoProduto, setNovoProduto] = useState({ nome: '', preco: '', preco_compra: '', categoria: '' });
 
   const [activeCategory, setActiveCategory] = useState('Todos');
 
@@ -21,7 +21,12 @@ const Menu = () => {
 
 
   const openEditProductModal = (item: any) => {
-    setNovoProduto({ nome: item.nome, preco: item.preco.toString(), categoria: item.categoria });
+    setNovoProduto({ 
+      nome: item.nome, 
+      preco: item.preco.toString(), 
+      preco_compra: item.preco_compra ? item.preco_compra.toString() : '', 
+      categoria: item.categoria 
+    });
     setEditingId(item.id);
     setShowModal(true);
   };
@@ -32,6 +37,7 @@ const Menu = () => {
       const payload = {
         nome: novoProduto.nome,
         preco: parseFloat(novoProduto.preco),
+        preco_compra: parseFloat(novoProduto.preco_compra) || 0.0,
         categoria: novoProduto.categoria || 'Geral'
       };
 
@@ -42,7 +48,7 @@ const Menu = () => {
       }
       
       setShowModal(false);
-      setNovoProduto({ nome: '', preco: '', categoria: '' });
+      setNovoProduto({ nome: '', preco: '', preco_compra: '', categoria: '' });
       setEditingId(null);
       refreshProdutos();
     } catch (error) {
@@ -80,7 +86,7 @@ const Menu = () => {
         <button 
           onClick={() => {
             setEditingId(null);
-            setNovoProduto({ nome: '', preco: '', categoria: '' });
+            setNovoProduto({ nome: '', preco: '', preco_compra: '', categoria: '' });
             setShowModal(true);
           }}
           className="premium-btn px-5 py-2.5 rounded-xl font-semibold flex items-center gap-2"
@@ -141,10 +147,16 @@ const Menu = () => {
                 </div>
                 <h3 className="font-bold text-lg text-white mb-1 group-hover:text-brand-400 transition-colors font-heading">{produto.nome}</h3>
               </div>
-              <div className="mt-4 flex items-center justify-between">
+              <div className="mt-4 flex flex-col gap-1">
                 <span className="text-xl font-bold text-zinc-300">
                   {produto.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                 </span>
+                {produto.preco_compra > 0 && (
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-zinc-500">Custo: {produto.preco_compra.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                    <span className="text-emerald-500 font-medium">Lucro: {(produto.preco - produto.preco_compra).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -195,17 +207,30 @@ const Menu = () => {
                 </datalist>
               </div>
               
-              <div>
-                <label className="block text-sm text-zinc-400 mb-1">Preço (R$)</label>
-                <input 
-                  required 
-                  type="number" 
-                  step="0.01" 
-                  value={novoProduto.preco} 
-                  onChange={e => setNovoProduto({...novoProduto, preco: e.target.value})} 
-                  placeholder="25.90"
-                  className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all text-white placeholder-zinc-600"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-zinc-400 mb-1">Preço Custo (R$)</label>
+                  <input 
+                    type="number" 
+                    step="0.01" 
+                    value={novoProduto.preco_compra} 
+                    onChange={e => setNovoProduto({...novoProduto, preco_compra: e.target.value})} 
+                    placeholder="10.00"
+                    className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all text-zinc-300 placeholder-zinc-600"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-zinc-400 mb-1">Preço Venda (R$)</label>
+                  <input 
+                    required 
+                    type="number" 
+                    step="0.01" 
+                    value={novoProduto.preco} 
+                    onChange={e => setNovoProduto({...novoProduto, preco: e.target.value})} 
+                    placeholder="25.90"
+                    className="w-full bg-dark-900 border border-brand-500/30 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all text-white placeholder-zinc-600 font-bold"
+                  />
+                </div>
               </div>
               
               <button type="submit" className="w-full premium-btn py-3.5 rounded-xl font-bold mt-4 text-base">

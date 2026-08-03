@@ -6,6 +6,7 @@ from datetime import datetime
 class ProdutoBase(BaseModel):
     nome: str
     categoria: str
+    preco_compra: float = 0.0
     preco: float
     ativo: bool = True
 
@@ -28,6 +29,7 @@ class ItemPedidoCreate(ItemPedidoBase):
 class ItemPedido(ItemPedidoBase):
     id: int
     pedido_id: int
+    custo_unitario: float = 0.0
     valor_unitario: float
     subtotal: float
     

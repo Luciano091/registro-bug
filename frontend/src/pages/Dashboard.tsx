@@ -94,21 +94,18 @@ const Dashboard = () => {
           </h3>
         </div>
 
-        {/* Card 4 */}
+        {/* Card 4 - Lucro Líquido */}
         <div className="glass-card p-5 rounded-2xl group flex flex-col justify-between overflow-hidden relative">
-          <div className="absolute -right-4 -top-4 w-24 h-24 bg-amber-500/10 rounded-full blur-2xl group-hover:bg-amber-500/20 transition-all duration-500"></div>
+          <div className="absolute -right-4 -top-4 w-24 h-24 bg-violet-500/10 rounded-full blur-2xl group-hover:bg-violet-500/20 transition-all duration-500"></div>
           <div className="flex justify-between items-start mb-2 relative z-10">
-            <p className="text-sm font-medium text-zinc-400">Mais Vendido</p>
-            <div className="p-2.5 bg-amber-500/10 rounded-xl text-amber-500 flex-shrink-0 group-hover:bg-amber-500 group-hover:text-white transition-colors duration-300">
+            <p className="text-sm font-medium text-zinc-400">Lucro Líquido</p>
+            <div className="p-2.5 bg-violet-500/10 rounded-xl text-violet-500 flex-shrink-0 group-hover:bg-violet-500 group-hover:text-white transition-colors duration-300">
               <TrendingUp size={20} />
             </div>
           </div>
-          <div className="relative z-10">
-            <h3 className="text-2xl font-bold text-white group-hover:text-amber-400 transition-colors truncate font-heading" title={resumo.mais_vendido.nome}>
-              {resumo.mais_vendido.nome}
-            </h3>
-            <p className="text-xs text-zinc-500 mt-1">{resumo.mais_vendido.quantidade} unidades</p>
-          </div>
+          <h3 className="text-4xl font-bold text-white group-hover:text-violet-400 transition-colors truncate font-heading relative z-10">
+            {resumo.lucro_hoje?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) || 'R$ 0,00'}
+          </h3>
         </div>
       </div>
 

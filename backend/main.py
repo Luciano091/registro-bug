@@ -17,6 +17,15 @@ try:
 except Exception:
     pass
 
+# Auto-migrate columns for lucro liquido
+try:
+    with engine.begin() as conn:
+        from sqlalchemy import text
+        conn.execute(text("ALTER TABLE produtos ADD COLUMN preco_compra FLOAT DEFAULT 0.0;"))
+        conn.execute(text("ALTER TABLE itens_pedido ADD COLUMN custo_unitario FLOAT DEFAULT 0.0;"))
+except Exception:
+    pass
+
 app = FastAPI(title="Burger Hause API")
 
 app.add_middleware(
@@ -101,6 +110,13 @@ def get_dashboard_resumo(db: Session = Depends(get_db)):
     
     total_pedidos = len(pedidos_hoje)
     faturamento_hoje = sum(p.total for p in pedidos_hoje)
+    
+    custo_hoje = sum(
+        sum(item.quantidade * (item.custo_unitario or 0.0) for item in p.itens) 
+        for p in pedidos_hoje
+    )
+    lucro_hoje = faturamento_hoje - custo_hoje
+
     ticket_medio = faturamento_hoje / total_pedidos if total_pedidos > 0 else 0
     
     # Produto mais vendido
@@ -116,6 +132,7 @@ def get_dashboard_resumo(db: Session = Depends(get_db)):
     return {
         "pedidos_hoje": total_pedidos,
         "faturamento_hoje": faturamento_hoje,
+        "lucro_hoje": lucro_hoje,
         "ticket_medio": ticket_medio,
         "mais_vendido": {"nome": mais_vendido[0], "quantidade": mais_vendido[1]},
         "ultimos_pedidos": ultimos_pedidos
@@ -163,12 +180,16 @@ def get_dashboard_relatorios(periodo: str = "mes", start: str = None, end: str =
     
     # Resumo atual
     faturamento_total = sum(p.total for p in pedidos_periodo)
+    custo_total = sum(sum(i.quantidade * (i.custo_unitario or 0.0) for i in p.itens) for p in pedidos_periodo)
+    lucro_total = faturamento_total - custo_total
     total_pedidos = len(pedidos_periodo)
     ticket_medio = faturamento_total / total_pedidos if total_pedidos > 0 else 0
     itens_vendidos = sum(sum(i.quantidade for i in p.itens) for p in pedidos_periodo)
     
     # Resumo anterior
     fat_ant = sum(p.total for p in pedidos_anteriores)
+    custo_ant = sum(sum(i.quantidade * (i.custo_unitario or 0.0) for i in p.itens) for p in pedidos_anteriores)
+    lucro_ant = fat_ant - custo_ant
     ped_ant = len(pedidos_anteriores)
     tk_ant = fat_ant / ped_ant if ped_ant > 0 else 0
     it_ant = sum(sum(i.quantidade for i in p.itens) for p in pedidos_anteriores)
@@ -207,21 +228,27 @@ def get_dashboard_relatorios(periodo: str = "mes", start: str = None, end: str =
     # Vendas no tempo (Gráfico de linha)
     vendas_tempo = {}
     if periodo == "hoje":
-        for h in range(8, 24): vendas_tempo[f"{h:02d}:00"] = 0
+        for h in range(8, 24): vendas_tempo[f"{h:02d}:00"] = {"vendas": 0, "lucro": 0}
         for p in pedidos_periodo:
             if not p.data: continue
             hora = f"{p.data.hour:02d}:00"
-            if hora in vendas_tempo: vendas_tempo[hora] += p.total
-        vendas_grafico = [{"name": k, "vendas": v} for k, v in vendas_tempo.items()]
+            if hora in vendas_tempo:
+                vendas_tempo[hora]["vendas"] += p.total
+                custo = sum(i.quantidade * (i.custo_unitario or 0.0) for i in p.itens)
+                vendas_tempo[hora]["lucro"] += (p.total - custo)
+        vendas_grafico = [{"name": k, "vendas": v["vendas"], "lucro": v["lucro"]} for k, v in vendas_tempo.items()]
     else:
         current_date = inicio.date()
         while current_date <= fim.date():
-            vendas_tempo[current_date.strftime("%Y-%m-%d")] = {"name": f"{current_date.day:02d}/{current_date.month:02d}", "vendas": 0}
+            vendas_tempo[current_date.strftime("%Y-%m-%d")] = {"name": f"{current_date.day:02d}/{current_date.month:02d}", "vendas": 0, "lucro": 0}
             current_date += timedelta(days=1)
         for p in pedidos_periodo:
             if not p.data: continue
             dia_str = p.data.date().strftime("%Y-%m-%d")
-            if dia_str in vendas_tempo: vendas_tempo[dia_str]["vendas"] += p.total
+            if dia_str in vendas_tempo:
+                vendas_tempo[dia_str]["vendas"] += p.total
+                custo = sum(i.quantidade * (i.custo_unitario or 0.0) for i in p.itens)
+                vendas_tempo[dia_str]["lucro"] += (p.total - custo)
         vendas_grafico = list(vendas_tempo.values())
 
     # Produtos mais vendidos (Top 5)
@@ -262,6 +289,7 @@ def get_dashboard_relatorios(periodo: str = "mes", start: str = None, end: str =
     return {
         "resumo": {
             "faturamento": {"atual": faturamento_total, "crescimento": calc_growth(faturamento_total, fat_ant)},
+            "lucro": {"atual": lucro_total, "crescimento": calc_growth(lucro_total, lucro_ant)},
             "pedidos": {"atual": total_pedidos, "crescimento": calc_growth(total_pedidos, ped_ant)},
             "ticket_medio": {"atual": ticket_medio, "crescimento": calc_growth(ticket_medio, tk_ant)},
             "itens_vendidos": {"atual": itens_vendidos, "crescimento": calc_growth(itens_vendidos, it_ant)}

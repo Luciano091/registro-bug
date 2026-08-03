@@ -13,6 +13,7 @@ class Produto(Base):
     id = Column(Integer, primary_key=True, index=True)
     nome = Column(String, index=True)
     categoria = Column(String, index=True)
+    preco_compra = Column(Float, default=0.0)
     preco = Column(Float)
     ativo = Column(Boolean, default=True)
 
@@ -43,6 +44,7 @@ class ItemPedido(Base):
     pedido_id = Column(Integer, ForeignKey("pedidos.id"))
     produto_id = Column(Integer, ForeignKey("produtos.id"))
     quantidade = Column(Integer, default=1)
+    custo_unitario = Column(Float, default=0.0)
     valor_unitario = Column(Float, default=0.0)
     subtotal = Column(Float, default=0.0)
 

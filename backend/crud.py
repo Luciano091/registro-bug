@@ -52,6 +52,7 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate):
                 models.ItemPedido(
                     produto_id=item.produto_id,
                     quantidade=item.quantidade,
+                    custo_unitario=produto.preco_compra or 0.0,
                     valor_unitario=produto.preco,
                     subtotal=item_subtotal
                 )

@@ -173,13 +173,13 @@ const Reports = () => {
         </div>
 
         <div className="glass-card p-5 rounded-xl flex items-start gap-4">
-          <div className="w-12 h-12 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center shrink-0">
-            <ShoppingCart size={24} />
+          <div className="w-12 h-12 rounded-full bg-violet-500/10 text-violet-500 flex items-center justify-center shrink-0">
+            <TrendingUp size={24} />
           </div>
           <div>
-            <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-1">Itens Vendidos</p>
-            <h3 className="text-2xl font-bold text-white font-heading mb-1">{data.resumo.itens_vendidos.atual}</h3>
-            <GrowthBadge value={data.resumo.itens_vendidos.crescimento} />
+            <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-1">Lucro Líquido</p>
+            <h3 className="text-2xl font-bold text-white font-heading mb-1">{data.resumo.lucro.atual.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</h3>
+            <GrowthBadge value={data.resumo.lucro.crescimento} />
           </div>
         </div>
       </div>
@@ -201,6 +201,10 @@ const Reports = () => {
                     <stop offset="5%" stopColor="#f97316" stopOpacity={0.3}/>
                     <stop offset="95%" stopColor="#f97316" stopOpacity={0}/>
                   </linearGradient>
+                  <linearGradient id="colorGreen" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                  </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff0a" vertical={false} />
                 <XAxis dataKey="name" stroke="#71717a" fontSize={10} tickLine={false} axisLine={false} />
@@ -208,9 +212,10 @@ const Reports = () => {
                 <RechartsTooltip 
                   contentStyle={{ backgroundColor: '#18181b', borderColor: '#ffffff1a', borderRadius: '8px', color: '#fff', fontSize: '12px' }}
                   itemStyle={{ color: '#f97316' }}
-                  formatter={(value: any) => [value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 'Faturamento']}
+                  formatter={(value: any, name: any) => [value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), name === 'vendas' ? 'Faturamento' : 'Lucro Líquido']}
                 />
                 <Area type="monotone" dataKey="vendas" stroke="#f97316" strokeWidth={2} fillOpacity={1} fill="url(#colorOrange)" activeDot={{ r: 4, fill: '#f97316', stroke: '#fff' }} dot={{ r: 2, fill: '#f97316', strokeWidth: 0 }} />
+                <Area type="monotone" dataKey="lucro" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorGreen)" activeDot={{ r: 4, fill: '#10b981', stroke: '#fff' }} dot={{ r: 2, fill: '#10b981', strokeWidth: 0 }} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -388,6 +393,7 @@ const Reports = () => {
           <thead>
             <tr className="bg-zinc-100 text-zinc-800">
               <th className="p-3 border border-zinc-300">Faturamento Total</th>
+              <th className="p-3 border border-zinc-300">Lucro Líquido</th>
               <th className="p-3 border border-zinc-300">Total de Pedidos</th>
               <th className="p-3 border border-zinc-300">Ticket Médio</th>
               <th className="p-3 border border-zinc-300">Itens Vendidos</th>
@@ -396,6 +402,7 @@ const Reports = () => {
           <tbody>
             <tr className="text-black">
               <td className="p-3 border border-zinc-300 font-bold text-lg">{data.resumo.faturamento.atual.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+              <td className="p-3 border border-zinc-300 font-bold text-lg text-emerald-600">{data.resumo.lucro.atual.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
               <td className="p-3 border border-zinc-300 font-bold text-lg">{data.resumo.pedidos.atual}</td>
               <td className="p-3 border border-zinc-300 font-bold text-lg">{data.resumo.ticket_medio.atual.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
               <td className="p-3 border border-zinc-300 font-bold text-lg">{data.resumo.itens_vendidos.atual}</td>
