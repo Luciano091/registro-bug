@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Wallet, DollarSign, ArrowDownCircle, ArrowUpCircle, Lock, LockOpen, History, Loader2, User } from 'lucide-react';
 import api from '../services/api';
+import { useAppData } from '../contexts/AppDataContext';
 
 interface Movimentacao {
   id: number;
@@ -23,7 +24,6 @@ interface Caixa {
 
 export default function CashFlow() {
   const [loading, setLoading] = useState(true);
-  const [caixa, setCaixa] = useState<Caixa | null>(null);
   
   // Abrir Caixa State
   const [operador, setOperador] = useState("");
@@ -35,34 +35,32 @@ export default function CashFlow() {
   const [movValor, setMovValor] = useState("");
   const [movDescricao, setMovDescricao] = useState("");
 
+  const { caixa: cachedCaixa, caixaLoaded, refreshCaixa, setCaixaData } = useAppData();
+  const caixa = cachedCaixa as Caixa | null;
+
   const fetchCaixa = async () => {
-    try {
-      setLoading(true);
-      const res = await api.get('/caixa/status');
-      setCaixa(res.data);
-    } catch (error: any) {
-      if (error.response?.status === 404) {
-        setCaixa(null); // Nenhum caixa aberto
-      } else {
-        alert("Erro ao carregar status do caixa.");
-      }
-    } finally {
-      setLoading(false);
-    }
+    setLoading(true);
+    await refreshCaixa();
+    setLoading(false);
   };
 
   useEffect(() => {
-    fetchCaixa();
-  }, []);
+    if (caixaLoaded) {
+      setLoading(false);
+    } else {
+      fetchCaixa();
+    }
+  }, [caixaLoaded]);
 
   const handleAbrirCaixa = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!operador.trim()) return alert("Digite o nome do operador.");
     try {
-      await api.post('/caixa/abrir', {
+      const res = await api.post('/caixa/abrir', {
         operador,
         saldo_inicial: parseFloat(saldoInicial) || 0
       });
+      setCaixaData(res.data);
       fetchCaixa();
     } catch (error: any) {
       alert(error.response?.data?.detail || "Erro ao abrir caixa");
@@ -74,6 +72,7 @@ export default function CashFlow() {
     if (!window.confirm("Tem certeza que deseja fechar o caixa? Nenhuma nova venda poderá ser registrada até que seja aberto novamente.")) return;
     try {
       await api.post(`/caixa/${caixa.id}/fechar`);
+      setCaixaData(null);
       fetchCaixa();
     } catch (error: any) {
       alert(error.response?.data?.detail || "Erro ao fechar caixa");

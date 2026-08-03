@@ -1,28 +1,22 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Search, X } from 'lucide-react';
 import api from '../services/api';
+import { useAppData } from '../contexts/AppDataContext';
 
 const Menu = () => {
   const [search, setSearch] = useState('');
-  const [produtos, setProdutos] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [novoProduto, setNovoProduto] = useState({ nome: '', preco: '', categoria: '' });
 
   const [activeCategory, setActiveCategory] = useState('Todos');
 
-  const fetchProdutos = async () => {
-    try {
-      const response = await api.get('/produtos');
-      setProdutos(response.data);
-    } catch (error) {
-      console.error(error);
-    }
-  };
+  const { produtos: cachedProdutos, produtosLoaded, refreshProdutos } = useAppData();
+  const produtos = cachedProdutos;
 
   useEffect(() => {
-    fetchProdutos();
-  }, []);
+    if (!produtosLoaded) refreshProdutos();
+  }, [produtosLoaded, refreshProdutos]);
 
 
 
@@ -50,7 +44,7 @@ const Menu = () => {
       setShowModal(false);
       setNovoProduto({ nome: '', preco: '', categoria: '' });
       setEditingId(null);
-      fetchProdutos();
+      refreshProdutos();
     } catch (error) {
       console.error(error);
       alert("Erro ao salvar produto");

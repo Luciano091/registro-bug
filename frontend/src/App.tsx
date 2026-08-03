@@ -9,6 +9,7 @@ import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import CashFlow from './pages/CashFlow';
 import { NetworkProvider, useNetwork } from './contexts/NetworkContext';
+import { AppDataProvider } from './contexts/AppDataContext';
 import { WifiOff, RefreshCcw } from 'lucide-react';
 
 const NetworkBanner = () => {
@@ -58,6 +59,7 @@ function App() {
 
   return (
     <NetworkProvider>
+      <AppDataProvider>
       <Router>
         <div className="flex h-screen bg-[#0a0a0a] text-zinc-50 overflow-hidden font-sans relative">
           <NetworkBanner />
@@ -130,6 +132,7 @@ function App() {
         </nav>
       </div>
       </Router>
+      </AppDataProvider>
     </NetworkProvider>
   );
 }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Search, Clock, CheckCircle2, Truck, Loader2 } from 'lucide-react';
 import api from '../services/api';
+import { useAppData } from '../contexts/AppDataContext';
 
 const statusColors: any = {
   'Recebido': 'bg-blue-500/10 text-blue-400 border-blue-500/20 shadow-[0_0_10px_rgba(59,130,246,0.15)] backdrop-blur-md',
@@ -21,28 +22,20 @@ const statusIcons: any = {
 const Orders = () => {
   const [filter, setFilter] = useState('Hoje');
   const [search, setSearch] = useState('');
-  const [orders, setOrders] = useState<any[]>([]);
-
-  const fetchOrders = async () => {
-    try {
-      const response = await api.get('/pedidos');
-      setOrders(response.data);
-    } catch (error) {
-      console.error(error);
-    }
-  };
+  const { orders: cachedOrders, ordersLoaded, refreshOrders, updateOrderStatus: optimisticUpdateStatus } = useAppData();
+  const orders = cachedOrders;
 
   useEffect(() => {
-    fetchOrders();
-    // Auto refresh every 10 seconds
-    const interval = setInterval(fetchOrders, 10000);
+    if (!ordersLoaded) refreshOrders();
+    const interval = setInterval(refreshOrders, 10000);
     return () => clearInterval(interval);
-  }, []);
+  }, [ordersLoaded, refreshOrders]);
 
   const handleStatusChange = async (id: number, newStatus: string) => {
     try {
       await api.put(`/pedidos/${id}/status?status=${newStatus}`);
-      fetchOrders();
+      optimisticUpdateStatus(id, newStatus);
+      refreshOrders();
     } catch (error) {
       console.error(error);
       alert("Erro ao alterar status");

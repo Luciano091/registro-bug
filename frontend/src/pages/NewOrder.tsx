@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { Search, Plus, Minus, Trash2, ChevronRight, X } from 'lucide-react';
 import api from '../services/api';
 import { useNetwork } from '../contexts/NetworkContext';
+import { useAppData } from '../contexts/AppDataContext';
 import { saveOfflineOrder } from '../services/db';
 import { v4 as uuidv4 } from 'uuid';
 
 const NewOrder = () => {
   const { isOnline } = useNetwork();
+  const { produtos: produtosCache, produtosLoaded, refreshProdutos, addOptimisticOrder, refreshOrders } = useAppData();
   const [cliente, setCliente] = useState('');
   const [telefone, setTelefone] = useState('');
   const [endereco, setEndereco] = useState('');
@@ -14,7 +16,7 @@ const NewOrder = () => {
   const [formaPagamento, setFormaPagamento] = useState('PIX');
   
   const [itens, setItens] = useState<{ id: number, produto: any, quantidade: number }[]>([]);
-  const [produtosDisponiveveis, setProdutosDisponiveveis] = useState<any[]>([]);
+  const produtosDisponiveveis = produtosCache;
   
   const [activeCategory, setActiveCategory] = useState('Todos');
   const [search, setSearch] = useState('');
@@ -22,16 +24,8 @@ const NewOrder = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    const fetchProdutos = async () => {
-      try {
-        const response = await api.get('/produtos');
-        setProdutosDisponiveveis(response.data);
-      } catch (error) {
-        console.error("Erro ao carregar produtos:", error);
-      }
-    };
-    fetchProdutos();
-  }, []);
+    if (!produtosLoaded) refreshProdutos();
+  }, [produtosLoaded, refreshProdutos]);
 
   const handleAddProduct = (produto: any) => {
     const existing = itens.find(i => i.produto.id === produto.id);
@@ -82,6 +76,24 @@ const NewOrder = () => {
       } else {
         try {
           await api.post('/pedidos', pedidoData);
+          const optimisticOrder = {
+            id: Date.now(),
+            uuid: orderUuid,
+            numero: `OPT-${Date.now()}`,
+            cliente,
+            telefone,
+            endereco,
+            tipo_entrega: tipoEntrega,
+            forma_pagamento: formaPagamento,
+            status: 'Recebido',
+            total,
+            subtotal,
+            taxa_entrega: 0,
+            data: new Date().toISOString(),
+            itens: itens.map(item => ({ produto_id: item.produto.id, quantidade: item.quantidade, valor_unitario: item.produto.preco, subtotal: item.produto.preco * item.quantidade, produto: item.produto }))
+          };
+          addOptimisticOrder(optimisticOrder);
+          refreshOrders();
           alert('Pedido salvo com sucesso!');
         } catch (error: any) {
           if (!error.response || error.message === 'Network Error') {

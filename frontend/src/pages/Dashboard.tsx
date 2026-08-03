@@ -2,36 +2,19 @@ import { useEffect, useState } from 'react';
 import { Package, DollarSign, Receipt, TrendingUp, Printer, Lock } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import api from '../services/api';
+import { useAppData } from '../contexts/AppDataContext';
 
 const Dashboard = () => {
-  const [resumo, setResumo] = useState({
-    pedidos_hoje: 0,
-    faturamento_hoje: 0,
-    ticket_medio: 0,
-    mais_vendido: { nome: 'Carregando...', quantidade: 0 },
-    ultimos_pedidos: [] as any[]
-  });
+  const { dashboardResumo: cachedResumo, dashboardLoaded, refreshDashboard } = useAppData();
+  const resumo = cachedResumo;
 
   const [showFechamento, setShowFechamento] = useState(false);
   const [fechamentoData, setFechamentoData] = useState<any>(null);
 
   useEffect(() => {
-    const fetchDashboard = async () => {
-      try {
-        const response = await api.get('/dashboard/resumo');
-        setResumo({
-          pedidos_hoje: response.data.pedidos_hoje,
-          faturamento_hoje: response.data.faturamento_hoje,
-          ticket_medio: response.data.ticket_medio,
-          mais_vendido: response.data.mais_vendido,
-          ultimos_pedidos: response.data.ultimos_pedidos || []
-        });
-      } catch (error) {
-        console.error("Erro ao carregar dashboard:", error);
-      }
-    };
-    fetchDashboard();
-  }, []);
+    if (!dashboardLoaded) refreshDashboard();
+    else refreshDashboard(); // Always refresh in background
+  }, [dashboardLoaded, refreshDashboard]);
 
   const handleFecharCaixa = async () => {
     try {
