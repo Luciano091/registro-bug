@@ -9,6 +9,8 @@ class ProdutoBase(BaseModel):
     preco_compra: float = 0.0
     preco: float
     ativo: bool = True
+    controlar_estoque: bool = False
+    estoque: int = 0
 
 class ProdutoCreate(ProdutoBase):
     pass

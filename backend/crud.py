@@ -57,6 +57,8 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate):
                     subtotal=item_subtotal
                 )
             )
+            if produto.controlar_estoque:
+                produto.estoque -= item.quantidade
             
     taxa_entrega = 0.0
     

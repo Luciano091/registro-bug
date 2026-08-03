@@ -26,6 +26,15 @@ try:
 except Exception:
     pass
 
+# Auto-migrate columns for estoque
+try:
+    with engine.begin() as conn:
+        from sqlalchemy import text
+        conn.execute(text("ALTER TABLE produtos ADD COLUMN controlar_estoque BOOLEAN DEFAULT FALSE;"))
+        conn.execute(text("ALTER TABLE produtos ADD COLUMN estoque INTEGER DEFAULT 0;"))
+except Exception:
+    pass
+
 app = FastAPI(title="Burger Hause API")
 
 app.add_middleware(
@@ -129,13 +138,22 @@ def get_dashboard_resumo(db: Session = Depends(get_db)):
     mais_vendido = max(vendas_produtos.items(), key=lambda x: x[1]) if vendas_produtos else ("Nenhum", 0)
     ultimos_pedidos = crud.get_pedidos(db, limit=5)
     
+    # Alertas de Estoque
+    produtos_estoque = db.query(models.Produto).filter(
+        models.Produto.controlar_estoque == True,
+        models.Produto.estoque <= 3,
+        models.Produto.ativo == True
+    ).all()
+    alertas_estoque = [{"id": p.id, "nome": p.nome, "estoque": p.estoque} for p in produtos_estoque]
+    
     return {
         "pedidos_hoje": total_pedidos,
         "faturamento_hoje": faturamento_hoje,
         "lucro_hoje": lucro_hoje,
         "ticket_medio": ticket_medio,
         "mais_vendido": {"nome": mais_vendido[0], "quantidade": mais_vendido[1]},
-        "ultimos_pedidos": ultimos_pedidos
+        "ultimos_pedidos": ultimos_pedidos,
+        "alertas_estoque": alertas_estoque
     }
 
 @app.get("/dashboard/relatorios")

@@ -42,9 +42,11 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
   const [dashboardResumo, setDashboardResumo] = useState<any>({
     pedidos_hoje: 0,
     faturamento_hoje: 0,
+    lucro_hoje: 0,
     ticket_medio: 0,
     mais_vendido: { nome: 'Carregando...', quantidade: 0 },
-    ultimos_pedidos: []
+    ultimos_pedidos: [],
+    alertas_estoque: []
   });
   const [caixa, setCaixa] = useState<any>(null);
 
@@ -87,7 +89,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         lucro_hoje: response.data.lucro_hoje,
         ticket_medio: response.data.ticket_medio,
         mais_vendido: response.data.mais_vendido,
-        ultimos_pedidos: response.data.ultimos_pedidos || []
+        ultimos_pedidos: response.data.ultimos_pedidos || [],
+        alertas_estoque: response.data.alertas_estoque || []
       });
       setDashboardLoaded(true);
     } catch (error) {
