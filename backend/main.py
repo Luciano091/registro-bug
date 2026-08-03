@@ -79,7 +79,10 @@ def create_pedido(pedido: schemas.PedidoCreate, db: Session = Depends(get_db)):
     if not caixa_aberto:
         raise HTTPException(status_code=400, detail="Não é possível registrar pedido: o Caixa está fechado.")
         
-    db_pedido = crud.create_pedido(db=db, pedido=pedido)
+    try:
+        db_pedido = crud.create_pedido(db=db, pedido=pedido)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     
     # Adicionar movimentação automática
     mov = schemas.MovimentacaoCaixaCreate(

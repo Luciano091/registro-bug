@@ -29,8 +29,15 @@ const NewOrder = () => {
 
   const handleAddProduct = (produto: any) => {
     const existing = itens.find(i => i.produto.id === produto.id);
+    const requestedQtd = existing ? existing.quantidade + 1 : 1;
+    
+    if (produto.controlar_estoque && requestedQtd > produto.estoque) {
+      alert(`Estoque insuficiente! Restam apenas ${produto.estoque} unidades de ${produto.nome}.`);
+      return;
+    }
+
     if (existing) {
-      setItens(itens.map(i => i.produto.id === produto.id ? { ...i, quantidade: i.quantidade + 1 } : i));
+      setItens(itens.map(i => i.produto.id === produto.id ? { ...i, quantidade: requestedQtd } : i));
     } else {
       setItens([...itens, { id: Date.now(), produto, quantidade: 1 }]);
     }
@@ -44,6 +51,12 @@ const NewOrder = () => {
     setItens(itens.map(i => {
       if (i.produto.id === id) {
         const newQtd = i.quantidade + delta;
+        
+        if (delta > 0 && i.produto.controlar_estoque && newQtd > i.produto.estoque) {
+          alert(`Estoque insuficiente! Restam apenas ${i.produto.estoque} unidades de ${i.produto.nome}.`);
+          return i;
+        }
+
         return newQtd > 0 ? { ...i, quantidade: newQtd } : i;
       }
       return i;
@@ -100,6 +113,8 @@ const NewOrder = () => {
       } else {
         api.post('/pedidos', pedidoData).then(() => {
           refreshOrders();
+          refreshProdutos();
+          refreshDashboard();
         }).catch(async (error: any) => {
           if (!error.response || error.message === 'Network Error') {
             await saveOfflineOrder(orderUuid, pedidoData);

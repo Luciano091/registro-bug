@@ -58,6 +58,8 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate):
                 )
             )
             if produto.controlar_estoque:
+                if produto.estoque < item.quantidade:
+                    raise ValueError(f"Estoque insuficiente para o produto '{produto.nome}'. Restam apenas {produto.estoque} unidades.")
                 produto.estoque -= item.quantidade
             
     taxa_entrega = 0.0
