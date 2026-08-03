@@ -73,7 +73,8 @@ const Reports = () => {
   const totalPagamentos = data.vendas_pagamento.reduce((acc: any, curr: any) => acc + curr.value, 0);
 
   return (
-    <div className="p-4 md:p-8 max-w-[1600px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-6 custom-scrollbar text-zinc-200">
+    <>
+    <div className="p-4 md:p-8 max-w-[1600px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-6 custom-scrollbar text-zinc-200 print:hidden">
       
       {/* Header */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 print:hidden">
@@ -365,6 +366,152 @@ const Reports = () => {
 
       </div>
     </div>
+
+    {/* DOCUMENTO OFICIAL PARA IMPRESSÃO (PDF) */}
+    <div className="hidden print:block w-full bg-white text-black p-8 font-sans" style={{ color: '#000' }}>
+      {/* Cabeçalho */}
+      <div className="border-b-2 border-black pb-4 mb-8 flex justify-between items-end">
+        <div>
+          <h1 className="text-3xl font-bold uppercase tracking-tight">Burger Hause</h1>
+          <h2 className="text-xl text-zinc-700 mt-1 font-medium">Relatório Oficial de Desempenho</h2>
+        </div>
+        <div className="text-right text-sm text-zinc-600">
+          <p><strong>Período:</strong> {periodo === 'custom' ? `${customStart.split('-').reverse().join('/')} a ${customEnd.split('-').reverse().join('/')}` : periodo === 'hoje' ? 'Hoje' : periodo === '7d' ? 'Últimos 7 dias' : 'Mês atual'}</p>
+          <p><strong>Emitido em:</strong> {new Date().toLocaleString('pt-BR')}</p>
+        </div>
+      </div>
+
+      {/* Resumo Financeiro */}
+      <div className="mb-10">
+        <h3 className="text-lg font-bold border-b border-zinc-300 pb-2 mb-4 uppercase text-zinc-800">Resumo Financeiro</h3>
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-zinc-100 text-zinc-800">
+              <th className="p-3 border border-zinc-300">Faturamento Total</th>
+              <th className="p-3 border border-zinc-300">Total de Pedidos</th>
+              <th className="p-3 border border-zinc-300">Ticket Médio</th>
+              <th className="p-3 border border-zinc-300">Itens Vendidos</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="text-black">
+              <td className="p-3 border border-zinc-300 font-bold text-lg">{data.resumo.faturamento.atual.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+              <td className="p-3 border border-zinc-300 font-bold text-lg">{data.resumo.pedidos.atual}</td>
+              <td className="p-3 border border-zinc-300 font-bold text-lg">{data.resumo.ticket_medio.atual.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+              <td className="p-3 border border-zinc-300 font-bold text-lg">{data.resumo.itens_vendidos.atual}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* Tabelas Lado a Lado: Produtos e Pagamentos */}
+      <div className="flex gap-8 mb-10">
+        <div className="flex-1">
+          <h3 className="text-lg font-bold border-b border-zinc-300 pb-2 mb-4 uppercase text-zinc-800">Top Produtos Vendidos</h3>
+          <table className="w-full text-sm text-left border-collapse text-black">
+            <thead>
+              <tr className="bg-zinc-100 text-zinc-800">
+                <th className="p-2 border border-zinc-300">#</th>
+                <th className="p-2 border border-zinc-300">Produto</th>
+                <th className="p-2 border border-zinc-300 text-right">Qtd</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.produtos_top.slice(0, 10).map((p: any, idx: number) => (
+                <tr key={idx}>
+                  <td className="p-2 border border-zinc-300 text-center font-bold">{idx + 1}</td>
+                  <td className="p-2 border border-zinc-300 font-medium">{p.nome}</td>
+                  <td className="p-2 border border-zinc-300 text-right">{p.qtd}</td>
+                </tr>
+              ))}
+              {data.produtos_top.length === 0 && (
+                <tr><td colSpan={3} className="p-2 border border-zinc-300 text-center">Nenhum produto no período</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="flex-1">
+          <h3 className="text-lg font-bold border-b border-zinc-300 pb-2 mb-4 uppercase text-zinc-800">Formas de Pagamento</h3>
+          <table className="w-full text-sm text-left border-collapse text-black">
+            <thead>
+              <tr className="bg-zinc-100 text-zinc-800">
+                <th className="p-2 border border-zinc-300">Método</th>
+                <th className="p-2 border border-zinc-300 text-right">Valor</th>
+                <th className="p-2 border border-zinc-300 text-right">%</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.vendas_pagamento.map((p: any, idx: number) => {
+                 const pct = totalPagamentos > 0 ? (p.value / totalPagamentos) * 100 : 0;
+                 return (
+                  <tr key={idx}>
+                    <td className="p-2 border border-zinc-300 font-medium">{p.name}</td>
+                    <td className="p-2 border border-zinc-300 text-right font-medium">{p.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                    <td className="p-2 border border-zinc-300 text-right">{pct.toFixed(1)}%</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Heatmap/Turnos em Tabela */}
+      <div className="mb-10">
+        <h3 className="text-lg font-bold border-b border-zinc-300 pb-2 mb-4 uppercase text-zinc-800">Fluxo de Pedidos por Turno (Heatmap)</h3>
+        <table className="w-full text-sm text-center border-collapse text-black">
+          <thead>
+            <tr className="bg-zinc-100 text-zinc-800">
+              <th className="p-2 border border-zinc-300 text-left">Turno</th>
+              <th className="p-2 border border-zinc-300">Seg</th>
+              <th className="p-2 border border-zinc-300">Ter</th>
+              <th className="p-2 border border-zinc-300">Qua</th>
+              <th className="p-2 border border-zinc-300">Qui</th>
+              <th className="p-2 border border-zinc-300">Sex</th>
+              <th className="p-2 border border-zinc-300">Sáb</th>
+              <th className="p-2 border border-zinc-300">Dom</th>
+              <th className="p-2 border border-zinc-300 bg-zinc-200">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.heatmap.map((row: any, idx: number) => {
+              const isTotal = row.turno === "Total";
+              return (
+                <tr key={idx} className={isTotal ? "font-bold bg-zinc-100" : ""}>
+                  <td className="p-2 border border-zinc-300 text-left font-medium">{row.turno}</td>
+                  <td className="p-2 border border-zinc-300">{row.Seg}</td>
+                  <td className="p-2 border border-zinc-300">{row.Ter}</td>
+                  <td className="p-2 border border-zinc-300">{row.Qua}</td>
+                  <td className="p-2 border border-zinc-300">{row.Qui}</td>
+                  <td className="p-2 border border-zinc-300">{row.Sex}</td>
+                  <td className="p-2 border border-zinc-300">{row.Sáb}</td>
+                  <td className="p-2 border border-zinc-300">{row.Dom}</td>
+                  <td className={`p-2 border border-zinc-300 ${isTotal ? 'bg-zinc-200 font-bold' : 'bg-zinc-50 font-medium'}`}>{row.Total}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Assinatura */}
+      <div className="mt-20 pt-8 flex justify-between px-10">
+        <div className="w-64 text-center border-t border-black pt-2">
+          <p className="text-sm font-bold text-black">Gerência</p>
+          <p className="text-xs text-zinc-600 mt-1">Assinatura</p>
+        </div>
+        <div className="w-64 text-center border-t border-black pt-2">
+          <p className="text-sm font-bold text-black">Conferência</p>
+          <p className="text-xs text-zinc-600 mt-1">Data: ___/___/20___</p>
+        </div>
+      </div>
+
+      <div className="mt-12 pt-4 border-t border-zinc-200 text-center text-[10px] text-zinc-400">
+        Gerado pelo sistema Burger Hause. Documento de uso interno, confidencial.
+      </div>
+    </div>
+    </>
   );
 };
 
