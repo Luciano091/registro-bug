@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Calendar, Download, DollarSign, Package, Receipt, ShoppingCart, TrendingUp, TrendingDown } from 'lucide-react';
+import { Calendar, DollarSign, Package, Receipt, TrendingUp, TrendingDown, Download, Printer } from 'lucide-react';
 import api from '../services/api';
 
 const CAT_COLORS = ['#f97316', '#3b82f6', '#f59e0b', '#8b5cf6', '#10b981'];
