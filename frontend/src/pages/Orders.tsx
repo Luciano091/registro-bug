@@ -33,16 +33,20 @@ const Orders = () => {
 
   const handleStatusChange = async (id: number, newStatus: string) => {
     try {
-      await api.put(`/pedidos/${id}/status?status=${newStatus}`);
       optimisticUpdateStatus(id, newStatus);
+      await api.put(`/pedidos/${id}/status?status=${encodeURIComponent(newStatus)}`);
       refreshOrders();
     } catch (error) {
       console.error(error);
+      refreshOrders(); // rollback
       alert("Erro ao alterar status");
     }
   };
 
-  const handleWhatsApp = (order: any) => {
+  const handleWhatsApp = (passedOrder: any) => {
+    // Busca a versão mais recente do pedido no estado
+    const order = orders.find(o => o.id === passedOrder.id) || passedOrder;
+    
     if (!order.telefone) {
       alert("O cliente não informou um número de telefone.");
       return;
