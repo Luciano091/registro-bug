@@ -119,8 +119,8 @@ const Orders = () => {
         </div>
       </div>
 
-      <div className="glass-card rounded-2xl overflow-hidden">
-        <div className="overflow-x-auto">
+      <div className="glass-card rounded-2xl flex-1 flex flex-col overflow-hidden min-h-[400px]">
+        <div className="overflow-auto flex-1 custom-scrollbar">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-white/5 bg-black/20">
