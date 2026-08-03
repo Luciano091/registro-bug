@@ -70,53 +70,52 @@ const NewOrder = () => {
         }))
       };
 
+      // 1. Atualização Otimista Imediata (antes do servidor responder)
+      const optimisticOrder = {
+        id: Date.now(),
+        uuid: orderUuid,
+        numero: `OPT-${Date.now()}`,
+        cliente,
+        telefone,
+        endereco,
+        tipo_entrega: tipoEntrega,
+        forma_pagamento: formaPagamento,
+        status: 'Recebido',
+        total,
+        subtotal,
+        taxa_entrega: 0,
+        data: new Date().toISOString(),
+        itens: itens.map(item => ({ produto_id: item.produto.id, quantidade: item.quantidade, valor_unitario: item.produto.preco, subtotal: item.produto.preco * item.quantidade, produto: item.produto }))
+      };
+      
+      addOptimisticOrder(optimisticOrder);
+      
+      // 2. Limpar formulário imediatamente para o usuário continuar trabalhando
+      setCliente(''); setTelefone(''); setEndereco(''); setItens([]); setShowCheckout(false);
+      setIsSubmitting(false);
+
+      // 3. Enviar para o servidor em background
       if (!isOnline) {
         await saveOfflineOrder(orderUuid, pedidoData);
-        alert('Você está offline. Pedido salvo localmente com sucesso! Ele será sincronizado automaticamente quando a conexão voltar.');
       } else {
-        try {
-          await api.post('/pedidos', pedidoData);
-          const optimisticOrder = {
-            id: Date.now(),
-            uuid: orderUuid,
-            numero: `OPT-${Date.now()}`,
-            cliente,
-            telefone,
-            endereco,
-            tipo_entrega: tipoEntrega,
-            forma_pagamento: formaPagamento,
-            status: 'Recebido',
-            total,
-            subtotal,
-            taxa_entrega: 0,
-            data: new Date().toISOString(),
-            itens: itens.map(item => ({ produto_id: item.produto.id, quantidade: item.quantidade, valor_unitario: item.produto.preco, subtotal: item.produto.preco * item.quantidade, produto: item.produto }))
-          };
-          addOptimisticOrder(optimisticOrder);
+        api.post('/pedidos', pedidoData).then(() => {
           refreshOrders();
-          alert('Pedido salvo com sucesso!');
-        } catch (error: any) {
+        }).catch(async (error: any) => {
           if (!error.response || error.message === 'Network Error') {
             await saveOfflineOrder(orderUuid, pedidoData);
-            alert('Falha na rede (Servidor indisponível). Pedido salvo localmente com sucesso! Será sincronizado depois.');
           } else {
             const detail = error.response?.data?.detail;
             if (detail && detail.includes("Caixa está fechado")) {
-              alert("Ops! O Caixa está fechado. Vá no menu 'Caixa' e abra-o antes de registrar pedidos.");
+              alert(`Atenção: O pedido de ${cliente || 'Cliente'} não foi salvo porque o Caixa está fechado! Abra o caixa.`);
             } else {
               alert(detail || 'Houve um erro ao salvar o pedido.');
             }
-            setIsSubmitting(false);
-            return; // Impede limpar o form
           }
-        }
+        });
       }
-      
-      setCliente(''); setTelefone(''); setEndereco(''); setItens([]); setShowCheckout(false);
     } catch (error: any) {
       console.error(error);
       alert('Erro inesperado ao processar o pedido.');
-    } finally {
       setIsSubmitting(false);
     }
   };
