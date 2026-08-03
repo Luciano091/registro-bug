@@ -60,10 +60,17 @@ const Orders = () => {
     
     let itemsText = "";
     if (order.itens && order.itens.length > 0) {
-      itemsText = "\nItens do Pedido:\n" + order.itens.map((item: any) => `- ${item.quantidade}x ${item.produto ? item.produto.nome : 'Produto'}`).join('\n');
+      itemsText = "\n\nItens do Pedido:\n" + order.itens.map((item: any) => `- ${item.quantidade}x ${item.produto ? item.produto.nome : 'Produto'}`).join('\n');
     }
 
-    const message = `Olá ${order.cliente}! 👋\n\nSeu pedido #${orderNumber} no valor de *${formattedTotal}* acabou de ser atualizado para o status: *${order.status}*.${itemsText}\n\nAgradecemos a preferência! 🍔🚀`;
+    let statusText = `acabou de ser atualizado para o status: *${order.status}*.`;
+    if (order.status === 'Recebido') statusText = "foi *Recebido* com sucesso e logo começaremos a prepará-lo!";
+    if (order.status === 'Em preparo') statusText = "já está *Em Preparo* na nossa cozinha!";
+    if (order.status === 'Pronto') statusText = order.tipo_entrega === 'Retirada' ? "está *Pronto* e já pode ser retirado no balcão!" : "está *Pronto* e aguardando o entregador!";
+    if (order.status === 'Saiu entrega') statusText = "acabou de *Sair para Entrega* e já está a caminho!";
+    if (order.status === 'Finalizado') statusText = "foi *Finalizado*. Esperamos que tenha gostado!";
+
+    const message = `Olá ${order.cliente}!\n\nSeu pedido #${orderNumber} no valor de *${formattedTotal}* ${statusText}${itemsText}\n\nAgradecemos a preferência!`;
     
     const whatsappUrl = `https://wa.me/55${phoneDigits}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
