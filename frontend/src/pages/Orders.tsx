@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Clock, CheckCircle2, Truck, Loader2, MessageCircle } from 'lucide-react';
+import { Search, Clock, CheckCircle2, Truck, Loader2, MessageCircle, X, Eye } from 'lucide-react';
 import api from '../services/api';
 import { useAppData } from '../contexts/AppDataContext';
 
@@ -22,6 +22,7 @@ const statusIcons: any = {
 const Orders = () => {
   const [filter, setFilter] = useState('Hoje');
   const [search, setSearch] = useState('');
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const { orders: cachedOrders, ordersLoaded, refreshOrders, updateOrderStatus: optimisticUpdateStatus } = useAppData();
   const orders = cachedOrders;
 
@@ -188,7 +189,15 @@ const Orders = () => {
                     </td>
                     
                     <td className="px-6 py-4">
-                      <div className="font-medium text-zinc-200">{order.cliente}</div>
+                      <button 
+                        onClick={() => setSelectedOrder(order)}
+                        className="group/name flex items-center gap-2 text-left w-full focus:outline-none"
+                      >
+                        <div className="font-medium text-zinc-200 group-hover/name:text-brand-400 group-hover/name:underline transition-all">
+                          {order.cliente}
+                        </div>
+                        <Eye size={14} className="text-zinc-600 group-hover/name:text-brand-400 opacity-0 group-hover/name:opacity-100 transition-opacity" />
+                      </button>
                       {order.telefone && (
                         <div className="text-xs text-zinc-500 mt-0.5">{order.telefone}</div>
                       )}
@@ -253,6 +262,70 @@ const Orders = () => {
           </table>
         </div>
       </div>
+
+      {selectedOrder && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 flex flex-col max-h-[90vh]">
+            
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-white/5 flex justify-between items-center bg-black/20">
+              <div>
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  Pedido #{selectedOrder.numero.split('-')[1] || selectedOrder.numero}
+                </h3>
+                <p className="text-sm text-zinc-400 mt-0.5">{selectedOrder.cliente}</p>
+              </div>
+              <button 
+                onClick={() => setSelectedOrder(null)}
+                className="p-2 hover:bg-white/10 rounded-full transition-colors text-zinc-400 hover:text-white"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
+              <div className="mb-6 grid grid-cols-2 gap-4 text-sm">
+                <div className="bg-dark-900 p-3 rounded-xl border border-white/5">
+                  <span className="text-zinc-500 block text-xs mb-1">Telefone</span>
+                  <span className="text-zinc-200 font-medium">{selectedOrder.telefone || '-'}</span>
+                </div>
+                <div className="bg-dark-900 p-3 rounded-xl border border-white/5">
+                  <span className="text-zinc-500 block text-xs mb-1">Pagamento</span>
+                  <span className="text-zinc-200 font-medium">{selectedOrder.forma_pagamento || '-'}</span>
+                </div>
+                <div className="col-span-2 bg-dark-900 p-3 rounded-xl border border-white/5">
+                  <span className="text-zinc-500 block text-xs mb-1">Entrega ({selectedOrder.tipo_entrega})</span>
+                  <span className="text-zinc-200 font-medium">{selectedOrder.endereco || 'Retirada no Local'}</span>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-2">Itens do Pedido</h4>
+                {selectedOrder.itens?.map((item: any) => (
+                  <div key={item.id} className="flex justify-between items-center py-2 border-b border-white/5 last:border-0">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-white/5 text-zinc-300 px-2 py-1 rounded text-xs font-bold">
+                        {item.quantidade}x
+                      </div>
+                      <span className="text-zinc-200 font-medium">{item.produto?.nome || 'Produto'}</span>
+                    </div>
+                    <span className="text-zinc-400 text-sm">R$ {item.subtotal?.toFixed(2) || (item.quantidade * (item.produto?.preco || 0)).toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 bg-brand-500/10 border-t border-brand-500/20 flex justify-between items-center">
+              <span className="text-brand-400 font-medium">Total do Pedido</span>
+              <span className="text-2xl font-bold text-brand-500">
+                R$ {selectedOrder.total?.toFixed(2)}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
