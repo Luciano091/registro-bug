@@ -39,18 +39,20 @@ export default function CashFlow() {
   const caixa = cachedCaixa as Caixa | null;
 
   const fetchCaixa = async () => {
-    setLoading(true);
+    if (!caixaLoaded) setLoading(true);
     await refreshCaixa();
     setLoading(false);
   };
 
   useEffect(() => {
-    if (caixaLoaded) {
-      setLoading(false);
-    } else {
+    if (!caixaLoaded) {
       fetchCaixa();
+    } else {
+      // Sempre atualiza o caixa em segundo plano ao abrir a aba
+      refreshCaixa();
+      setLoading(false);
     }
-  }, [caixaLoaded]);
+  }, [caixaLoaded, refreshCaixa]);
 
   const handleAbrirCaixa = async (e: React.FormEvent) => {
     e.preventDefault();
