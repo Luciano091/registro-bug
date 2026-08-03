@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Clock, CheckCircle2, Truck, Loader2 } from 'lucide-react';
+import { Search, Clock, CheckCircle2, Truck, Loader2, MessageCircle } from 'lucide-react';
 import api from '../services/api';
 import { useAppData } from '../contexts/AppDataContext';
 
@@ -40,6 +40,33 @@ const Orders = () => {
       console.error(error);
       alert("Erro ao alterar status");
     }
+  };
+
+  const handleWhatsApp = (order: any) => {
+    if (!order.telefone) {
+      alert("O cliente não informou um número de telefone.");
+      return;
+    }
+    
+    // Extrai apenas os números do telefone
+    const phoneDigits = order.telefone.replace(/\D/g, '');
+    if (phoneDigits.length < 10) {
+      alert("Número de telefone inválido.");
+      return;
+    }
+    
+    const formattedTotal = order.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const orderNumber = order.numero.split('-')[1] || order.numero;
+    
+    let itemsText = "";
+    if (order.itens && order.itens.length > 0) {
+      itemsText = "\\nItens do Pedido:\\n" + order.itens.map((item: any) => `- ${item.quantidade}x ${item.produto ? item.produto.nome : 'Produto'}`).join('\\n');
+    }
+
+    const message = `Olá ${order.cliente}! 👋\\n\\nSeu pedido #${orderNumber} no valor de *${formattedTotal}* acabou de ser atualizado para o status: *${order.status}*.${itemsText}\\n\\nAgradecemos a preferência! 🍔🚀`;
+    
+    const whatsappUrl = `https://wa.me/55${phoneDigits}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
   };
 
   const filteredOrders = orders.filter(order => {
@@ -198,6 +225,14 @@ const Orders = () => {
                             ))}
                           </select>
                         </div>
+                        
+                        <button 
+                          onClick={() => handleWhatsApp(order)}
+                          className="opacity-0 group-hover:opacity-100 transition-all text-[#25D366] hover:text-[#128C7E] bg-[#25D366]/10 p-1.5 rounded-full hover:bg-[#25D366]/20 border border-[#25D366]/20"
+                          title="Enviar Mensagem no WhatsApp"
+                        >
+                          <MessageCircle size={16} />
+                        </button>
                       </div>
                     </td>
                   </tr>
