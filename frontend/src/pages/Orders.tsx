@@ -60,10 +60,10 @@ const Orders = () => {
     
     let itemsText = "";
     if (order.itens && order.itens.length > 0) {
-      itemsText = "\\nItens do Pedido:\\n" + order.itens.map((item: any) => `- ${item.quantidade}x ${item.produto ? item.produto.nome : 'Produto'}`).join('\\n');
+      itemsText = "\nItens do Pedido:\n" + order.itens.map((item: any) => `- ${item.quantidade}x ${item.produto ? item.produto.nome : 'Produto'}`).join('\n');
     }
 
-    const message = `Olá ${order.cliente}! 👋\\n\\nSeu pedido #${orderNumber} no valor de *${formattedTotal}* acabou de ser atualizado para o status: *${order.status}*.${itemsText}\\n\\nAgradecemos a preferência! 🍔🚀`;
+    const message = `Olá ${order.cliente}! 👋\n\nSeu pedido #${orderNumber} no valor de *${formattedTotal}* acabou de ser atualizado para o status: *${order.status}*.${itemsText}\n\nAgradecemos a preferência! 🍔🚀`;
     
     const whatsappUrl = `https://wa.me/55${phoneDigits}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
