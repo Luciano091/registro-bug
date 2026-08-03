@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 const NewOrder = () => {
   const { isOnline } = useNetwork();
-  const { produtos: produtosCache, produtosLoaded, refreshProdutos, addOptimisticOrder, refreshOrders } = useAppData();
+  const { produtos: produtosCache, produtosLoaded, refreshProdutos, addOptimisticOrder, refreshOrders, refreshDashboard } = useAppData();
   const [cliente, setCliente] = useState('');
   const [telefone, setTelefone] = useState('');
   const [endereco, setEndereco] = useState('');
