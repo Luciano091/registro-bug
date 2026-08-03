@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, Minus, Trash2, ChevronRight, X } from 'lucide-react';
+import { Search, Plus, Minus, Trash2, ChevronRight, X, AlertTriangle } from 'lucide-react';
 import api from '../services/api';
 import { useNetwork } from '../contexts/NetworkContext';
 import { useAppData } from '../contexts/AppDataContext';
@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 const NewOrder = () => {
   const { isOnline } = useNetwork();
-  const { produtos: produtosCache, produtosLoaded, refreshProdutos, addOptimisticOrder, refreshOrders, refreshDashboard } = useAppData();
+  const { produtos: produtosCache, produtosLoaded, refreshProdutos, addOptimisticOrder, refreshOrders, refreshDashboard, dashboardResumo } = useAppData();
   const [cliente, setCliente] = useState('');
   const [telefone, setTelefone] = useState('');
   const [endereco, setEndereco] = useState('');
@@ -153,6 +153,23 @@ const NewOrder = () => {
           <p className="text-brand-400 font-mono text-sm mt-1">#{new Date().toISOString().slice(0,10).replace(/-/g,'')}-012</p>
         </div>
       </header>
+
+      {dashboardResumo?.alertas_estoque && dashboardResumo.alertas_estoque.length > 0 && (
+        <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 flex flex-col gap-2 mb-6">
+          <div className="flex items-center gap-2 text-red-500 font-bold mb-1">
+            <AlertTriangle size={20} />
+            <h4>Alerta de Estoque Crítico</h4>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {dashboardResumo.alertas_estoque.map((alerta: any) => (
+              <div key={alerta.id} className="bg-dark-900/50 rounded-xl p-3 flex gap-4 items-center border border-red-500/10">
+                <span className="text-white font-medium">{alerta.nome}</span>
+                <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-md">Restam {alerta.estoque}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {showCheckout && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">

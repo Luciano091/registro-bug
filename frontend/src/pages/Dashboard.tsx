@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Package, DollarSign, Receipt, TrendingUp, Printer, Lock, AlertTriangle } from 'lucide-react';
+import { Package, DollarSign, Receipt, TrendingUp, Printer, Lock } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import api from '../services/api';
 import { useAppData } from '../contexts/AppDataContext';
@@ -53,23 +53,6 @@ const Dashboard = () => {
           <span>Fechar Caixa</span>
         </button>
       </header>
-
-      {resumo.alertas_estoque && resumo.alertas_estoque.length > 0 && (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 flex flex-col gap-2">
-          <div className="flex items-center gap-2 text-red-500 font-bold mb-1">
-            <AlertTriangle size={20} />
-            <h4>Alerta de Estoque Crítico</h4>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {resumo.alertas_estoque.map((alerta: any) => (
-              <div key={alerta.id} className="bg-dark-900/50 rounded-xl p-3 flex justify-between items-center border border-red-500/10">
-                <span className="text-white font-medium">{alerta.nome}</span>
-                <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-md">Restam {alerta.estoque}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Card 1 */}
