@@ -84,6 +84,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       setDashboardResumo({
         pedidos_hoje: response.data.pedidos_hoje,
         faturamento_hoje: response.data.faturamento_hoje,
+        lucro_hoje: response.data.lucro_hoje,
         ticket_medio: response.data.ticket_medio,
         mais_vendido: response.data.mais_vendido,
         ultimos_pedidos: response.data.ultimos_pedidos || []
