@@ -76,7 +76,7 @@ const Reports = () => {
     <div className="p-4 md:p-8 max-w-[1600px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-6 custom-scrollbar text-zinc-200">
       
       {/* Header */}
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 print:hidden">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-white font-heading">Relatórios</h2>
           <p className="text-zinc-400 mt-1 text-sm">Acompanhe o desempenho completo do seu negócio.</p>

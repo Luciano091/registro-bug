@@ -77,7 +77,7 @@ function App() {
         <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-amber-500/10 rounded-full blur-[150px] translate-x-1/3 translate-y-1/3 pointer-events-none z-0"></div>
 
         {/* Sidebar */}
-        <aside className={`${isCollapsed ? 'w-24' : 'w-64'} transition-all duration-300 ease-in-out glass border-r border-white/5 flex flex-col hidden md:flex z-10 relative`}>
+        <aside className={`${isCollapsed ? 'w-24' : 'w-64'} transition-all duration-300 ease-in-out glass border-r border-white/5 flex flex-col hidden md:flex z-10 relative print:hidden`}>
           <div className={`pt-6 px-4 pb-2 h-24 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
             {!isCollapsed && (
               <div className="flex items-center gap-2 overflow-hidden">
@@ -125,7 +125,7 @@ function App() {
         </main>
 
         {/* Mobile Bottom Nav */}
-        <nav className="md:hidden fixed bottom-0 w-full glass border-t border-white/10 flex justify-around p-2 z-50">
+        <nav className="md:hidden fixed bottom-0 w-full glass border-t border-white/10 flex justify-around p-2 z-50 print:hidden">
           <Link to="/" className="p-3 text-zinc-400 hover:text-brand-400 transition-colors"><Home size={24} /></Link>
           <Link to="/novo-pedido" className="p-4 premium-btn rounded-full -mt-8 shadow-xl"><PlusCircle size={28} /></Link>
           <Link to="/pedidos" className="p-3 text-zinc-400 hover:text-brand-400 transition-colors"><ListOrdered size={24} /></Link>
