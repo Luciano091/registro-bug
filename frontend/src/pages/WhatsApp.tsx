@@ -154,7 +154,7 @@ const WhatsApp = () => {
                           : 'bg-dark-800/90 text-zinc-200 border border-white/5 rounded-tl-none'
                       }`}
                     >
-                      <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.texto}</p>
+                      <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">{msg.texto}</p>
                       <div className="flex items-center justify-end gap-1 mt-1">
                         <span className={`text-[10px] ${isOut ? 'text-brand-200' : 'text-zinc-500'}`}>
                           {new Date(msg.data).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
