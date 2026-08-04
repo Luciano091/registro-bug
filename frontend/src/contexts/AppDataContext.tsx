@@ -152,20 +152,40 @@ const showBrowserNotification = (title: string, body: string) => {
       setChats(prev => {
         const novosChats = response.data;
         
-        // Count total incoming messages in new vs prev
-        let totalIncomingNovos = 0;
+        let shouldRing = false;
+        let hasNewIncoming = false;
+
         novosChats.forEach((chat: any) => {
-          totalIncomingNovos += chat.mensagens.filter((m: any) => m.direcao === 'in').length;
-        });
-        
-        let totalIncomingPrev = 0;
-        prev.forEach((chat: any) => {
-          totalIncomingPrev += chat.mensagens.filter((m: any) => m.direcao === 'in').length;
+          const prevChat = prev.find((p: any) => p.id === chat.id);
+          const inMsgs = chat.mensagens.filter((m: any) => m.direcao === 'in');
+          const prevInMsgs = prevChat ? prevChat.mensagens.filter((m: any) => m.direcao === 'in') : [];
+          
+          if (inMsgs.length > prevInMsgs.length) {
+            hasNewIncoming = true; // Still show red badge
+            
+            // Apply 2-hour rule for sound/notification
+            if (prevInMsgs.length > 0) {
+              const lastPrev = prevInMsgs[prevInMsgs.length - 1];
+              const lastNew = inMsgs[inMsgs.length - 1];
+              const diffMs = new Date(lastNew.data).getTime() - new Date(lastPrev.data).getTime();
+              
+              if (diffMs > 2 * 60 * 60 * 1000) {
+                shouldRing = true;
+              }
+            } else {
+              // First message ever from this contact
+              shouldRing = true;
+            }
+          }
         });
 
-        // Se houver mais mensagens IN do que antes, toca o sino e notifica!
-        if (totalIncomingNovos > totalIncomingPrev) {
+        // Always show badge if there is any new message
+        if (hasNewIncoming) {
           setHasUnreadChats(true);
+        }
+
+        // Only ring and show popup if it passed the 2 hour rule
+        if (shouldRing) {
           try {
             const audio = new Audio(notificationSoundBase64);
             audio.play().catch(e => console.log('Autoplay blocked:', e));
