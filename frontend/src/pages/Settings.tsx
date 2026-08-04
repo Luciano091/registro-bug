@@ -45,7 +45,7 @@ const Settings = () => {
   };
 
   return (
-    <div className="p-6 md:p-10 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 h-full flex flex-col">
+    <div className="p-6 md:p-10 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 h-full flex flex-col overflow-y-auto pb-20">
       <header className="mb-8 flex flex-col md:flex-row justify-between md:items-end gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-white font-heading drop-shadow-sm">Configurações</h2>
@@ -60,7 +60,7 @@ const Settings = () => {
         </button>
       </header>
 
-      <div className="relative overflow-hidden bg-dark-800/40 backdrop-blur-md border border-white/5 shadow-xl rounded-2xl p-6 md:p-8 flex-1">
+      <div className="relative overflow-hidden bg-dark-800/40 backdrop-blur-md border border-white/5 shadow-xl rounded-2xl p-6 md:p-8 shrink-0 mb-8">
         <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-brand-500 to-rose-500"></div>
         <h3 className="text-xl font-bold font-heading text-white border-b border-white/5 pb-3 mb-6">Dados do Estabelecimento</h3>
         
@@ -114,7 +114,7 @@ const Settings = () => {
         </div>
         
         {/* WhatsApp Auto-Reply Section */}
-        <div className="bg-dark-950 border border-white/5 rounded-2xl p-6 md:p-8 space-y-6 relative overflow-hidden group">
+        <div className="bg-dark-950 border border-white/5 rounded-2xl p-6 md:p-8 space-y-6 relative overflow-hidden group shrink-0">
           <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
           
           <div className="flex items-center gap-3 mb-2 relative z-10">
