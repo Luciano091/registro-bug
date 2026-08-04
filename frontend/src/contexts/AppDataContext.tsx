@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import api from '../services/api';
+import { notificationSoundBase64 } from '../notificationSound';
 
 interface AppDataContextType {
   // Data
@@ -60,7 +61,17 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
   const refreshOrders = useCallback(async () => {
     try {
       const response = await api.get('/pedidos');
-      setOrders(response.data);
+      setOrders(prev => {
+        if (prev.length > 0 && response.data.length > prev.length) {
+          try {
+            const audio = new Audio(notificationSoundBase64);
+            audio.play().catch(e => console.log('Autoplay blocked:', e));
+          } catch (e) {
+            console.error('Audio play error', e);
+          }
+        }
+        return response.data;
+      });
       setOrdersLoaded(true);
     } catch (error) {
       console.error('Erro ao carregar pedidos:', error);
