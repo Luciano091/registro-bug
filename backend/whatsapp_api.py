@@ -107,15 +107,34 @@ async def process_webhook(payload: dict, db: Session):
                                     meta_message_id=meta_msg_id
                                 )
                                 db.add(db_msg)
+                                
+                                # Bot Auto-reply logic
+                                old_interacao = contato.ultima_interacao
+                                
                                 contato.ultima_interacao = models.get_now()
                                 db.commit()
                                 
-                                # Bot Auto-reply logic
-                                await send_whatsapp_message(
-                                    phone,
-                                    "Olá! Sou o assistente virtual da Burger Hause. Nosso cardápio digital é: https://burgerhause.com. Para falar com um atendente, aguarde um momento.",
-                                    db
-                                )
+                                import datetime
+                                from crud import get_configuracao
+                                
+                                config = get_configuracao(db)
+                                
+                                if config.whatsapp_auto_reply_enabled and config.whatsapp_auto_reply_text:
+                                    # Check if it's a new contact or if the last interaction was more than 2 hours ago
+                                    should_reply = False
+                                    if not old_interacao:
+                                        should_reply = True
+                                    else:
+                                        time_diff = models.get_now() - old_interacao
+                                        if time_diff.total_seconds() > 2 * 3600:
+                                            should_reply = True
+                                            
+                                    if should_reply:
+                                        await send_whatsapp_message(
+                                            phone,
+                                            config.whatsapp_auto_reply_text,
+                                            db
+                                        )
                                 
                 # Check for status updates (sent, delivered, read)
                 if "statuses" in value:

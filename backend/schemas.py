@@ -74,6 +74,8 @@ class ConfiguracaoBase(BaseModel):
     logo: Optional[str] = None
     taxa_entrega: float
     tempo_medio_preparo: int
+    whatsapp_auto_reply_enabled: bool = False
+    whatsapp_auto_reply_text: Optional[str] = None
 
 class ConfiguracaoCreate(ConfiguracaoBase):
     pass

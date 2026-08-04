@@ -63,6 +63,8 @@ class Configuracao(Base):
     logo = Column(String, nullable=True)
     taxa_entrega = Column(Float, default=5.0)
     tempo_medio_preparo = Column(Integer, default=30)
+    whatsapp_auto_reply_enabled = Column(Boolean, default=False)
+    whatsapp_auto_reply_text = Column(String, nullable=True)
 
 class Caixa(Base):
     __tablename__ = "caixas"

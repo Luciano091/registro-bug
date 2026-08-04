@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, Store, Phone, MapPin, Clock } from 'lucide-react';
+import { Save, Store, Phone, MapPin, Clock, MessageSquare } from 'lucide-react';
 import api from '../services/api';
 
 const Settings = () => {
@@ -8,7 +8,9 @@ const Settings = () => {
     telefone: '',
     endereco: '',
     taxa_entrega: 0,
-    tempo_medio_preparo: 0
+    tempo_medio_preparo: 0,
+    whatsapp_auto_reply_enabled: false,
+    whatsapp_auto_reply_text: ''
   });
 
   useEffect(() => {
@@ -24,7 +26,8 @@ const Settings = () => {
   }, []);
 
   const handleChange = (e: any) => {
-    setConfig({ ...config, [e.target.name]: e.target.value });
+    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+    setConfig({ ...config, [e.target.name]: value });
   };
 
   const handleSave = async () => {
@@ -108,6 +111,48 @@ const Settings = () => {
             ></textarea>
           </div>
           
+        </div>
+        
+        {/* WhatsApp Auto-Reply Section */}
+        <div className="bg-dark-950 border border-white/5 rounded-2xl p-6 md:p-8 space-y-6 relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          
+          <div className="flex items-center gap-3 mb-2 relative z-10">
+            <div className="p-2.5 bg-green-500/10 rounded-xl text-green-400">
+              <MessageSquare size={24} />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-white font-heading">Automação do WhatsApp</h3>
+              <p className="text-zinc-400 text-sm">Responda automaticamente a novos clientes.</p>
+            </div>
+          </div>
+
+          <div className="space-y-6 relative z-10">
+            <div className="flex items-center justify-between bg-dark-900 border border-white/10 rounded-xl px-4 py-4">
+              <div>
+                <p className="text-white font-medium">Ativar Resposta Automática</p>
+                <p className="text-zinc-400 text-sm mt-0.5">Envia uma mensagem automática se o cliente não interagiu nas últimas 2 horas.</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" name="whatsapp_auto_reply_enabled" className="sr-only peer" checked={config.whatsapp_auto_reply_enabled} onChange={handleChange} />
+                <div className="w-11 h-6 bg-dark-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-zinc-300 after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+              </label>
+            </div>
+
+            {config.whatsapp_auto_reply_enabled && (
+              <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                <label className="flex items-center gap-2 text-sm font-medium text-zinc-400 mb-2">
+                  Mensagem Automática
+                </label>
+                <textarea 
+                  name="whatsapp_auto_reply_text" rows={4}
+                  value={config.whatsapp_auto_reply_text || ''} onChange={handleChange}
+                  placeholder="Ex: Olá! Sou o assistente virtual da Burger Hause. Já vamos te atender! O nosso cardápio digital é..."
+                  className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-all text-white resize-none"
+                ></textarea>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
