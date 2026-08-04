@@ -190,7 +190,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     setCaixaLoaded(true);
   }, []);
 
-  const markChatAsRead = useCallback((chatId: number) => {
+  const markChatAsRead = useCallback(() => {
     setHasUnreadChats(false);
   }, []);
 
