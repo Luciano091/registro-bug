@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, Clock, CheckCircle2, Truck, Loader2, MessageCircle, X, Eye } from 'lucide-react';
 import api from '../services/api';
 import { useAppData } from '../contexts/AppDataContext';
@@ -20,6 +21,7 @@ const statusIcons: any = {
 };
 
 const Orders = () => {
+  const navigate = useNavigate();
   const [filter, setFilter] = useState('Hoje');
   const [search, setSearch] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
@@ -68,17 +70,9 @@ const Orders = () => {
       itemsText = "\n\nItens do Pedido:\n" + order.itens.map((item: any) => `- ${item.quantidade}x ${item.produto ? item.produto.nome : 'Produto'}`).join('\n');
     }
 
-    let statusText = `acabou de ser atualizado para o status: *${order.status}*.`;
-    if (order.status === 'Recebido') statusText = "foi *Recebido* com sucesso e logo começaremos a prepará-lo!";
-    if (order.status === 'Em preparo') statusText = "já está *Em Preparo* na nossa cozinha!";
-    if (order.status === 'Pronto') statusText = order.tipo_entrega === 'Retirada' ? "está *Pronto* e já pode ser retirado no balcão!" : "está *Pronto* e aguardando o entregador!";
-    if (order.status === 'Saiu entrega') statusText = "acabou de *Sair para Entrega* e já está a caminho!";
-    if (order.status === 'Finalizado') statusText = "foi *Finalizado*. Esperamos que tenha gostado!";
-
-    const message = `Olá ${order.cliente}!\n\nSeu pedido #${orderNumber} no valor de *${formattedTotal}* ${statusText}${itemsText}\n\nAgradecemos a preferência!`;
-    
-    const whatsappUrl = `https://wa.me/55${phoneDigits}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+    // Now handled automatically by the backend via Webhooks & Meta API
+    // The button now redirects to our internal WhatsApp dashboard
+    navigate('/whatsapp');
   };
 
   const filteredOrders = orders.filter(order => {

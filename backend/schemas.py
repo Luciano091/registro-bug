@@ -118,3 +118,36 @@ class Caixa(CaixaBase):
 
     class Config:
         from_attributes = True
+
+# --- WhatsApp ---
+class WhatsAppMensagemBase(BaseModel):
+    direcao: str
+    texto: str
+    status: Optional[str] = "sent"
+    meta_message_id: Optional[str] = None
+
+class WhatsAppMensagemCreate(WhatsAppMensagemBase):
+    pass
+
+class WhatsAppMensagem(WhatsAppMensagemBase):
+    id: int
+    contato_id: int
+    data: datetime
+
+    class Config:
+        from_attributes = True
+
+class WhatsAppContatoBase(BaseModel):
+    telefone: str
+    nome: Optional[str] = None
+
+class WhatsAppContatoCreate(WhatsAppContatoBase):
+    pass
+
+class WhatsAppContato(WhatsAppContatoBase):
+    id: int
+    ultima_interacao: datetime
+    mensagens: List[WhatsAppMensagem] = []
+
+    class Config:
+        from_attributes = True

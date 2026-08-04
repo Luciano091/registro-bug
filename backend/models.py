@@ -89,3 +89,26 @@ class MovimentacaoCaixa(Base):
     data = Column(DateTime, default=get_now)
 
     caixa = relationship("Caixa", back_populates="movimentacoes")
+
+class WhatsAppContato(Base):
+    __tablename__ = "whatsapp_contatos"
+
+    id = Column(Integer, primary_key=True, index=True)
+    telefone = Column(String, unique=True, index=True) # Ex: "5511999999999"
+    nome = Column(String, nullable=True)
+    ultima_interacao = Column(DateTime, default=get_now)
+    
+    mensagens = relationship("WhatsAppMensagem", back_populates="contato", order_by="WhatsAppMensagem.data")
+
+class WhatsAppMensagem(Base):
+    __tablename__ = "whatsapp_mensagens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    contato_id = Column(Integer, ForeignKey("whatsapp_contatos.id"))
+    direcao = Column(String) # "in" (recebida), "out" (enviada)
+    texto = Column(String)
+    status = Column(String, default="sent") # "sent", "delivered", "read", "received"
+    data = Column(DateTime, default=get_now)
+    meta_message_id = Column(String, nullable=True, unique=True) # ID da mensagem na Meta
+
+    contato = relationship("WhatsAppContato", back_populates="mensagens")

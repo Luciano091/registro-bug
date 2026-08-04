@@ -1,11 +1,12 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Query, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Dict, Any
 import datetime
+from datetime import timedelta
 
-import models, schemas, crud
-from database import engine, get_db
+import models, schemas, crud, whatsapp_api
+from database import engine, get_db, SessionLocal
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -95,11 +96,31 @@ def create_pedido(pedido: schemas.PedidoCreate, db: Session = Depends(get_db)):
     
     return db_pedido
 
+async def send_status_whatsapp(telefone: str, message: str):
+    db = SessionLocal()
+    try:
+        await whatsapp_api.send_whatsapp_message(telefone, message, db)
+    finally:
+        db.close()
+
 @app.put("/pedidos/{pedido_id}/status", response_model=schemas.Pedido)
-def update_pedido_status(pedido_id: int, status: str, db: Session = Depends(get_db)):
+def update_pedido_status(pedido_id: int, status: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     db_pedido = crud.update_pedido_status(db, pedido_id=pedido_id, status=status)
     if db_pedido is None:
         raise HTTPException(status_code=404, detail="Pedido não encontrado")
+        
+    if db_pedido.telefone:
+        formattedTotal = f"R$ {db_pedido.total:.2f}".replace(".", ",")
+        statusText = f"acabou de ser atualizado para o status: *{db_pedido.status}*."
+        if db_pedido.status == 'Recebido': statusText = "foi *Recebido* com sucesso e logo começaremos a prepará-lo!"
+        elif db_pedido.status == 'Em preparo': statusText = "já está *Em Preparo* na nossa cozinha!"
+        elif db_pedido.status == 'Pronto': statusText = "está *Pronto* e já pode ser retirado no balcão!" if db_pedido.tipo_entrega == 'Retirada' else "está *Pronto* e aguardando o entregador!"
+        elif db_pedido.status == 'Saiu entrega': statusText = "acabou de *Sair para Entrega* e já está a caminho!"
+        elif db_pedido.status == 'Finalizado': statusText = "foi *Finalizado*. Esperamos que tenha gostado!"
+        
+        message = f"Olá {db_pedido.cliente}!\n\nSeu pedido #{db_pedido.numero.split('-')[1] if '-' in db_pedido.numero else db_pedido.numero} no valor de *{formattedTotal}* {statusText}\n\nAgradecemos a preferência!"
+        background_tasks.add_task(send_status_whatsapp, db_pedido.telefone, message)
+
     return db_pedido
 
 # --- Configuracoes ---
@@ -358,3 +379,46 @@ def add_movimento_caixa(caixa_id: int, movimento: schemas.MovimentacaoCaixaCreat
     if not caixa or caixa.id != caixa_id:
         raise HTTPException(status_code=400, detail="Caixa não está aberto ou ID inválido.")
     return crud.add_movimentacao(db=db, caixa_id=caixa_id, movimentacao=movimento)
+# --- WhatsApp Webhooks ---
+@app.get("/webhook")
+def verify_webhook(
+    hub_mode: str = Query(None, alias="hub.mode"),
+    hub_verify_token: str = Query(None, alias="hub.verify_token"),
+    hub_challenge: str = Query(None, alias="hub.challenge")
+):
+    if hub_mode == "subscribe" and hub_verify_token == whatsapp_api.META_VERIFY_TOKEN:
+        return int(hub_challenge)
+    raise HTTPException(status_code=403, detail="Verification token mismatch")
+
+@app.post("/webhook")
+async def receive_webhook(request: Request, background_tasks: BackgroundTasks):
+    payload = await request.json()
+    # Process webhook in background to immediately return 200 to Meta
+    
+    async def run_webhook(payload):
+        db = SessionLocal()
+        try:
+            await whatsapp_api.process_webhook(payload, db)
+        finally:
+            db.close()
+            
+    background_tasks.add_task(run_webhook, payload)
+    return {"status": "ok"}
+
+@app.get("/whatsapp/chats", response_model=List[schemas.WhatsAppContato])
+def get_whatsapp_chats(db: Session = Depends(get_db)):
+    # Returns contacts with their latest messages, ordered by recent interaction
+    contatos = db.query(models.WhatsAppContato).order_by(models.WhatsAppContato.ultima_interacao.desc()).all()
+    return contatos
+
+@app.post("/whatsapp/send")
+async def send_manual_message(telefone: str, texto: str, background_tasks: BackgroundTasks):
+    async def send_msg_task():
+        db = SessionLocal()
+        try:
+            await whatsapp_api.send_whatsapp_message(telefone, texto, db)
+        finally:
+            db.close()
+            
+    background_tasks.add_task(send_msg_task)
+    return {"status": "queued"}

@@ -8,9 +8,10 @@ import Menu from './pages/Menu';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import CashFlow from './pages/CashFlow';
+import WhatsApp from './pages/WhatsApp';
 import { NetworkProvider, useNetwork } from './contexts/NetworkContext';
 import { AppDataProvider } from './contexts/AppDataContext';
-import { WifiOff, RefreshCcw } from 'lucide-react';
+import { WifiOff, RefreshCcw, MessageCircle } from 'lucide-react';
 
 const NetworkBanner = () => {
   const { isOnline, isSyncing } = useNetwork();
@@ -104,6 +105,7 @@ function App() {
             <NavLink to="/" icon={Home} isCollapsed={isCollapsed}>Dashboard</NavLink>
             <NavLink to="/novo-pedido" icon={PlusCircle} isCollapsed={isCollapsed}>Novo Pedido</NavLink>
             <NavLink to="/pedidos" icon={ListOrdered} isCollapsed={isCollapsed}>Pedidos</NavLink>
+            <NavLink to="/whatsapp" icon={MessageCircle} isCollapsed={isCollapsed}>WhatsApp</NavLink>
             <NavLink to="/caixa" icon={Wallet} isCollapsed={isCollapsed}>Caixa</NavLink>
             <NavLink to="/cardapio" icon={Utensils} isCollapsed={isCollapsed}>Cardápio</NavLink>
             <NavLink to="/relatorios" icon={BarChart3} isCollapsed={isCollapsed}>Relatórios</NavLink>
@@ -117,6 +119,7 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/novo-pedido" element={<NewOrder />} />
             <Route path="/pedidos" element={<Orders />} />
+            <Route path="/whatsapp" element={<WhatsApp />} />
             <Route path="/caixa" element={<CashFlow />} />
             <Route path="/cardapio" element={<Menu />} />
             <Route path="/relatorios" element={<Reports />} />
