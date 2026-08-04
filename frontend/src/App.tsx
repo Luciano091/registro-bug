@@ -137,7 +137,6 @@ function AppContent() {
           <Link to="/pedidos" className="p-3 text-zinc-400 hover:text-brand-400 transition-colors"><ListOrdered size={24} /></Link>
         </nav>
       </div>
-      </div>
   );
 }
 
