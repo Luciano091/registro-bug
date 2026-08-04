@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Search, Plus, Minus, Trash2, ChevronRight, X, AlertTriangle } from 'lucide-react';
 import api from '../services/api';
 import { useNetwork } from '../contexts/NetworkContext';
@@ -9,8 +10,11 @@ import { v4 as uuidv4 } from 'uuid';
 const NewOrder = () => {
   const { isOnline } = useNetwork();
   const { produtos: produtosCache, produtosLoaded, refreshProdutos, addOptimisticOrder, refreshOrders, refreshDashboard, dashboardResumo } = useAppData();
-  const [cliente, setCliente] = useState('');
-  const [telefone, setTelefone] = useState('');
+  const location = useLocation();
+  const prefill = location.state?.prefill;
+
+  const [cliente, setCliente] = useState(prefill?.nome || '');
+  const [telefone, setTelefone] = useState(prefill?.telefone || '');
   const [endereco, setEndereco] = useState('');
   const [tipoEntrega, setTipoEntrega] = useState('Delivery');
   const [formaPagamento, setFormaPagamento] = useState('PIX');

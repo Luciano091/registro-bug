@@ -9,6 +9,8 @@ interface AppDataContextType {
   produtos: any[];
   dashboardResumo: any;
   caixa: any;
+  chats: any[];
+  hasUnreadChats: boolean;
   // Loading states (only for first load)
   ordersLoaded: boolean;
   produtosLoaded: boolean;
@@ -19,11 +21,13 @@ interface AppDataContextType {
   refreshProdutos: () => Promise<void>;
   refreshDashboard: () => Promise<void>;
   refreshCaixa: () => Promise<void>;
+  refreshChats: () => Promise<void>;
   // Optimistic updates
   addOptimisticOrder: (order: any) => void;
   updateOrderStatus: (orderId: number, newStatus: string) => void;
   addOrUpdateProduto: (produto: any) => void;
   setCaixaData: (data: any) => void;
+  markChatAsRead: (chatId: number) => void;
 }
 
 const AppDataContext = createContext<AppDataContextType | null>(null);
@@ -50,6 +54,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     alertas_estoque: []
   });
   const [caixa, setCaixa] = useState<any>(null);
+  const [chats, setChats] = useState<any[]>([]);
+  const [hasUnreadChats, setHasUnreadChats] = useState(false);
 
   // Track whether first load happened
   const [ordersLoaded, setOrdersLoaded] = useState(false);
@@ -123,6 +129,42 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const refreshChats = useCallback(async () => {
+    try {
+      const response = await api.get('/whatsapp/chats');
+      
+      setChats(prev => {
+        const novosChats = response.data;
+        
+        // Count total incoming messages in new vs prev
+        let totalIncomingNovos = 0;
+        novosChats.forEach((chat: any) => {
+          totalIncomingNovos += chat.mensagens.filter((m: any) => m.direcao === 'in').length;
+        });
+        
+        let totalIncomingPrev = 0;
+        prev.forEach((chat: any) => {
+          totalIncomingPrev += chat.mensagens.filter((m: any) => m.direcao === 'in').length;
+        });
+
+        // Se houver mais mensagens IN do que antes, toca o sino!
+        if (totalIncomingNovos > totalIncomingPrev) {
+          setHasUnreadChats(true);
+          try {
+            const audio = new Audio(notificationSoundBase64);
+            audio.play().catch(e => console.log('Autoplay blocked:', e));
+          } catch (e) {
+            console.error('Audio play error', e);
+          }
+        }
+        
+        return novosChats;
+      });
+    } catch (error) {
+      console.error('Erro ao carregar chats do whatsapp:', error);
+    }
+  }, []);
+
   // ========== Optimistic Updates ==========
   const addOptimisticOrder = useCallback((order: any) => {
     // Add the new order at the top of the list
@@ -148,11 +190,25 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     setCaixaLoaded(true);
   }, []);
 
+  const markChatAsRead = useCallback((chatId: number) => {
+    setHasUnreadChats(false);
+  }, []);
+
   // ========== Preload critical data on app start ==========
   useEffect(() => {
     refreshProdutos();
     refreshOrders();
-  }, [refreshProdutos, refreshOrders]);
+    refreshChats();
+    
+    // Polling global (roda de 5 em 5 seg)
+    const intervalChats = setInterval(refreshChats, 5000);
+    const intervalOrders = setInterval(refreshOrders, 10000);
+    
+    return () => {
+      clearInterval(intervalChats);
+      clearInterval(intervalOrders);
+    };
+  }, [refreshProdutos, refreshOrders, refreshChats]);
 
   return (
     <AppDataContext.Provider value={{
@@ -160,6 +216,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       produtos,
       dashboardResumo,
       caixa,
+      chats,
+      hasUnreadChats,
       ordersLoaded,
       produtosLoaded,
       dashboardLoaded,
@@ -168,10 +226,12 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       refreshProdutos,
       refreshDashboard,
       refreshCaixa,
+      refreshChats,
       addOptimisticOrder,
       updateOrderStatus,
       addOrUpdateProduto,
       setCaixaData,
+      markChatAsRead,
     }}>
       {children}
     </AppDataContext.Provider>

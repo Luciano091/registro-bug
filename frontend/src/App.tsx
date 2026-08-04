@@ -10,7 +10,7 @@ import Settings from './pages/Settings';
 import CashFlow from './pages/CashFlow';
 import WhatsApp from './pages/WhatsApp';
 import { NetworkProvider, useNetwork } from './contexts/NetworkContext';
-import { AppDataProvider } from './contexts/AppDataContext';
+import { AppDataProvider, useAppData } from './contexts/AppDataContext';
 import { WifiOff, RefreshCcw, MessageCircle } from 'lucide-react';
 
 const NetworkBanner = () => {
@@ -33,7 +33,7 @@ const NetworkBanner = () => {
   );
 };
 
-const NavLink = ({ to, icon: Icon, children, isCollapsed }: { to: string, icon: any, children: React.ReactNode, isCollapsed: boolean }) => {
+const NavLink = ({ to, icon: Icon, children, isCollapsed, hasBadge }: { to: string, icon: any, children: React.ReactNode, isCollapsed: boolean, hasBadge?: boolean }) => {
   const location = useLocation();
   const isActive = location.pathname === to;
   return (
@@ -48,21 +48,24 @@ const NavLink = ({ to, icon: Icon, children, isCollapsed }: { to: string, icon: 
       {!isActive && (
         <div className="absolute inset-0 bg-white/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
       )}
-      <Icon size={20} className={`relative z-10 transition-colors flex-shrink-0 ${isActive ? 'text-brand-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
+      <div className="relative">
+        <Icon size={20} className={`relative z-10 transition-colors flex-shrink-0 ${isActive ? 'text-brand-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
+        {hasBadge && (
+          <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full shadow-[0_0_5px_rgba(239,68,68,0.8)] border border-dark-950 z-20"></span>
+        )}
+      </div>
       {!isCollapsed && <span className="relative z-10 whitespace-nowrap transition-opacity duration-300">{children}</span>}
       {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-brand-500 rounded-r-full shadow-[0_0_10px_rgba(249,115,22,0.8)]"></div>}
     </Link>
   );
 };
 
-function App() {
+function AppContent() {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { hasUnreadChats } = useAppData();
 
   return (
-    <NetworkProvider>
-      <AppDataProvider>
-      <Router>
-        <div className="flex h-screen bg-[#0a0a0a] text-zinc-50 overflow-hidden font-sans relative">
+    <div className="flex h-screen bg-[#0a0a0a] text-zinc-50 overflow-hidden font-sans relative">
           <NetworkBanner />
         {/* Global Background Image */}
         <div 
@@ -105,7 +108,7 @@ function App() {
             <NavLink to="/" icon={Home} isCollapsed={isCollapsed}>Dashboard</NavLink>
             <NavLink to="/novo-pedido" icon={PlusCircle} isCollapsed={isCollapsed}>Novo Pedido</NavLink>
             <NavLink to="/pedidos" icon={ListOrdered} isCollapsed={isCollapsed}>Pedidos</NavLink>
-            <NavLink to="/whatsapp" icon={MessageCircle} isCollapsed={isCollapsed}>WhatsApp</NavLink>
+            <NavLink to="/whatsapp" icon={MessageCircle} isCollapsed={isCollapsed} hasBadge={hasUnreadChats}>WhatsApp</NavLink>
             <NavLink to="/caixa" icon={Wallet} isCollapsed={isCollapsed}>Caixa</NavLink>
             <NavLink to="/cardapio" icon={Utensils} isCollapsed={isCollapsed}>Cardápio</NavLink>
             <NavLink to="/relatorios" icon={BarChart3} isCollapsed={isCollapsed}>Relatórios</NavLink>
@@ -134,7 +137,17 @@ function App() {
           <Link to="/pedidos" className="p-3 text-zinc-400 hover:text-brand-400 transition-colors"><ListOrdered size={24} /></Link>
         </nav>
       </div>
-      </Router>
+      </div>
+  );
+}
+
+function App() {
+  return (
+    <NetworkProvider>
+      <AppDataProvider>
+        <Router>
+          <AppContent />
+        </Router>
       </AppDataProvider>
     </NetworkProvider>
   );

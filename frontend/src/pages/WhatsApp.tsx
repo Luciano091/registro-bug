@@ -1,28 +1,23 @@
 import { useState, useEffect, useRef } from 'react';
-import { Send, Search, User, Clock, Check, CheckCheck, MessageCircle } from 'lucide-react';
+import { Send, Search, User, Clock, Check, CheckCheck, MessageCircle, ShoppingCart } from 'lucide-react';
 import api from '../services/api';
 
+import { useAppData } from '../contexts/AppDataContext';
+import { useNavigate } from 'react-router-dom';
+
 const WhatsApp = () => {
-  const [chats, setChats] = useState<any[]>([]);
+  const { chats, refreshChats, markChatAsRead } = useAppData();
   const [selectedChat, setSelectedChat] = useState<any>(null);
   const [message, setMessage] = useState('');
   const [search, setSearch] = useState('');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  const fetchChats = async () => {
-    try {
-      const response = await api.get('/whatsapp/chats');
-      setChats(response.data);
-    } catch (error) {
-      console.error('Erro ao buscar conversas:', error);
-    }
-  };
+  const navigate = useNavigate();
 
   useEffect(() => {
-    fetchChats();
-    const interval = setInterval(fetchChats, 5000);
-    return () => clearInterval(interval);
-  }, []);
+    // Optional: force an initial refresh if needed, but context already handles polling
+    refreshChats();
+    markChatAsRead(0); // clear badge when entering screen
+  }, [refreshChats, markChatAsRead]);
 
   useEffect(() => {
     if (selectedChat) {
@@ -133,10 +128,17 @@ const WhatsApp = () => {
               <div className="w-10 h-10 rounded-full bg-dark-800 flex items-center justify-center text-zinc-400 shadow-inner">
                 <User size={20} />
               </div>
-              <div>
+              <div className="flex-1">
                 <h3 className="text-lg font-bold text-white">{selectedChat.nome || selectedChat.telefone}</h3>
                 <p className="text-xs text-zinc-400">{selectedChat.telefone}</p>
               </div>
+              <button 
+                onClick={() => navigate('/novo-pedido', { state: { prefill: { nome: selectedChat.nome || '', telefone: selectedChat.telefone } } })}
+                className="flex items-center gap-2 bg-brand-500 hover:bg-brand-400 text-white px-4 py-2 rounded-lg font-medium shadow-lg transition-colors ml-auto"
+              >
+                <ShoppingCart size={18} />
+                <span className="hidden sm:inline">Criar Pedido</span>
+              </button>
             </div>
 
             {/* Mensagens */}
