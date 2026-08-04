@@ -5,6 +5,21 @@ import api from '../services/api';
 import { useAppData } from '../contexts/AppDataContext';
 import { useNavigate } from 'react-router-dom';
 
+const renderMessageText = (text: string) => {
+  if (!text) return text;
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  return text.split(urlRegex).map((part, i) => {
+    if (part.match(urlRegex)) {
+      return (
+        <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="underline hover:text-white/80 transition-colors">
+          {part}
+        </a>
+      );
+    }
+    return part;
+  });
+};
+
 const WhatsApp = () => {
   const { chats, refreshChats, markChatAsRead } = useAppData();
   const [selectedChat, setSelectedChat] = useState<any>(null);
@@ -154,7 +169,7 @@ const WhatsApp = () => {
                           : 'bg-dark-800/90 text-zinc-200 border border-white/5 rounded-tl-none'
                       }`}
                     >
-                      <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">{msg.texto}</p>
+                      <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">{renderMessageText(msg.texto)}</p>
                       <div className="flex items-center justify-end gap-1 mt-1">
                         <span className={`text-[10px] ${isOut ? 'text-brand-200' : 'text-zinc-500'}`}>
                           {new Date(msg.data).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
