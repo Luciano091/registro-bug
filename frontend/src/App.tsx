@@ -51,7 +51,7 @@ const NavLink = ({ to, icon: Icon, children, isCollapsed, hasBadge }: { to: stri
       <div className="relative">
         <Icon size={20} className={`relative z-10 transition-colors flex-shrink-0 ${isActive ? 'text-brand-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
         {hasBadge && (
-          <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full shadow-[0_0_5px_rgba(239,68,68,0.8)] border border-dark-950 z-20"></span>
+          <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-red-500 rounded-full shadow-[0_0_12px_rgba(239,68,68,1)] border-[1.5px] border-dark-950 z-20 animate-pulse"></span>
         )}
       </div>
       {!isCollapsed && <span className="relative z-10 whitespace-nowrap transition-opacity duration-300">{children}</span>}
