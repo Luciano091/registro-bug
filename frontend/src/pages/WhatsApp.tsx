@@ -7,7 +7,7 @@ const WhatsApp = () => {
   const [selectedChat, setSelectedChat] = useState<any>(null);
   const [message, setMessage] = useState('');
   const [search, setSearch] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const fetchChats = async () => {
     try {
@@ -32,7 +32,9 @@ const WhatsApp = () => {
   }, [chats]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+    }
   };
 
   useEffect(() => {
@@ -138,7 +140,7 @@ const WhatsApp = () => {
             </div>
 
             {/* Mensagens */}
-            <div className="relative z-10 flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+            <div ref={scrollContainerRef} className="relative z-10 flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
               {selectedChat.mensagens.map((msg: any, index: number) => {
                 const isOut = msg.direcao === 'out';
                 return (
@@ -168,7 +170,6 @@ const WhatsApp = () => {
                   </div>
                 );
               })}
-              <div ref={messagesEndRef} />
             </div>
 
             {/* Input Area */}
