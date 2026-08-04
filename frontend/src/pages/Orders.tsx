@@ -48,7 +48,7 @@ const Orders = () => {
 
   const handleWhatsApp = (passedOrder: any) => {
     // Busca a versão mais recente do pedido no estado
-    const order = orders.find(o => o.id === passedOrder.id) || passedOrder;
+    const order = orders.find((o: any) => o.id === passedOrder.id) || passedOrder;
     
     if (!order.telefone) {
       alert("O cliente não informou um número de telefone.");
@@ -60,14 +60,6 @@ const Orders = () => {
     if (phoneDigits.length < 10) {
       alert("Número de telefone inválido.");
       return;
-    }
-    
-    const formattedTotal = order.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-    const orderNumber = order.numero.split('-')[1] || order.numero;
-    
-    let itemsText = "";
-    if (order.itens && order.itens.length > 0) {
-      itemsText = "\n\nItens do Pedido:\n" + order.itens.map((item: any) => `- ${item.quantidade}x ${item.produto ? item.produto.nome : 'Produto'}`).join('\n');
     }
 
     // Now handled automatically by the backend via Webhooks & Meta API
