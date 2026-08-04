@@ -73,7 +73,8 @@ const WhatsApp = () => {
   );
 
   return (
-    <div className="flex h-full bg-dark-950 rounded-2xl border border-white/5 overflow-hidden shadow-2xl">
+    <div className="p-4 md:p-6 h-[calc(100vh-5rem)] md:h-full max-w-7xl mx-auto animate-in fade-in duration-500">
+      <div className="flex h-full bg-dark-950 rounded-2xl border border-white/5 overflow-hidden shadow-2xl">
       {/* Sidebar de Chats */}
       <div className="w-1/3 border-r border-white/5 bg-dark-900 flex flex-col min-w-[300px]">
         <div className="p-4 bg-black/20 border-b border-white/5">
@@ -122,7 +123,7 @@ const WhatsApp = () => {
       </div>
 
       {/* Área Principal de Chat */}
-      <div className="flex-1 bg-[url('https://i.ibb.co/3YxHjJd/whatsapp-bg.png')] bg-cover bg-center flex flex-col relative before:content-[''] before:absolute before:inset-0 before:bg-dark-950/90 before:z-0">
+      <div className="flex-1 bg-[#0b141a] flex flex-col relative z-0">
         {selectedChat ? (
           <>
             {/* Header do Chat */}
@@ -202,6 +203,7 @@ const WhatsApp = () => {
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 };
