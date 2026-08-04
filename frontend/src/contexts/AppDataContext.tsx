@@ -63,6 +63,21 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
   const [dashboardLoaded, setDashboardLoaded] = useState(false);
   const [caixaLoaded, setCaixaLoaded] = useState(false);
 
+// Helper function for browser notifications
+const showBrowserNotification = (title: string, body: string) => {
+  if (!("Notification" in window)) return;
+  
+  if (Notification.permission === "granted") {
+    new Notification(title, { body });
+  } else if (Notification.permission !== "denied") {
+    Notification.requestPermission().then(permission => {
+      if (permission === "granted") {
+        new Notification(title, { body });
+      }
+    });
+  }
+};
+
   // ========== Refresh Functions ==========
   const refreshOrders = useCallback(async () => {
     try {
@@ -72,8 +87,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
           try {
             const audio = new Audio(notificationSoundBase64);
             audio.play().catch(e => console.log('Autoplay blocked:', e));
+            showBrowserNotification("Novo Pedido!", "Um novo pedido acabou de chegar no Burger Hause.");
           } catch (e) {
-            console.error('Audio play error', e);
+            console.error('Audio/Notification error', e);
           }
         }
         return response.data;
@@ -147,14 +163,15 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
           totalIncomingPrev += chat.mensagens.filter((m: any) => m.direcao === 'in').length;
         });
 
-        // Se houver mais mensagens IN do que antes, toca o sino!
+        // Se houver mais mensagens IN do que antes, toca o sino e notifica!
         if (totalIncomingNovos > totalIncomingPrev) {
           setHasUnreadChats(true);
           try {
             const audio = new Audio(notificationSoundBase64);
             audio.play().catch(e => console.log('Autoplay blocked:', e));
+            showBrowserNotification("Nova Mensagem!", "Você recebeu uma nova mensagem no WhatsApp do Burger Hause.");
           } catch (e) {
-            console.error('Audio play error', e);
+            console.error('Audio/Notification error', e);
           }
         }
         
