@@ -94,7 +94,7 @@ const Menu = () => {
         <button 
           onClick={() => {
             setEditingId(null);
-            setNovoProduto({ nome: '', preco: '', preco_compra: '', categoria: '', controlar_estoque: false, estoque: '' });
+            setNovoProduto({ nome: '', preco: '', preco_compra: '', categoria: '', descricao: '', imagem_url: '', controlar_estoque: false, estoque: '' });
             setShowModal(true);
           }}
           className="premium-btn px-5 py-2.5 rounded-xl font-semibold flex items-center gap-2"
