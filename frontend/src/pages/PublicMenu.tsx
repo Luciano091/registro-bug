@@ -81,10 +81,6 @@ const PublicMenu = () => {
               <Clock size={14} className="text-brand-400" />
               {config?.tempo_medio_preparo} min
             </div>
-            <div className="flex items-center gap-1.5 bg-dark-800 px-3 py-1.5 rounded-full text-zinc-300">
-              <span className="text-green-400 font-bold">R$</span>
-              Taxa: {config?.taxa_entrega.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </div>
           </div>
         </div>
 
