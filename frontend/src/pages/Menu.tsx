@@ -7,7 +7,7 @@ const Menu = () => {
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [novoProduto, setNovoProduto] = useState({ nome: '', preco: '', preco_compra: '', categoria: '', controlar_estoque: false, estoque: '' });
+  const [novoProduto, setNovoProduto] = useState({ nome: '', preco: '', preco_compra: '', categoria: '', descricao: '', imagem_url: '', controlar_estoque: false, estoque: '' });
 
   const [activeCategory, setActiveCategory] = useState('Todos');
 
@@ -26,6 +26,8 @@ const Menu = () => {
       preco: item.preco.toString(), 
       preco_compra: item.preco_compra ? item.preco_compra.toString() : '', 
       categoria: item.categoria,
+      descricao: item.descricao || '',
+      imagem_url: item.imagem_url || '',
       controlar_estoque: item.controlar_estoque || false,
       estoque: item.estoque !== null && item.estoque !== undefined ? item.estoque.toString() : ''
     });
@@ -41,6 +43,8 @@ const Menu = () => {
         preco: parseFloat(novoProduto.preco),
         preco_compra: parseFloat(novoProduto.preco_compra) || 0.0,
         categoria: novoProduto.categoria || 'Geral',
+        descricao: novoProduto.descricao || null,
+        imagem_url: novoProduto.imagem_url || null,
         controlar_estoque: novoProduto.controlar_estoque,
         estoque: parseInt(novoProduto.estoque) || 0
       };
@@ -52,7 +56,7 @@ const Menu = () => {
       }
       
       setShowModal(false);
-      setNovoProduto({ nome: '', preco: '', preco_compra: '', categoria: '', controlar_estoque: false, estoque: '' });
+      setNovoProduto({ nome: '', preco: '', preco_compra: '', categoria: '', descricao: '', imagem_url: '', controlar_estoque: false, estoque: '' });
       setEditingId(null);
       refreshProdutos();
     } catch (error) {
