@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock, MapPin } from 'lucide-react';
+import { Clock, MapPin, X } from 'lucide-react';
 import api from '../services/api';
 
 const PublicMenu = () => {
@@ -7,6 +7,7 @@ const PublicMenu = () => {
   const [produtos, setProdutos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string>('Todos');
+  const [amplifiedImage, setAmplifiedImage] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -133,7 +134,10 @@ const PublicMenu = () => {
                         R$ {produto.preco.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </p>
                     </div>
-                    <div className="w-24 h-24 bg-dark-800 rounded-xl border border-white/5 overflow-hidden shrink-0 flex items-center justify-center text-zinc-600 relative">
+                    <div 
+                      className="w-24 h-24 bg-dark-800 rounded-xl border border-white/5 overflow-hidden shrink-0 flex items-center justify-center text-zinc-600 relative cursor-pointer"
+                      onClick={() => produto.imagem_url && setAmplifiedImage(produto.imagem_url)}
+                    >
                        {produto.imagem_url ? (
                          <img src={produto.imagem_url} alt={produto.nome} className="w-full h-full object-contain" referrerPolicy="no-referrer" />
                        ) : (
@@ -155,6 +159,27 @@ const PublicMenu = () => {
           )}
         </div>
       </div>
+
+      {amplifiedImage && (
+        <div 
+          className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in"
+          onClick={() => setAmplifiedImage(null)}
+        >
+          <button 
+            className="absolute top-4 right-4 text-white/50 hover:text-white bg-white/10 p-2 rounded-full"
+            onClick={() => setAmplifiedImage(null)}
+          >
+            <X size={24} />
+          </button>
+          <img 
+            src={amplifiedImage} 
+            alt="Produto" 
+            className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl" 
+            referrerPolicy="no-referrer"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 };
