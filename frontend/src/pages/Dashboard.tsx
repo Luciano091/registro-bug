@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Package, DollarSign, Receipt, TrendingUp, Printer, Lock } from 'lucide-react';
+import { Package, DollarSign, Receipt, TrendingUp, Printer } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import api from '../services/api';
 import { useAppData } from '../contexts/AppDataContext';
@@ -16,15 +16,6 @@ const Dashboard = () => {
     else refreshDashboard(); // Always refresh in background
   }, [dashboardLoaded, refreshDashboard]);
 
-  const handleFecharCaixa = async () => {
-    try {
-      const response = await api.get('/dashboard/relatorios');
-      setFechamentoData(response.data.resumo_diario);
-      setShowFechamento(true);
-    } catch (error) {
-      console.error(error);
-    }
-  };
 
   const data = [
     { name: 'Seg', vendas: 780 },
