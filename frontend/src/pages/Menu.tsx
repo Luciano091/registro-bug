@@ -183,7 +183,7 @@ const Menu = () => {
 
       {showModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="glass border border-white/10 rounded-3xl p-6 w-full max-w-md animate-in zoom-in-95 shadow-2xl">
+          <div className="glass border border-white/10 rounded-3xl p-6 w-full max-w-md animate-in zoom-in-95 shadow-2xl max-h-[95vh] overflow-y-auto custom-scrollbar">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-2xl font-bold font-heading">{editingId ? 'Editar Produto' : 'Novo Produto'}</h3>
               <button onClick={() => setShowModal(false)} className="text-zinc-500 hover:text-white transition-colors bg-white/5 p-2 rounded-full hover:bg-white/10">
