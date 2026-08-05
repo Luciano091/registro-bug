@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock, MapPin, Search, ChevronRight } from 'lucide-react';
+import { Clock, MapPin } from 'lucide-react';
 import api from '../services/api';
 
 const PublicMenu = () => {
