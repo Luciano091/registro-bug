@@ -13,6 +13,8 @@ class Produto(Base):
     id = Column(Integer, primary_key=True, index=True)
     nome = Column(String, index=True)
     categoria = Column(String, index=True)
+    descricao = Column(String, nullable=True)
+    imagem_url = Column(String, nullable=True)
     preco_compra = Column(Float, default=0.0)
     preco = Column(Float)
     ativo = Column(Boolean, default=True)

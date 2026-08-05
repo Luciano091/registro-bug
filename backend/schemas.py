@@ -6,7 +6,9 @@ from datetime import datetime
 class ProdutoBase(BaseModel):
     nome: str
     categoria: str
-    preco_compra: float = 0.0
+    descricao: Optional[str] = None
+    imagem_url: Optional[str] = None
+    preco_compra: Optional[float] = 0.0
     preco: float
     ativo: bool = True
     controlar_estoque: bool = False

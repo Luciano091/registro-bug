@@ -215,6 +215,28 @@ const Menu = () => {
                   ))}
                 </datalist>
               </div>
+
+              <div>
+                <label className="block text-sm text-zinc-400 mb-1">Descrição (Ingredientes)</label>
+                <textarea 
+                  value={novoProduto.descricao || ''} 
+                  onChange={e => setNovoProduto({...novoProduto, descricao: e.target.value})} 
+                  placeholder="Ex: Pão brioche, 150g de blend angus, queijo prato..."
+                  rows={2}
+                  className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all text-white placeholder-zinc-600 resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-zinc-400 mb-1">Link da Imagem (URL)</label>
+                <input 
+                  type="url"
+                  value={novoProduto.imagem_url || ''} 
+                  onChange={e => setNovoProduto({...novoProduto, imagem_url: e.target.value})} 
+                  placeholder="Ex: https://imgur.com/foto.png"
+                  className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all text-white placeholder-zinc-600"
+                />
+              </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>

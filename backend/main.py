@@ -36,6 +36,15 @@ try:
 except Exception:
     pass
 
+# Auto-migrate columns for descricao and imagem_url
+try:
+    with engine.begin() as conn:
+        from sqlalchemy import text
+        conn.execute(text("ALTER TABLE produtos ADD COLUMN descricao VARCHAR;"))
+        conn.execute(text("ALTER TABLE produtos ADD COLUMN imagem_url VARCHAR;"))
+except Exception:
+    pass
+
 app = FastAPI(title="Burger Hause API")
 
 app.add_middleware(

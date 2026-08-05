@@ -126,14 +126,21 @@ const PublicMenu = () => {
                   >
                     <div className="flex-1 min-w-0">
                       <h3 className="font-bold text-white text-base truncate">{produto.nome}</h3>
-                      <p className="text-brand-400 font-bold mt-1 text-sm">
+                      {produto.descricao && (
+                        <p className="text-zinc-400 text-xs mt-1 line-clamp-2 leading-relaxed">{produto.descricao}</p>
+                      )}
+                      <p className="text-brand-400 font-bold mt-2 text-sm">
                         R$ {produto.preco.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </p>
                     </div>
-                    <div className="w-20 h-20 bg-dark-800 rounded-xl border border-white/5 overflow-hidden shrink-0 flex items-center justify-center text-zinc-600 relative">
-                       <span className="font-bold font-heading text-2xl text-white/10 group-hover:text-white/20 transition-colors uppercase">
-                          {produto.nome.substring(0,2)}
-                       </span>
+                    <div className="w-24 h-24 bg-dark-800 rounded-xl border border-white/5 overflow-hidden shrink-0 flex items-center justify-center text-zinc-600 relative">
+                       {produto.imagem_url ? (
+                         <img src={produto.imagem_url} alt={produto.nome} className="w-full h-full object-cover" />
+                       ) : (
+                         <span className="font-bold font-heading text-2xl text-white/10 group-hover:text-white/20 transition-colors uppercase">
+                            {produto.nome.substring(0,2)}
+                         </span>
+                       )}
                     </div>
                   </div>
                 ))}
