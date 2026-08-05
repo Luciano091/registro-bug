@@ -78,9 +78,13 @@ class ConfiguracaoBase(BaseModel):
     tempo_medio_preparo: int
     whatsapp_auto_reply_enabled: bool = False
     whatsapp_auto_reply_text: Optional[str] = None
+    senha_admin: Optional[str] = None
 
 class ConfiguracaoCreate(ConfiguracaoBase):
     pass
+
+class LoginRequest(BaseModel):
+    senha: str
 
 class Configuracao(ConfiguracaoBase):
     id: int

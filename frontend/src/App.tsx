@@ -10,6 +10,8 @@ import Settings from './pages/Settings';
 import CashFlow from './pages/CashFlow';
 import WhatsApp from './pages/WhatsApp';
 import PublicMenu from './pages/PublicMenu';
+import Login from './pages/Login';
+import { Navigate } from 'react-router-dom';
 import { NetworkProvider, useNetwork } from './contexts/NetworkContext';
 import { AppDataProvider, useAppData } from './contexts/AppDataContext';
 import { WifiOff, RefreshCcw, MessageCircle } from 'lucide-react';
@@ -61,15 +63,21 @@ const NavLink = ({ to, icon: Icon, children, isCollapsed, hasBadge }: { to: stri
   );
 };
 
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const isAuthenticated = localStorage.getItem('adminToken') !== null;
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
+};
+
 function AppContent() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { hasUnreadChats } = useAppData();
   const location = useLocation();
 
-  if (location.pathname === '/menu-publico') {
+  if (location.pathname === '/menu-publico' || location.pathname === '/login') {
     return (
       <Routes>
         <Route path="/menu-publico" element={<PublicMenu />} />
+        <Route path="/login" element={<Login />} />
       </Routes>
     );
   }
@@ -129,14 +137,14 @@ function AppContent() {
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto relative pb-20 md:pb-0 z-10">
           <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/novo-pedido" element={<NewOrder />} />
-            <Route path="/pedidos" element={<Orders />} />
-            <Route path="/whatsapp" element={<WhatsApp />} />
-            <Route path="/caixa" element={<CashFlow />} />
-            <Route path="/cardapio" element={<Menu />} />
-            <Route path="/relatorios" element={<Reports />} />
-            <Route path="/configuracoes" element={<Settings />} />
+            <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/novo-pedido" element={<ProtectedRoute><NewOrder /></ProtectedRoute>} />
+            <Route path="/pedidos" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+            <Route path="/whatsapp" element={<ProtectedRoute><WhatsApp /></ProtectedRoute>} />
+            <Route path="/caixa" element={<ProtectedRoute><CashFlow /></ProtectedRoute>} />
+            <Route path="/cardapio" element={<ProtectedRoute><Menu /></ProtectedRoute>} />
+            <Route path="/relatorios" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+            <Route path="/configuracoes" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           </Routes>
         </main>
 

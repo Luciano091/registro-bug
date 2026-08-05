@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, Store, Phone, MapPin, Clock, MessageSquare } from 'lucide-react';
+import { Save, Store, Phone, MapPin, Clock, MessageSquare, Lock } from 'lucide-react';
 import api from '../services/api';
 
 const Settings = () => {
@@ -10,7 +10,8 @@ const Settings = () => {
     taxa_entrega: 0,
     tempo_medio_preparo: 0,
     whatsapp_auto_reply_enabled: false,
-    whatsapp_auto_reply_text: ''
+    whatsapp_auto_reply_text: '',
+    senha_admin: ''
   });
 
   useEffect(() => {
@@ -152,6 +153,40 @@ const Settings = () => {
                 ></textarea>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Security Section */}
+        <div className="glass border border-white/5 rounded-3xl p-6 md:p-8 relative overflow-hidden group hover:border-brand-500/30 transition-colors">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-brand-500/5 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none group-hover:bg-brand-500/10 transition-colors"></div>
+          
+          <div className="flex items-center gap-3 mb-6 relative z-10">
+            <div className="p-2.5 bg-brand-500/10 rounded-xl text-brand-400">
+              <Lock size={24} />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-white font-heading">Segurança</h3>
+              <p className="text-zinc-400 text-sm">Proteja o acesso ao painel de controle.</p>
+            </div>
+          </div>
+
+          <div className="space-y-6 relative z-10">
+            <div>
+              <label className="flex items-center gap-2 text-sm font-medium text-zinc-400 mb-2">
+                Senha de Administrador (PIN)
+              </label>
+              <input 
+                type="text" 
+                name="senha_admin" 
+                value={config.senha_admin || ''} 
+                onChange={handleChange}
+                placeholder="Ex: burger123"
+                className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all text-white"
+              />
+              <p className="text-xs text-zinc-500 mt-2">
+                Esta é a senha solicitada na tela de login para acessar o painel administrativo.
+              </p>
+            </div>
           </div>
         </div>
       </div>

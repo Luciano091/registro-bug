@@ -45,6 +45,14 @@ try:
 except Exception:
     pass
 
+# Auto-migrate column for senha_admin
+try:
+    with engine.begin() as conn:
+        from sqlalchemy import text
+        conn.execute(text("ALTER TABLE configuracoes ADD COLUMN senha_admin VARCHAR DEFAULT 'burger123';"))
+except Exception:
+    pass
+
 app = FastAPI(title="Burger Hause API")
 
 app.add_middleware(
@@ -131,6 +139,18 @@ def update_pedido_status(pedido_id: int, status: str, background_tasks: Backgrou
         background_tasks.add_task(send_status_whatsapp, db_pedido.telefone, message)
 
     return db_pedido
+
+# --- Autenticação ---
+@app.post("/auth/login")
+def login(login_req: schemas.LoginRequest, db: Session = Depends(get_db)):
+    config = crud.get_configuracao(db)
+    # Se ainda não houver configuração ou senha, definimos a padrão para teste
+    senha_correta = config.senha_admin if (config and config.senha_admin) else "burger123"
+    
+    if login_req.senha == senha_correta:
+        return {"token": "admin_token_super_secreto_burger_hause"}
+    else:
+        raise HTTPException(status_code=401, detail="Senha incorreta")
 
 # --- Configuracoes ---
 @app.get("/configuracao", response_model=schemas.Configuracao)

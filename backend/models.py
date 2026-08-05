@@ -67,6 +67,7 @@ class Configuracao(Base):
     tempo_medio_preparo = Column(Integer, default=30)
     whatsapp_auto_reply_enabled = Column(Boolean, default=False)
     whatsapp_auto_reply_text = Column(String, nullable=True)
+    senha_admin = Column(String, default="burger123")
 
 class Caixa(Base):
     __tablename__ = "caixas"
