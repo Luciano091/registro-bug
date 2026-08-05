@@ -9,6 +9,7 @@ import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import CashFlow from './pages/CashFlow';
 import WhatsApp from './pages/WhatsApp';
+import PublicMenu from './pages/PublicMenu';
 import { NetworkProvider, useNetwork } from './contexts/NetworkContext';
 import { AppDataProvider, useAppData } from './contexts/AppDataContext';
 import { WifiOff, RefreshCcw, MessageCircle } from 'lucide-react';
@@ -63,6 +64,15 @@ const NavLink = ({ to, icon: Icon, children, isCollapsed, hasBadge }: { to: stri
 function AppContent() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { hasUnreadChats } = useAppData();
+  const location = useLocation();
+
+  if (location.pathname === '/menu-publico') {
+    return (
+      <Routes>
+        <Route path="/menu-publico" element={<PublicMenu />} />
+      </Routes>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-[#0a0a0a] text-zinc-50 overflow-hidden font-sans relative">
