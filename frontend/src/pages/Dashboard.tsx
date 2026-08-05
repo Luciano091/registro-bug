@@ -1,15 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Package, DollarSign, Receipt, TrendingUp, Printer } from 'lucide-react';
+import { Package, DollarSign, Receipt, TrendingUp } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import api from '../services/api';
 import { useAppData } from '../contexts/AppDataContext';
 
 const Dashboard = () => {
-  const { dashboardResumo: cachedResumo, dashboardLoaded, refreshDashboard } = useAppData();
-  const resumo = cachedResumo;
+  const { dashboardResumo: resumo, dashboardLoaded, refreshDashboard } = useAppData();
 
-  const [showFechamento, setShowFechamento] = useState(false);
-  const [fechamentoData, setFechamentoData] = useState<any>(null);
+
 
   useEffect(() => {
     if (!dashboardLoaded) refreshDashboard();
@@ -143,61 +140,7 @@ const Dashboard = () => {
         </div>
       </div>
       </div>
-      
-      {showFechamento && fechamentoData && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="glass border border-white/10 rounded-3xl p-8 w-full max-w-sm animate-in zoom-in-95 shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 to-rose-500"></div>
-            
-            <div className="text-center mb-8">
-              <h3 className="text-3xl font-bold text-white font-heading">Fechamento</h3>
-              <p className="text-zinc-400 text-sm mt-2">{new Date().toLocaleDateString('pt-BR')} - {new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}</p>
-            </div>
-            
-            <div className="space-y-5 mb-8">
-              <div className="flex justify-between items-center pb-3 border-b border-white/10">
-                <span className="text-zinc-400">Total de Pedidos</span>
-                <span className="font-bold text-xl">{fechamentoData.pedidos}</span>
-              </div>
-              
-              <div className="space-y-3">
-                <p className="text-sm font-medium text-zinc-300 mb-2 uppercase tracking-widest text-xs">Recebimentos</p>
-                {fechamentoData.vendas_pagamento.map((vp: any, i: number) => (
-                  <div key={i} className="flex justify-between items-center text-sm">
-                    <span className="text-zinc-400">{vp.name}</span>
-                    <span className="font-medium text-zinc-200">{vp.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="flex justify-between items-center pt-5 border-t border-white/10">
-                <span className="text-lg font-medium text-zinc-300">Faturamento</span>
-                <span className="text-3xl font-bold gradient-text font-heading">
-                  {fechamentoData.faturamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                </span>
-              </div>
-            </div>
-            
-            <div className="flex flex-col gap-3">
-              <button 
-                onClick={() => window.print()}
-                className="w-full premium-btn py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2"
-              >
-                <Printer size={18} />
-                Imprimir Comprovante
-              </button>
-              <button 
-                onClick={() => setShowFechamento(false)} 
-                className="w-full py-3.5 rounded-xl font-medium text-zinc-400 hover:text-white hover:bg-white/5 transition-all"
-              >
-                Voltar ao Painel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
-    </div>
   );
 };
 
