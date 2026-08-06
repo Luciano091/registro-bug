@@ -76,12 +76,14 @@ app.add_middleware(
 @app.post("/upload")
 def upload_image(file: UploadFile = File(...), admin: bool = Depends(auth.get_current_admin)):
     if not os.getenv("CLOUDINARY_CLOUD_NAME"):
-        raise HTTPException(status_code=500, detail="Cloudinary não configurado")
+        raise HTTPException(status_code=500, detail="Cloudinary não configurado nas variáveis de ambiente do Render")
     try:
-        result = cloudinary.uploader.upload(file.file)
+        contents = file.file.read()
+        result = cloudinary.uploader.upload(contents)
         return {"url": result.get("secure_url")}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Erro no Cloudinary: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Cloudinary error: {str(e)}")
 
 # --- Produtos ---
 @app.get("/produtos", response_model=List[schemas.Produto])

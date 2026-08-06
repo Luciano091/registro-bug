@@ -51,9 +51,10 @@ const Menu = () => {
         },
       });
       setNovoProduto({ ...novoProduto, imagem_url: response.data.url });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao fazer upload da imagem:', error);
-      alert('Erro ao enviar imagem. Verifique se o Cloudinary está configurado.');
+      const detail = error.response?.data?.detail || error.message;
+      alert(`Erro ao enviar imagem: ${detail}`);
     } finally {
       setUploadingImage(false);
     }
