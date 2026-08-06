@@ -51,12 +51,12 @@ const PublicMenu = () => {
   return (
     <div className="min-h-screen bg-[#0F0F11] text-zinc-100 font-sans pb-16 selection:bg-brand-500/30 selection:text-white">
       {/* Banner Minimalista */}
-      <div className="h-56 w-full relative overflow-hidden bg-black">
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0F0F11] via-[#0F0F11]/80 to-transparent z-10"></div>
+      <div className="h-56 w-full relative">
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0F0F11] to-transparent z-10"></div>
         <img 
-          src="/logo.jpg" 
+          src="https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=1400&q=80" 
           alt="Capa" 
-          className="w-full h-full object-cover opacity-40 blur-sm scale-110"
+          className="w-full h-full object-cover"
         />
       </div>
 
