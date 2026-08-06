@@ -145,13 +145,34 @@ def update_pedido_status(pedido_id: int, status: str, background_tasks: Backgrou
 def login(login_req: schemas.LoginRequest, db: Session = Depends(get_db)):
     config = crud.get_configuracao(db)
     
-    # Valida senha
-    if config.senha_admin and auth.verify_password(login_req.senha, config.senha_admin):
-        access_token = auth.create_access_token(data={"role": "admin"})
-        return {"token": access_token}
-    
-    # Fallback to test password if not set
-    if not config.senha_admin and login_req.senha == "burger123":
+    is_valid = False
+    needs_rehash = False
+
+    if config.senha_admin:
+        # Tenta verificar se já é um hash do bcrypt
+        try:
+            if auth.verify_password(login_req.senha, config.senha_admin):
+                is_valid = True
+        except ValueError:
+            # Se der erro (ex: salt inválido), ou não verificar, tenta checar se é a senha em texto plano
+            pass
+
+        # Se não validou como hash, checa se bate com texto puro (legado)
+        if not is_valid and config.senha_admin == login_req.senha:
+            is_valid = True
+            needs_rehash = True
+    else:
+        # Se não tem senha configurada, o fallback é burger123
+        if login_req.senha == "burger123":
+            is_valid = True
+            needs_rehash = True
+
+    if is_valid:
+        # Se a senha estava em texto plano ou não existia, atualiza no banco com o hash
+        if needs_rehash:
+            config.senha_admin = auth.get_password_hash(login_req.senha)
+            db.commit()
+            
         access_token = auth.create_access_token(data={"role": "admin"})
         return {"token": access_token}
 
