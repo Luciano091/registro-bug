@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MapPin, X, ChevronRight, Clock, Info } from 'lucide-react';
+import { MapPin, X, ChevronRight, Clock, Info, Utensils } from 'lucide-react';
 import api from '../services/api';
 
 const PublicMenu = () => {
@@ -104,7 +104,7 @@ const PublicMenu = () => {
                 onClick={() => setActiveCategory(cat)}
                 className={`whitespace-nowrap px-5 py-2.5 rounded-full font-medium text-sm transition-colors ${
                   activeCategory === cat 
-                    ? 'bg-white text-black' 
+                    ? 'bg-brand-500 text-white shadow-md shadow-brand-500/20' 
                     : 'bg-[#18181A] text-zinc-400 hover:text-zinc-100 hover:bg-[#202022]'
                 }`}
               >
@@ -131,16 +131,16 @@ const PublicMenu = () => {
                   >
                     <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
                       <div>
-                        <h3 className="font-semibold text-zinc-100 text-[15px] truncate leading-tight">
+                        <h3 className="font-bold text-white text-[16px] md:text-[17px] tracking-tight truncate leading-tight">
                           {produto.nome}
                         </h3>
                         {produto.descricao && (
-                          <p className="text-zinc-500 text-[13px] mt-1.5 line-clamp-2 leading-snug">
+                          <p className="text-zinc-400 text-[13px] mt-1.5 line-clamp-2 leading-snug font-medium">
                             {produto.descricao}
                           </p>
                         )}
                       </div>
-                      <div className="mt-3 font-semibold text-[15px] text-white">
+                      <div className="mt-3 font-bold text-[16px] text-brand-400 tracking-wide">
                         {produto.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                       </div>
                     </div>
@@ -159,10 +159,8 @@ const PublicMenu = () => {
                            </div>
                          </>
                        ) : (
-                         <div className="w-full h-full flex items-center justify-center bg-zinc-900">
-                           <span className="font-medium text-lg text-zinc-700 uppercase">
-                              {produto.nome.substring(0,2)}
-                           </span>
+                         <div className="w-full h-full flex items-center justify-center bg-[#141416] border border-white/5">
+                           <Utensils size={32} strokeWidth={1.5} className="text-zinc-700" />
                          </div>
                        )}
                     </div>
