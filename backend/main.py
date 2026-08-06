@@ -195,7 +195,10 @@ def login(login_req: schemas.LoginRequest, db: Session = Depends(get_db)):
             config.senha_admin = auth.get_password_hash(login_req.senha)
             db.commit()
             
-        access_token = auth.create_access_token(data={"role": "admin"})
+        access_token = auth.create_access_token(
+            data={"role": "admin"},
+            expires_delta=timedelta(days=7)
+        )
         return {"token": access_token}
 
     raise HTTPException(status_code=401, detail="Senha incorreta")
