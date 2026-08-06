@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Home, PlusCircle, ListOrdered, Utensils, BarChart3, Settings as SettingsIcon, ChevronLeft, ChevronRight, Wallet } from 'lucide-react';
+import { Home, PlusCircle, ListOrdered, Utensils, BarChart3, Settings as SettingsIcon, ChevronLeft, ChevronRight, Wallet, LogOut } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import NewOrder from './pages/NewOrder';
 import Orders from './pages/Orders';
@@ -132,6 +132,20 @@ function AppContent() {
             <NavLink to="/relatorios" icon={BarChart3} isCollapsed={isCollapsed}>Relatórios</NavLink>
             <NavLink to="/configuracoes" icon={SettingsIcon} isCollapsed={isCollapsed}>Configurações</NavLink>
           </nav>
+          
+          <div className="p-4 border-t border-white/5 mt-auto">
+            <button 
+              onClick={() => {
+                localStorage.removeItem('adminToken');
+                window.location.href = '/login';
+              }}
+              className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 px-4'} py-3 rounded-xl transition-all duration-300 font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10`}
+              title={isCollapsed ? "Sair do Sistema" : undefined}
+            >
+              <LogOut size={20} className="flex-shrink-0" />
+              {!isCollapsed && <span>Sair</span>}
+            </button>
+          </div>
         </aside>
 
         {/* Main Content */}
