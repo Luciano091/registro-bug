@@ -7,6 +7,7 @@ const Menu = () => {
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [novoProduto, setNovoProduto] = useState({ nome: '', preco: '', preco_compra: '', categoria: '', descricao: '', imagem_url: '', controlar_estoque: false, estoque: '' });
 
   const [activeCategory, setActiveCategory] = useState('Todos');
@@ -33,6 +34,29 @@ const Menu = () => {
     });
     setEditingId(item.id);
     setShowModal(true);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await api.post('/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      setNovoProduto({ ...novoProduto, imagem_url: response.data.url });
+    } catch (error) {
+      console.error('Erro ao fazer upload da imagem:', error);
+      alert('Erro ao enviar imagem. Verifique se o Cloudinary está configurado.');
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const handleSave = async (e: any) => {
@@ -232,14 +256,33 @@ const Menu = () => {
               </div>
 
               <div>
-                <label className="block text-sm text-zinc-400 mb-1">Link da Imagem (URL)</label>
-                <input 
-                  type="url"
-                  value={novoProduto.imagem_url || ''} 
-                  onChange={e => setNovoProduto({...novoProduto, imagem_url: e.target.value})} 
-                  placeholder="Ex: https://imgur.com/foto.png"
-                  className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all text-white placeholder-zinc-600"
-                />
+                <label className="block text-sm text-zinc-400 mb-1">Imagem do Produto</label>
+                <div className="flex gap-3">
+                  <div className="flex-1">
+                    <input 
+                      type="url"
+                      value={novoProduto.imagem_url || ''} 
+                      onChange={e => setNovoProduto({...novoProduto, imagem_url: e.target.value})} 
+                      placeholder="URL (ou anexe um arquivo)"
+                      className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all text-white placeholder-zinc-600 mb-2"
+                    />
+                    <label className="cursor-pointer premium-btn py-2 px-4 rounded-xl font-semibold flex items-center justify-center gap-2 text-sm w-full text-center">
+                      {uploadingImage ? 'Enviando...' : 'Fazer Upload (PNG/JPG)'}
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={handleImageUpload} 
+                        disabled={uploadingImage}
+                        className="hidden" 
+                      />
+                    </label>
+                  </div>
+                  {novoProduto.imagem_url && (
+                    <div className="w-24 h-24 shrink-0 bg-dark-900 rounded-xl overflow-hidden border border-white/10">
+                      <img src={novoProduto.imagem_url} alt="Preview" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                </div>
               </div>
               
               <div className="grid grid-cols-2 gap-4">

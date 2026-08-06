@@ -4,6 +4,10 @@ from sqlalchemy.orm import Session
 from typing import List, Dict, Any
 import datetime
 from datetime import timedelta
+import os
+import cloudinary
+import cloudinary.uploader
+from fastapi import UploadFile, File
 
 import models, schemas, crud, whatsapp_api, auth
 from database import engine, get_db, SessionLocal
@@ -53,6 +57,12 @@ try:
 except Exception:
     pass
 
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET")
+)
+
 app = FastAPI(title="Burger Hause API")
 
 app.add_middleware(
@@ -62,6 +72,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.post("/upload")
+def upload_image(file: UploadFile = File(...), admin: bool = Depends(auth.get_current_admin)):
+    if not os.getenv("CLOUDINARY_CLOUD_NAME"):
+        raise HTTPException(status_code=500, detail="Cloudinary não configurado")
+    try:
+        result = cloudinary.uploader.upload(file.file)
+        return {"url": result.get("secure_url")}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # --- Produtos ---
 @app.get("/produtos", response_model=List[schemas.Produto])
