@@ -5,7 +5,7 @@ from typing import List, Dict, Any
 import datetime
 from datetime import timedelta
 
-import models, schemas, crud, whatsapp_api
+import models, schemas, crud, whatsapp_api, auth
 from database import engine, get_db, SessionLocal
 
 models.Base.metadata.create_all(bind=engine)
@@ -144,13 +144,18 @@ def update_pedido_status(pedido_id: int, status: str, background_tasks: Backgrou
 @app.post("/auth/login")
 def login(login_req: schemas.LoginRequest, db: Session = Depends(get_db)):
     config = crud.get_configuracao(db)
-    # Se ainda não houver configuração ou senha, definimos a padrão para teste
-    senha_correta = config.senha_admin if (config and config.senha_admin) else "burger123"
     
-    if login_req.senha == senha_correta:
-        return {"token": "admin_token_super_secreto_burger_hause"}
-    else:
-        raise HTTPException(status_code=401, detail="Senha incorreta")
+    # Valida senha
+    if config.senha_admin and auth.verify_password(login_req.senha, config.senha_admin):
+        access_token = auth.create_access_token(data={"role": "admin"})
+        return {"token": access_token}
+    
+    # Fallback to test password if not set
+    if not config.senha_admin and login_req.senha == "burger123":
+        access_token = auth.create_access_token(data={"role": "admin"})
+        return {"token": access_token}
+
+    raise HTTPException(status_code=401, detail="Senha incorreta")
 
 # --- Configuracoes ---
 @app.get("/configuracao", response_model=schemas.Configuracao)
@@ -163,7 +168,7 @@ def update_configuracao(config: schemas.ConfiguracaoCreate, db: Session = Depend
 
 # --- Dashboard & Relatorios ---
 @app.get("/dashboard/resumo")
-def get_dashboard_resumo(db: Session = Depends(get_db)):
+def get_dashboard_resumo(db: Session = Depends(get_db), admin: bool = Depends(auth.get_current_admin)):
     hoje = (datetime.datetime.utcnow() - datetime.timedelta(hours=3)).date()
     inicio_dia = datetime.datetime.combine(hoje, datetime.time.min)
     fim_dia = datetime.datetime.combine(hoje, datetime.time.max)
@@ -373,7 +378,7 @@ def get_dashboard_relatorios(periodo: str = "mes", start: str = None, end: str =
     }
 
 @app.get("/debug/relatorios")
-def debug_relatorios(db: Session = Depends(get_db)):
+def debug_relatorios(db: Session = Depends(get_db), admin: bool = Depends(auth.get_current_admin)):
     import traceback
     try:
         return get_dashboard_relatorios(periodo="mes", start=None, end=None, db=db)
@@ -382,7 +387,7 @@ def debug_relatorios(db: Session = Depends(get_db)):
 
 # --- Caixa ---
 @app.get("/caixa/status", response_model=schemas.Caixa)
-def get_caixa_status(db: Session = Depends(get_db)):
+def get_caixa_status(db: Session = Depends(get_db), admin: bool = Depends(auth.get_current_admin)):
     caixa = crud.get_caixa_aberto(db)
     if not caixa:
         raise HTTPException(status_code=404, detail="Nenhum caixa aberto no momento.")
@@ -435,7 +440,7 @@ async def receive_webhook(request: Request, background_tasks: BackgroundTasks):
     return {"status": "ok"}
 
 @app.get("/whatsapp/chats", response_model=List[schemas.WhatsAppContato])
-def get_whatsapp_chats(db: Session = Depends(get_db)):
+def get_whatsapp_chats(db: Session = Depends(get_db), admin: bool = Depends(auth.get_current_admin)):
     # Returns contacts with their latest messages, ordered by recent interaction
     contatos = db.query(models.WhatsAppContato).order_by(models.WhatsAppContato.ultima_interacao.desc()).all()
     return contatos

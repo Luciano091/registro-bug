@@ -107,10 +107,12 @@ def update_pedido_status(db: Session, pedido_id: int, status: str):
     return db_pedido
 
 # --- Configuracoes ---
+import auth
+
 def get_configuracao(db: Session):
     config = db.query(models.Configuracao).first()
     if not config:
-        config = models.Configuracao()
+        config = models.Configuracao(senha_admin=auth.get_password_hash("burger123"))
         db.add(config)
         db.commit()
         db.refresh(config)
@@ -118,12 +120,25 @@ def get_configuracao(db: Session):
 
 def update_configuracao(db: Session, config: schemas.ConfiguracaoCreate):
     db_config = db.query(models.Configuracao).first()
+    config_data = config.model_dump()
+    
+    # Hash password if provided
+    if "senha_admin" in config_data and config_data["senha_admin"]:
+        config_data["senha_admin"] = auth.get_password_hash(config_data["senha_admin"])
+
     if not db_config:
-        db_config = models.Configuracao(**config.model_dump())
+        if "senha_admin" not in config_data or not config_data["senha_admin"]:
+            config_data["senha_admin"] = auth.get_password_hash("burger123")
+        db_config = models.Configuracao(**config_data)
         db.add(db_config)
     else:
-        for key, value in config.model_dump().items():
-            setattr(db_config, key, value)
+        for key, value in config_data.items():
+            # Se for senha_admin, só atualiza se tiver vindo um valor novo (não nulo)
+            if key == "senha_admin":
+                if value:
+                    setattr(db_config, key, value)
+            else:
+                setattr(db_config, key, value)
     db.commit()
     db.refresh(db_config)
     return db_config
