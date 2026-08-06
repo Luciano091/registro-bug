@@ -153,8 +153,8 @@ def login(login_req: schemas.LoginRequest, db: Session = Depends(get_db)):
         try:
             if auth.verify_password(login_req.senha, config.senha_admin):
                 is_valid = True
-        except ValueError:
-            # Se der erro (ex: salt inválido), ou não verificar, tenta checar se é a senha em texto plano
+        except Exception:
+            # Se der erro (ex: salt inválido, UnknownHashError), tenta checar se é a senha em texto plano
             pass
 
         # Se não validou como hash, checa se bate com texto puro (legado)
