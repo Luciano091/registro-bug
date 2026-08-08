@@ -7,7 +7,7 @@ from datetime import timedelta
 import os
 import cloudinary
 import cloudinary.uploader
-from fastapi import UploadFile, File
+from fastapi import UploadFile, File, Form
 
 import models, schemas, crud, whatsapp_api, auth
 from database import engine, get_db, SessionLocal
@@ -74,12 +74,21 @@ app.add_middleware(
 )
 
 @app.post("/upload")
-def upload_image(file: UploadFile = File(...), admin: bool = Depends(auth.get_current_admin)):
+def upload_image(
+    file: UploadFile = File(...), 
+    remover_fundo: str = Form(None),
+    admin: bool = Depends(auth.get_current_admin)
+):
     if not os.getenv("CLOUDINARY_CLOUD_NAME"):
         raise HTTPException(status_code=500, detail="Cloudinary não configurado nas variáveis de ambiente do Render")
     try:
         contents = file.file.read()
-        result = cloudinary.uploader.upload(contents)
+        
+        options = {}
+        if remover_fundo == 'true':
+            options['background_removal'] = "cloudinary_ai"
+            
+        result = cloudinary.uploader.upload(contents, **options)
         return {"url": result.get("secure_url")}
     except Exception as e:
         print(f"Erro no Cloudinary: {str(e)}")

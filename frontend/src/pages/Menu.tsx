@@ -8,6 +8,7 @@ const Menu = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [removerFundo, setRemoverFundo] = useState(false);
   const [novoProduto, setNovoProduto] = useState({ nome: '', preco: '', preco_compra: '', categoria: '', descricao: '', imagem_url: '', controlar_estoque: false, estoque: '' });
 
   const [activeCategory, setActiveCategory] = useState('Todos');
@@ -43,6 +44,9 @@ const Menu = () => {
     setUploadingImage(true);
     const formData = new FormData();
     formData.append('file', file);
+    if (removerFundo) {
+      formData.append('remover_fundo', 'true');
+    }
 
     try {
       const response = await api.post('/upload', formData, {
@@ -267,7 +271,7 @@ const Menu = () => {
                       placeholder="URL (ou anexe um arquivo)"
                       className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all text-white placeholder-zinc-600 mb-2"
                     />
-                    <label className="cursor-pointer premium-btn py-2 px-4 rounded-xl font-semibold flex items-center justify-center gap-2 text-sm w-full text-center">
+                    <label className="cursor-pointer premium-btn py-2 px-4 rounded-xl font-semibold flex items-center justify-center gap-2 text-sm w-full text-center mb-3">
                       {uploadingImage ? 'Enviando...' : 'Fazer Upload (PNG/JPG)'}
                       <input 
                         type="file" 
@@ -276,6 +280,15 @@ const Menu = () => {
                         disabled={uploadingImage}
                         className="hidden" 
                       />
+                    </label>
+                    <label className="flex items-center gap-2 text-sm text-zinc-400 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={removerFundo}
+                        onChange={(e) => setRemoverFundo(e.target.checked)}
+                        className="w-4 h-4 rounded border-white/10 bg-dark-900 text-brand-500 focus:ring-brand-500/50"
+                      />
+                      Remover fundo (Cloudinary AI)
                     </label>
                   </div>
                   {novoProduto.imagem_url && (
