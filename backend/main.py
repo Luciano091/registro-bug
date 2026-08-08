@@ -86,7 +86,7 @@ def upload_image(
         
         options = {}
         if remover_fundo == 'true':
-            options['background_removal'] = "cloudinary_ai"
+            options['background_removal'] = "pixelz"
             
         result = cloudinary.uploader.upload(contents, **options)
         return {"url": result.get("secure_url")}
