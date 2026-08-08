@@ -288,7 +288,7 @@ const Menu = () => {
                         onChange={(e) => setRemoverFundo(e.target.checked)}
                         className="w-4 h-4 rounded border-white/10 bg-dark-900 text-brand-500 focus:ring-brand-500/50"
                       />
-                      Remover fundo (Cloudinary AI)
+                      Remover fundo (Automático)
                     </label>
                   </div>
                   {novoProduto.imagem_url && (
