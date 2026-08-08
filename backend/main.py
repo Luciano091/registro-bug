@@ -91,7 +91,7 @@ def upload_image(
                 from rembg import remove, new_session
                 global rembg_session
                 if 'rembg_session' not in globals():
-                    globals()['rembg_session'] = new_session("u2netp")
+                    globals()['rembg_session'] = new_session("u2net")
                 
                 contents = remove(contents, session=globals()['rembg_session'])
             except Exception as e:
