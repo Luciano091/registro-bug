@@ -76,7 +76,7 @@ app.add_middleware(
 @app.post("/upload")
 def upload_image(
     file: UploadFile = File(...), 
-    remover_fundo: str = Form(None),
+    remover_fundo: bool = Form(False),
     admin: bool = Depends(auth.get_current_admin)
 ):
     if not os.getenv("CLOUDINARY_CLOUD_NAME"):
@@ -85,7 +85,7 @@ def upload_image(
         contents = file.file.read()
         
         options = {}
-        if remover_fundo == 'true':
+        if remover_fundo:
             options['format'] = 'png'
             try:
                 from rembg import remove, new_session
