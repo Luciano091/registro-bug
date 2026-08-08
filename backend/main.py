@@ -84,12 +84,22 @@ def upload_image(
     try:
         contents = file.file.read()
         
-        options = {}
         if remover_fundo == 'true':
-            options['background_removal'] = "pixelz"
+            try:
+                from rembg import remove, new_session
+                global rembg_session
+                if 'rembg_session' not in globals():
+                    globals()['rembg_session'] = new_session("u2netp")
+                
+                contents = remove(contents, session=globals()['rembg_session'])
+            except Exception as e:
+                print(f"Erro ao remover fundo localmente: {str(e)}")
+                raise HTTPException(status_code=500, detail=f"Erro IA rembg: {str(e)}")
             
-        result = cloudinary.uploader.upload(contents, **options)
+        result = cloudinary.uploader.upload(contents)
         return {"url": result.get("secure_url")}
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"Erro no Cloudinary: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Cloudinary error: {str(e)}")
