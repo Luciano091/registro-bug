@@ -14,22 +14,6 @@ const PublicMenu = () => {
   // Modals state
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  const [timeLeft, setTimeLeft] = useState("");
-
-  useEffect(() => {
-    const updateTimer = () => {
-      const now = new Date();
-      const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-      const diff = tomorrow.getTime() - now.getTime();
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-      setTimeLeft(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
-    };
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -159,13 +143,10 @@ const PublicMenu = () => {
           {/* 🌟 DESTAQUE DO DIA */}
           {destaqueDoDia && (
             <div className="mb-14">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center mb-4">
                 <h2 className="text-xl font-heading font-bold text-white flex items-center gap-2 uppercase tracking-wide">
                   <Flame size={20} className="text-brand-500" /> Destaque do Dia
                 </h2>
-                <div className="text-[10px] md:text-xs text-zinc-400 font-medium">
-                  Troca automática em <span className="text-brand-400 ml-1">{timeLeft}</span>
-                </div>
               </div>
               
               <div 
@@ -205,13 +186,13 @@ const PublicMenu = () => {
                   </div>
                 </div>
 
-                {/* Right Content (Image) absolute on mobile to overflow the right side */}
-                <div className="absolute right-[-25%] md:right-[-5%] top-1/2 -translate-y-1/2 w-[70%] md:w-[50%] h-[120%] flex items-center justify-center pointer-events-none">
+                {/* Right Content (Image) */}
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[55%] md:w-[50%] h-full flex items-center justify-center pointer-events-none pr-2 md:pr-6">
                   {destaqueDoDia.imagem_url ? (
                     <img 
                       src={destaqueDoDia.imagem_url} 
                       alt={destaqueDoDia.nome} 
-                      className="w-full h-full object-contain scale-[1.3] md:scale-[1.1] transition-transform duration-700 group-hover:scale-[1.4] drop-shadow-[0_20px_40px_rgba(0,0,0,0.8)]" 
+                      className="w-full h-[80%] object-contain scale-[1.15] md:scale-[1.1] transition-transform duration-700 group-hover:scale-[1.25] drop-shadow-[0_20px_40px_rgba(0,0,0,0.8)]" 
                       referrerPolicy="no-referrer" 
                     />
                   ) : (
