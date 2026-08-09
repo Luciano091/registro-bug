@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { MapPin, Clock, Utensils, Plus, Flame, Star, ChevronRight } from 'lucide-react';
+import { MapPin, Clock, Utensils, Plus, Flame, ChevronRight } from 'lucide-react';
 import api from '../services/api';
 import { ProductModal } from '../components/ProductModal';
 import { FloatingCart } from '../components/FloatingCart';
