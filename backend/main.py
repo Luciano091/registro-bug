@@ -87,31 +87,34 @@ def upload_image(
         options = {}
         if remover_fundo:
             try:
-                print("Iniciando modo de DEBUG: Inverter cores...")
-                from PIL import Image, ImageOps
+                print("Iniciando remoção de fundo com rembg...")
+                from rembg import remove, new_session
+                from PIL import Image
                 import io
                 
-                input_image = Image.open(io.BytesIO(contents))
-                if input_image.mode == 'RGBA':
-                    # Create white background for alpha channel before inverting
-                    background = Image.new("RGB", input_image.size, (255, 255, 255))
-                    background.paste(input_image, mask=input_image.split()[3]) # 3 is the alpha channel
-                    input_image = background
-                else:
-                    input_image = input_image.convert('RGB')
-                    
-                output_image = ImageOps.invert(input_image)
+                global rembg_session
+                if 'rembg_session' not in globals():
+                    print("Carregando modelo isnet-general-use...")
+                    globals()['rembg_session'] = new_session("isnet-general-use")
                 
+                # Convert bytes to PIL Image
+                input_image = Image.open(io.BytesIO(contents))
+                
+                # Remove background with post processing
+                print("Aplicando IA isnet-general-use...")
+                output_image = remove(input_image, session=globals()['rembg_session'], post_process_mask=True)
+                
+                # Convert back to bytes
                 img_byte_arr = io.BytesIO()
                 output_image.save(img_byte_arr, format='PNG')
                 contents = img_byte_arr.getvalue()
                 options['format'] = 'png'
-                print("Inversão concluída com sucesso.")
+                print("Remoção de fundo concluída com sucesso.")
             except Exception as e:
                 import traceback
                 traceback.print_exc()
-                print(f"Erro no DEBUG invert: {str(e)}")
-                raise HTTPException(status_code=500, detail=f"Erro Invert: {str(e)}")
+                print(f"Erro ao remover fundo localmente: {str(e)}")
+                raise HTTPException(status_code=500, detail=f"Erro IA rembg: {str(e)}")
             
         print("Fazendo upload para Cloudinary...")
         result = cloudinary.uploader.upload(contents, **options)
