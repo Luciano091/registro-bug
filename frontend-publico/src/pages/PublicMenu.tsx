@@ -68,32 +68,32 @@ const PublicMenu = () => {
   return (
     <div className="min-h-screen bg-[#0D0D0D] text-zinc-100 font-sans pb-24 selection:bg-brand-500/30 selection:text-white">
       
-      {/* HEADER / HERO (Compacto) */}
-      <div className="h-44 md:h-56 w-full relative">
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0D0D0D] via-[#0D0D0D]/60 to-black/30 z-10"></div>
+      {/* HEADER / HERO */}
+      <div className="w-full relative flex flex-col items-center justify-end min-h-[260px] md:min-h-[300px] pt-12 pb-6">
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0D0D0D] via-[#0D0D0D]/70 to-black/30 z-10 pointer-events-none"></div>
         <img 
           src="https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=1400&q=80" 
           alt="Capa" 
-          className="w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
         />
         
         {/* Informações da Loja por cima do Hero */}
-        <div className="absolute inset-x-0 bottom-0 z-20 flex flex-col items-center pb-6">
-          <div className="w-20 h-20 md:w-24 md:h-24 bg-[#171717] rounded-full p-1 border-2 border-white/10 shadow-2xl mb-3">
+        <div className="relative z-20 flex flex-col items-center w-full px-4 mt-auto">
+          <div className="w-28 h-28 md:w-32 md:h-32 bg-[#171717] rounded-full p-1 border-2 border-white/10 shadow-2xl mb-4 shrink-0">
             <img src={config?.logo || "/logo.jpg"} alt={config?.nome_empresa || "Logo"} className="w-full h-full object-cover rounded-full" />
           </div>
-          <h1 className="text-3xl md:text-4xl font-heading font-bold text-white tracking-wide">
+          <h1 className="text-3xl md:text-4xl font-heading font-bold text-white tracking-wide text-center">
             {config?.nome_empresa || 'Burger Hause'}
           </h1>
-          <p className="text-brand-400 font-bold tracking-widest text-sm uppercase mt-1 mb-3">O Lanche</p>
+          <p className="text-brand-400 font-bold tracking-widest text-sm uppercase mt-1 mb-4 text-center">O Lanche</p>
           
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap justify-center items-center gap-3">
              <div className="bg-[#171717]/80 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2 text-xs font-bold text-white shadow-lg">
-                <div className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse"></div>
+                <div className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse shrink-0"></div>
                 Aberto
              </div>
              <div className="bg-[#171717]/80 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2 text-xs font-bold text-white shadow-lg">
-                <Clock size={14} className="text-brand-500" />
+                <Clock size={14} className="text-brand-500 shrink-0" />
                 ~ {config?.tempo_medio_preparo || 30} min
              </div>
           </div>
