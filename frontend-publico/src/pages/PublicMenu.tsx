@@ -161,16 +161,16 @@ const PublicMenu = () => {
                 </div>
 
                 {/* Left Content (Text) */}
-                <div className="relative z-30 w-[55%] md:w-1/2 p-5 md:p-8 flex flex-col justify-center">
+                <div className="relative z-30 w-[55%] md:w-1/2 p-4 md:p-8 flex flex-col justify-center">
                   <div className="inline-flex items-center gap-1.5 bg-brand-500 text-white text-[10px] md:text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider mb-2 w-fit shadow-[0_0_15px_rgba(249,115,22,0.5)]">
                     <Flame size={12} fill="currentColor" /> Especial
                   </div>
                   
-                  <h3 className="font-heading font-bold text-white text-3xl md:text-5xl uppercase tracking-wide mb-3 leading-none drop-shadow-lg">
+                  <h3 className="font-heading font-bold text-white text-3xl md:text-5xl uppercase tracking-wide mb-2 leading-none drop-shadow-lg">
                     {destaqueDoDia.nome}
                   </h3>
-
-                  <p className="text-zinc-300 text-[11px] md:text-sm leading-snug mb-4 line-clamp-3 md:line-clamp-3 drop-shadow-md font-medium">
+                  
+                  <p className="text-zinc-300 text-[11px] md:text-sm leading-snug mb-4 line-clamp-4 md:line-clamp-3 drop-shadow-md font-medium pr-2">
                     {destaqueDoDia.descricao || "Pão brioche, blend artesanal, cheddar, bacon crocante, alface, tomate e molho da casa."}
                   </p>
 
@@ -178,19 +178,19 @@ const PublicMenu = () => {
                     <span className="font-price font-bold text-2xl md:text-3xl text-brand-400 drop-shadow-md">
                       {destaqueDoDia.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </span>
-                    <div className="inline-flex items-center justify-center gap-2 bg-brand-500 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-brand-500/30 transition-transform group-hover:scale-105 active:scale-95 w-fit">
+                    <div className="inline-flex items-center justify-center gap-2 bg-brand-500 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-brand-500/30 transition-transform group-hover:scale-105 active:scale-95 w-fit mt-1">
                       <Plus size={16} /> Pedir
                     </div>
                   </div>
                 </div>
 
                 {/* Right Content (Image) completely absolute and NOT constrained by overflow-hidden! */}
-                <div className="absolute right-[-40px] md:right-0 top-1/2 -translate-y-1/2 w-[240px] h-[240px] md:w-[350px] md:h-[350px] flex items-center justify-center pointer-events-none z-20">
+                <div className="absolute right-[-12px] md:right-0 top-1/2 -translate-y-1/2 w-[210px] h-[210px] md:w-[320px] md:h-[320px] flex items-center justify-center pointer-events-none z-20">
                   {destaqueDoDia.imagem_url ? (
                     <img 
                       src={destaqueDoDia.imagem_url} 
                       alt={destaqueDoDia.nome} 
-                      className="w-full h-full object-contain scale-[1.7] md:scale-[1.4] transition-transform duration-700 group-hover:scale-[1.8] drop-shadow-[0_20px_40px_rgba(0,0,0,0.8)]" 
+                      className="w-full h-full object-contain scale-[1.45] md:scale-[1.3] transition-transform duration-700 group-hover:scale-[1.55] drop-shadow-[0_20px_40px_rgba(0,0,0,0.8)]" 
                       referrerPolicy="no-referrer" 
                     />
                   ) : (
