@@ -94,14 +94,14 @@ def upload_image(
                 
                 global rembg_session
                 if 'rembg_session' not in globals():
-                    print("Carregando modelo isnet-general-use...")
-                    globals()['rembg_session'] = new_session("isnet-general-use")
+                    print("Carregando modelo silueta...")
+                    globals()['rembg_session'] = new_session("silueta")
                 
                 # Convert bytes to PIL Image
                 input_image = Image.open(io.BytesIO(contents))
                 
                 # Remove background with post processing
-                print("Aplicando IA isnet-general-use...")
+                print("Aplicando IA silueta...")
                 output_image = remove(input_image, session=globals()['rembg_session'], post_process_mask=True)
                 
                 # Convert back to bytes
