@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-dark-900 text-zinc-50 font-sans antialiased selection:bg-brand-500/30;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading tracking-tight;
+  }
+}
+
+/* Scrollbar styles - Ultra minimal */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #27272a; /* zinc-800 */
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #52525b; /* zinc-600 */
+}
+
+/* Utilities for glassmorphism */
+@layer utilities {
+  .glass {
+    @apply bg-black/40 backdrop-blur-[32px] border border-white/5 shadow-[20px_0_40px_rgba(0,0,0,0.5)];
+  }
+  .glass-card {
+    @apply bg-[rgba(15,10,5,0.3)] backdrop-blur-[24px] border border-white/[0.05] shadow-2xl hover:bg-[rgba(15,10,5,0.4)] transition-all duration-300;
+  }
+  .gradient-text {
+    @apply bg-gradient-to-r from-orange-400 to-rose-500 bg-clip-text text-transparent;
+  }
+  .premium-btn {
+    @apply bg-gradient-to-r from-brand-500 to-rose-600 hover:from-brand-400 hover:to-rose-500 text-white shadow-lg shadow-brand-500/25 transition-all duration-300 border border-white/10 active:scale-95;
+  }
+}
+
+/* Print Styles */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  /* Make main content take full width */
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+  
+  /* Clean up cards for printing */
+  .glass, .glass-card {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    border: 1px solid #e4e4e7 !important;
+    box-shadow: none !important;
+    color: black !important;
+    break-inside: avoid;
+    margin-bottom: 24px !important;
+  }
+  
+  /* Force text colors to be printable */
+  .text-white, .text-zinc-50, .text-zinc-400, .text-zinc-500, .text-brand-400 {
+    color: #18181b !important;
+  }
+
+  /* Fix gradients */
+  .gradient-text {
+    background: none !important;
+    color: #18181b !important;
+    -webkit-text-fill-color: #18181b !important;
+  }
+
+  /* Ensure SVG text in charts is visible */
+  text {
+    fill: #18181b !important;
+  }
+}

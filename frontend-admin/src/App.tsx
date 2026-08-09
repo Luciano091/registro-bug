@@ -9,7 +9,6 @@ import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import CashFlow from './pages/CashFlow';
 import WhatsApp from './pages/WhatsApp';
-import PublicMenu from './pages/PublicMenu';
 import Login from './pages/Login';
 import { Navigate } from 'react-router-dom';
 import { NetworkProvider, useNetwork } from './contexts/NetworkContext';
@@ -72,11 +71,11 @@ function AppContent() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { hasUnreadChats } = useAppData();
   const location = useLocation();
-
-  if (location.pathname === '/menu-publico' || location.pathname === '/login') {
+  const isLoginRoute = location.pathname === '/login';
+  
+  if (isLoginRoute) {
     return (
       <Routes>
-        <Route path="/menu-publico" element={<PublicMenu />} />
         <Route path="/login" element={<Login />} />
       </Routes>
     );
