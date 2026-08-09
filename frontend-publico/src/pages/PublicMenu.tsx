@@ -36,7 +36,12 @@ const PublicMenu = () => {
   // Hooks não podem ser chamados após o return!
   const maisVendidos = useMemo(() => {
     if (activeCategory !== 'Todos') return [];
-    return produtos.slice(0, 4);
+    
+    // Prioriza hambúrgueres para os mais vendidos
+    const burgers = produtos.filter(p => p.categoria && p.categoria.toLowerCase().includes('hamburguer'));
+    
+    // Se não tiver hambúrguer, pega os primeiros produtos de forma geral
+    return burgers.length > 0 ? burgers.slice(0, 4) : produtos.slice(0, 4);
   }, [produtos, activeCategory]);
 
   if (loading) {
