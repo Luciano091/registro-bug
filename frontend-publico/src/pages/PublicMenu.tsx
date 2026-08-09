@@ -33,6 +33,12 @@ const PublicMenu = () => {
     fetchData();
   }, []);
 
+  // Hooks não podem ser chamados após o return!
+  const maisVendidos = useMemo(() => {
+    if (activeCategory !== 'Todos') return [];
+    return produtos.slice(0, 4);
+  }, [produtos, activeCategory]);
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-[#0D0D0D]">
@@ -53,12 +59,6 @@ const PublicMenu = () => {
     acc[cat].push(produto);
     return acc;
   }, {});
-
-  // Simulando "Mais Vendidos" pegando os 4 primeiros produtos apenas para dar destaque visual
-  const maisVendidos = useMemo(() => {
-    if (activeCategory !== 'Todos') return [];
-    return produtos.slice(0, 4);
-  }, [produtos, activeCategory]);
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] text-zinc-100 font-sans pb-24 selection:bg-brand-500/30 selection:text-white">
