@@ -166,14 +166,9 @@ const PublicMenu = () => {
                     <Flame size={12} fill="currentColor" /> Especial
                   </div>
                   
-                  <h3 className="font-heading font-bold text-white text-3xl md:text-5xl uppercase tracking-wide mb-1 leading-none drop-shadow-lg">
+                  <h3 className="font-heading font-bold text-white text-3xl md:text-5xl uppercase tracking-wide mb-3 leading-none drop-shadow-lg">
                     {destaqueDoDia.nome}
                   </h3>
-                  
-                  <div className="flex items-center gap-1 mb-2 drop-shadow-md">
-                    {[1,2,3,4,5].map(i => <Star key={i} size={12} className="text-brand-500" fill="currentColor" />)}
-                    <span className="text-zinc-300 text-[10px] md:text-xs ml-1 font-bold">(328)</span>
-                  </div>
 
                   <p className="text-zinc-300 text-[11px] md:text-sm leading-snug mb-4 line-clamp-3 md:line-clamp-3 drop-shadow-md font-medium">
                     {destaqueDoDia.descricao || "Pão brioche, blend artesanal, cheddar, bacon crocante, alface, tomate e molho da casa."}
