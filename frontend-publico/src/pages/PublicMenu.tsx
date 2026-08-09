@@ -246,14 +246,11 @@ const PublicMenu = () => {
           </div>
           <h4 className="font-heading text-xl text-zinc-500 mb-2">{config?.nome_empresa || 'Burger Hause'}</h4>
           {config?.endereco && (
-            <p className="text-zinc-600 text-sm max-w-sm flex items-center justify-center gap-1.5 mb-2">
+            <p className="text-zinc-600 text-sm max-w-sm flex items-center justify-center gap-1.5">
               <MapPin size={14} />
               {config.endereco}
             </p>
           )}
-          <p className="text-zinc-700 text-xs mt-6">
-            © {new Date().getFullYear()} Desenvolvido com Antigravity
-          </p>
         </div>
       </footer>
 
