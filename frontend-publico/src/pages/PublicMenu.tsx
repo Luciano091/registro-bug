@@ -46,14 +46,20 @@ const PublicMenu = () => {
   }, []);
 
   // Hooks não podem ser chamados após o return!
-  const maisVendidos = useMemo(() => {
-    if (activeCategory !== 'Todos') return [];
+  // Produto Destaque do Dia (Rodízio diário)
+  const destaqueDoDia = useMemo(() => {
+    if (activeCategory !== 'Todos') return null;
     
-    // Prioriza hambúrgueres para os mais vendidos
+    // Filtra apenas hambúrgueres
     const burgers = produtos.filter(p => p.categoria && p.categoria.toLowerCase().includes('hamburguer'));
+    if (burgers.length === 0) return null;
     
-    // Se não tiver hambúrguer, pega os primeiros produtos de forma geral
-    return burgers.length > 0 ? burgers.slice(0, 4) : produtos.slice(0, 4);
+    // Usa o dia do ano para fazer o rodízio (muda 1x por dia)
+    const start = new Date(new Date().getFullYear(), 0, 0).getTime();
+    const diff = new Date().getTime() - start;
+    const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
+    
+    return burgers[dayOfYear % burgers.length];
   }, [produtos, activeCategory]);
 
   if (loading) {
@@ -134,54 +140,60 @@ const PublicMenu = () => {
 
         <div className="space-y-12">
           
-          {/* 🔥 MAIS VENDIDOS */}
-          {maisVendidos.length > 0 && (
-            <div>
+          {/* 🌟 DESTAQUE DO DIA */}
+          {destaqueDoDia && (
+            <div className="mb-12">
               <h2 className="text-2xl font-heading font-bold text-white mb-6 flex items-center gap-2">
-                <span className="text-brand-500">🔥</span> Mais Vendidos
+                <span className="text-brand-500">🌟</span> Destaque do Dia
               </h2>
               
-              <div className="flex overflow-x-auto hide-scrollbar gap-4 -mx-4 px-4 pb-4 md:mx-0 md:px-0 md:grid md:grid-cols-2 lg:grid-cols-4">
-                {maisVendidos.map((produto: any) => (
-                  <div 
-                    key={`mv-${produto.id}`} 
-                    className="w-[240px] md:w-auto shrink-0 group bg-[#171717] rounded-2xl overflow-hidden flex flex-col transition-all hover:bg-[#262626] cursor-pointer shadow-lg shadow-black/50 border border-white/5"
-                    onClick={() => setSelectedProduct(produto)}
-                  >
-                    <div className="w-full h-40 bg-[#0F0F11] relative overflow-hidden">
-                       {produto.imagem_url ? (
-                         <img 
-                           src={produto.imagem_url} 
-                           alt={produto.nome} 
-                           className="w-full h-full object-contain p-3 transition-transform duration-500 group-hover:scale-110" 
-                           referrerPolicy="no-referrer" 
-                         />
-                       ) : (
-                         <div className="w-full h-full flex items-center justify-center bg-[#171717]">
-                           <Utensils size={32} strokeWidth={1.5} className="text-zinc-700" />
-                         </div>
-                       )}
-                    </div>
-                    <div className="p-4 flex flex-col flex-1">
-                      <h3 className="font-sans font-semibold text-white text-[16px] md:text-[18px] tracking-tight leading-tight line-clamp-1">
-                        {produto.nome}
+              <div 
+                className="group relative w-full bg-[#171717] rounded-3xl overflow-hidden cursor-pointer shadow-2xl shadow-brand-500/5 border border-brand-500/20 transition-all hover:shadow-brand-500/20 hover:border-brand-500/40"
+                onClick={() => setSelectedProduct(destaqueDoDia)}
+              >
+                {/* Imagem Ampliada */}
+                <div className="w-full h-[240px] md:h-[320px] bg-gradient-to-b from-[#1a1a1c] to-[#0D0D0D] relative overflow-hidden flex items-center justify-center">
+                  <div className="absolute inset-0 bg-brand-500/5 mix-blend-overlay"></div>
+                  {destaqueDoDia.imagem_url ? (
+                    <img 
+                      src={destaqueDoDia.imagem_url} 
+                      alt={destaqueDoDia.nome} 
+                      className="w-full h-full object-contain p-6 md:p-10 transition-transform duration-700 group-hover:scale-110 drop-shadow-2xl" 
+                      referrerPolicy="no-referrer" 
+                    />
+                  ) : (
+                    <Utensils size={64} strokeWidth={1} className="text-zinc-700" />
+                  )}
+                  
+                  {/* Badge */}
+                  <div className="absolute top-4 right-4 bg-brand-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg uppercase tracking-wider">
+                    Especial
+                  </div>
+                </div>
+
+                {/* Informações overlay (Degradê subindo do fundo) */}
+                <div className="p-5 md:p-6 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/90 to-transparent absolute bottom-0 w-full flex flex-col justify-end pt-24">
+                  <div className="flex items-end justify-between gap-4">
+                    <div className="flex-1">
+                      <h3 className="font-sans font-bold text-white text-xl md:text-2xl tracking-tight leading-tight drop-shadow-md">
+                        {destaqueDoDia.nome}
                       </h3>
-                      {produto.descricao && (
-                        <p className="text-zinc-400 text-xs mt-1.5 line-clamp-2 leading-relaxed mb-4 flex-1">
-                          {produto.descricao}
+                      {destaqueDoDia.descricao && (
+                        <p className="text-zinc-300 text-sm mt-1.5 line-clamp-2 leading-relaxed drop-shadow-md">
+                          {destaqueDoDia.descricao}
                         </p>
                       )}
-                      <div className="flex items-center justify-between mt-auto pt-2">
-                        <span className="font-price font-bold text-[17px] text-brand-400">
-                          {produto.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                        </span>
-                        <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-brand-500 group-hover:text-white transition-colors">
-                          <Plus size={16} />
-                        </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="font-price font-bold text-[22px] md:text-[26px] text-brand-400 drop-shadow-md">
+                        {destaqueDoDia.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </div>
+                      <div className="mt-2 inline-flex items-center gap-1.5 bg-brand-500 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-brand-500/30 transition-transform group-hover:scale-105 active:scale-95">
+                        <Plus size={16} /> Pedir
                       </div>
                     </div>
                   </div>
-                ))}
+                </div>
               </div>
             </div>
           )}
