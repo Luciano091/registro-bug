@@ -150,49 +150,52 @@ const PublicMenu = () => {
               </div>
               
               <div 
-                className="group relative w-full bg-[#131313] rounded-3xl overflow-hidden cursor-pointer shadow-2xl border border-brand-500/20 transition-all hover:border-brand-500/50 flex items-center min-h-[260px] md:min-h-[300px]"
+                className="group relative w-full cursor-pointer transition-all flex items-center min-h-[220px] md:min-h-[280px] mt-4"
                 onClick={() => setSelectedProduct(destaqueDoDia)}
               >
-                {/* Background Bokeh / Glows */}
-                <div className="absolute right-0 top-0 w-64 h-64 bg-brand-500/20 rounded-full blur-[80px] pointer-events-none translate-x-1/2 -translate-y-1/2"></div>
-                <div className="absolute left-10 bottom-0 w-40 h-40 bg-orange-600/10 rounded-full blur-[60px] pointer-events-none"></div>
+                {/* Background Layer with Overflow Hidden to contain glows */}
+                <div className="absolute inset-0 bg-[#131313] rounded-3xl overflow-hidden shadow-2xl border border-brand-500/20 group-hover:border-brand-500/40 transition-colors">
+                   {/* Glows */}
+                   <div className="absolute right-0 top-0 w-64 h-64 bg-brand-500/20 rounded-full blur-[80px] pointer-events-none translate-x-1/2 -translate-y-1/2"></div>
+                   <div className="absolute left-10 bottom-0 w-40 h-40 bg-orange-600/10 rounded-full blur-[60px] pointer-events-none"></div>
+                </div>
 
                 {/* Left Content (Text) */}
-                <div className="relative z-10 w-[55%] md:w-1/2 p-5 md:p-8 flex flex-col justify-center">
-                  <div className="inline-flex items-center gap-1.5 bg-brand-500 text-white text-[10px] md:text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider mb-3 w-fit shadow-[0_0_15px_rgba(249,115,22,0.5)]">
+                <div className="relative z-30 w-[55%] md:w-1/2 p-5 md:p-8 flex flex-col justify-center">
+                  <div className="inline-flex items-center gap-1.5 bg-brand-500 text-white text-[10px] md:text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider mb-2 w-fit shadow-[0_0_15px_rgba(249,115,22,0.5)]">
                     <Flame size={12} fill="currentColor" /> Especial
                   </div>
                   
-                  <h3 className="font-heading font-bold text-white text-3xl md:text-5xl uppercase tracking-wide mb-1 leading-none drop-shadow-md">
+                  <h3 className="font-heading font-bold text-white text-3xl md:text-5xl uppercase tracking-wide mb-1 leading-none drop-shadow-lg">
                     {destaqueDoDia.nome}
                   </h3>
                   
-                  <div className="flex items-center gap-1 mb-3">
+                  <div className="flex items-center gap-1 mb-2 drop-shadow-md">
                     {[1,2,3,4,5].map(i => <Star key={i} size={12} className="text-brand-500" fill="currentColor" />)}
-                    <span className="text-zinc-400 text-[10px] md:text-xs ml-1 font-medium">(328)</span>
+                    <span className="text-zinc-300 text-[10px] md:text-xs ml-1 font-bold">(328)</span>
                   </div>
 
-                  <p className="text-zinc-400 text-xs md:text-sm leading-relaxed mb-5 line-clamp-2 md:line-clamp-3">
+                  <p className="text-zinc-300 text-[11px] md:text-sm leading-snug mb-4 line-clamp-3 md:line-clamp-3 drop-shadow-md font-medium">
                     {destaqueDoDia.descricao || "Pão brioche, blend artesanal, cheddar, bacon crocante, alface, tomate e molho da casa."}
                   </p>
 
-                  <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 mt-auto">
-                    <span className="font-price font-bold text-2xl md:text-3xl text-brand-400 drop-shadow-sm">
+                  <div className="flex flex-col gap-2 mt-auto">
+                    <span className="font-price font-bold text-2xl md:text-3xl text-brand-400 drop-shadow-md">
                       {destaqueDoDia.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </span>
-                    <div className="inline-flex items-center justify-center gap-2 bg-brand-500 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-brand-500/25 transition-transform group-hover:scale-105 active:scale-95 w-fit">
+                    <div className="inline-flex items-center justify-center gap-2 bg-brand-500 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-brand-500/30 transition-transform group-hover:scale-105 active:scale-95 w-fit">
                       <Plus size={16} /> Pedir
                     </div>
                   </div>
                 </div>
 
-                {/* Right Content (Image) */}
-                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[55%] md:w-[50%] h-full flex items-center justify-center pointer-events-none pr-2 md:pr-6">
+                {/* Right Content (Image) completely absolute and NOT constrained by overflow-hidden! */}
+                <div className="absolute right-[-10px] md:right-8 top-1/2 -translate-y-1/2 w-[160px] h-[160px] md:w-[280px] md:h-[280px] flex items-center justify-center pointer-events-none z-20">
                   {destaqueDoDia.imagem_url ? (
                     <img 
                       src={destaqueDoDia.imagem_url} 
                       alt={destaqueDoDia.nome} 
-                      className="w-full h-[80%] object-contain scale-[1.15] md:scale-[1.1] transition-transform duration-700 group-hover:scale-[1.25] drop-shadow-[0_20px_40px_rgba(0,0,0,0.8)]" 
+                      className="w-full h-full object-contain scale-[1.4] md:scale-[1.25] transition-transform duration-700 group-hover:scale-[1.5] drop-shadow-[0_20px_40px_rgba(0,0,0,0.8)]" 
                       referrerPolicy="no-referrer" 
                     />
                   ) : (
