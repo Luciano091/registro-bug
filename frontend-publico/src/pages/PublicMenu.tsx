@@ -136,7 +136,7 @@ const PublicMenu = () => {
                          <img 
                            src={produto.imagem_url} 
                            alt={produto.nome} 
-                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                           className="w-full h-full object-contain p-3 transition-transform duration-500 group-hover:scale-110" 
                            referrerPolicy="no-referrer" 
                          />
                        ) : (
@@ -188,7 +188,7 @@ const PublicMenu = () => {
                          <img 
                            src={produto.imagem_url} 
                            alt={produto.nome} 
-                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                           className="w-full h-full object-contain p-3 transition-transform duration-500 group-hover:scale-110" 
                            referrerPolicy="no-referrer" 
                          />
                        ) : (

@@ -55,7 +55,7 @@ export const ProductModal = ({ produto, onClose }: ProductModalProps) => {
             <img 
               src={produto.imagem_url} 
               alt={produto.nome} 
-              className="w-full h-full object-cover" 
+              className="w-full h-full object-contain p-4" 
               referrerPolicy="no-referrer"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#141416] to-transparent"></div>
