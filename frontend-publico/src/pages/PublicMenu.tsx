@@ -150,7 +150,7 @@ const PublicMenu = () => {
               </div>
               
               <div 
-                className="group relative w-full cursor-pointer transition-all flex items-center min-h-[220px] md:min-h-[280px] mt-4"
+                className="group relative w-full cursor-pointer transition-all flex items-center min-h-[260px] md:min-h-[300px] mt-4"
                 onClick={() => setSelectedProduct(destaqueDoDia)}
               >
                 {/* Background Layer with Overflow Hidden to contain glows */}
@@ -190,12 +190,12 @@ const PublicMenu = () => {
                 </div>
 
                 {/* Right Content (Image) completely absolute and NOT constrained by overflow-hidden! */}
-                <div className="absolute right-[-10px] md:right-8 top-1/2 -translate-y-1/2 w-[160px] h-[160px] md:w-[280px] md:h-[280px] flex items-center justify-center pointer-events-none z-20">
+                <div className="absolute right-[-40px] md:right-0 top-1/2 -translate-y-1/2 w-[240px] h-[240px] md:w-[350px] md:h-[350px] flex items-center justify-center pointer-events-none z-20">
                   {destaqueDoDia.imagem_url ? (
                     <img 
                       src={destaqueDoDia.imagem_url} 
                       alt={destaqueDoDia.nome} 
-                      className="w-full h-full object-contain scale-[1.4] md:scale-[1.25] transition-transform duration-700 group-hover:scale-[1.5] drop-shadow-[0_20px_40px_rgba(0,0,0,0.8)]" 
+                      className="w-full h-full object-contain scale-[1.7] md:scale-[1.4] transition-transform duration-700 group-hover:scale-[1.8] drop-shadow-[0_20px_40px_rgba(0,0,0,0.8)]" 
                       referrerPolicy="no-referrer" 
                     />
                   ) : (
