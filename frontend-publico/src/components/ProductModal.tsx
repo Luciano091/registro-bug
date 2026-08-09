@@ -48,7 +48,7 @@ export const ProductModal = ({ produto, onClose }: ProductModalProps) => {
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4 animate-in fade-in duration-200">
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
       
-      <div className="relative w-full md:max-w-xl bg-[#141416] rounded-t-3xl md:rounded-3xl overflow-hidden flex flex-col max-h-[90vh] md:max-h-[85vh] shadow-2xl shadow-black">
+      <div className="relative w-full md:max-w-xl bg-[#141416] rounded-t-3xl md:rounded-3xl overflow-hidden flex flex-col max-h-[90vh] md:max-h-[85vh] shadow-2xl shadow-black min-w-0">
         {/* Imagem Cover */}
         {produto.imagem_url && (
           <div className="w-full h-56 md:h-64 relative bg-[#0F0F11]">
@@ -69,17 +69,17 @@ export const ProductModal = ({ produto, onClose }: ProductModalProps) => {
           <X size={20} />
         </button>
 
-        <div className="flex-1 overflow-y-auto hide-scrollbar p-6">
-          <div className="flex justify-between items-start gap-4">
-            <div>
-              <h2 className="font-sans text-xl md:text-2xl font-semibold text-white tracking-wide leading-tight">{produto.nome}</h2>
+        <div className="flex-1 overflow-y-auto hide-scrollbar p-5 md:p-6">
+          <div className="flex justify-between items-start gap-3 md:gap-4">
+            <div className="flex-1 min-w-0">
+              <h2 className="font-sans text-xl md:text-2xl font-semibold text-white tracking-wide leading-tight break-words">{produto.nome}</h2>
               {produto.descricao && (
                 <p className="text-zinc-400 text-sm mt-2 leading-relaxed">
                   {produto.descricao}
                 </p>
               )}
             </div>
-            <div className="font-price font-bold text-xl text-brand-400 shrink-0">
+            <div className="font-price font-bold text-lg md:text-xl text-brand-400 shrink-0 mt-0.5">
               {produto.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
             </div>
           </div>
@@ -131,10 +131,10 @@ export const ProductModal = ({ produto, onClose }: ProductModalProps) => {
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 md:p-6 bg-[#18181A] border-t border-white/5 flex gap-4 items-center">
-          <div className="flex items-center gap-4 bg-[#202022] rounded-xl p-2 shrink-0 border border-white/5">
+        <div className="p-4 md:p-6 bg-[#18181A] border-t border-white/5 flex gap-3 md:gap-4 items-center">
+          <div className="flex items-center gap-2 md:gap-4 bg-[#202022] rounded-xl p-1.5 md:p-2 shrink-0 border border-white/5">
             <button 
-              className="text-zinc-400 hover:text-white p-2 rounded-lg hover:bg-white/5 disabled:opacity-50 transition-colors"
+              className="text-zinc-400 hover:text-white p-1.5 md:p-2 rounded-lg hover:bg-white/5 disabled:opacity-50 transition-colors"
               onClick={() => setQuantidade(Math.max(1, quantidade - 1))}
               disabled={quantidade <= 1}
             >
@@ -142,7 +142,7 @@ export const ProductModal = ({ produto, onClose }: ProductModalProps) => {
             </button>
             <span className="font-bold text-white w-4 text-center">{quantidade}</span>
             <button 
-              className="text-zinc-400 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors"
+              className="text-zinc-400 hover:text-white p-1.5 md:p-2 rounded-lg hover:bg-white/5 transition-colors"
               onClick={() => setQuantidade(quantidade + 1)}
             >
               <Plus size={18} />
@@ -151,10 +151,10 @@ export const ProductModal = ({ produto, onClose }: ProductModalProps) => {
           
           <button 
             onClick={handleAdd}
-            className="flex-1 bg-brand-500 hover:bg-brand-600 text-white p-4 rounded-xl font-bold flex items-center justify-between transition-colors shadow-lg shadow-brand-500/20 active:scale-[0.98]"
+            className="flex-1 bg-brand-500 hover:bg-brand-600 text-white p-3.5 md:p-4 rounded-xl font-bold flex items-center justify-between transition-colors shadow-lg shadow-brand-500/20 active:scale-[0.98] min-w-0"
           >
-            <span>Adicionar</span>
-            <span className="font-price tracking-tight">
+            <span className="truncate mr-2">Adicionar</span>
+            <span className="font-price tracking-tight shrink-0">
               {totalPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
             </span>
           </button>
