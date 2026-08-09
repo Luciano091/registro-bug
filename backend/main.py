@@ -87,34 +87,31 @@ def upload_image(
         options = {}
         if remover_fundo:
             try:
-                print("Iniciando remoção de fundo com rembg...")
-                from rembg import remove, new_session
-                from PIL import Image
+                print("Iniciando modo de DEBUG: Inverter cores...")
+                from PIL import Image, ImageOps
                 import io
                 
-                global rembg_session
-                if 'rembg_session' not in globals():
-                    print("Carregando modelo u2net...")
-                    globals()['rembg_session'] = new_session("u2net")
-                
-                # Convert bytes to PIL Image
                 input_image = Image.open(io.BytesIO(contents))
+                if input_image.mode == 'RGBA':
+                    # Create white background for alpha channel before inverting
+                    background = Image.new("RGB", input_image.size, (255, 255, 255))
+                    background.paste(input_image, mask=input_image.split()[3]) # 3 is the alpha channel
+                    input_image = background
+                else:
+                    input_image = input_image.convert('RGB')
+                    
+                output_image = ImageOps.invert(input_image)
                 
-                # Remove background
-                print("Aplicando IA...")
-                output_image = remove(input_image, session=globals()['rembg_session'])
-                
-                # Convert back to bytes
                 img_byte_arr = io.BytesIO()
                 output_image.save(img_byte_arr, format='PNG')
                 contents = img_byte_arr.getvalue()
                 options['format'] = 'png'
-                print("Remoção de fundo concluída com sucesso.")
+                print("Inversão concluída com sucesso.")
             except Exception as e:
                 import traceback
                 traceback.print_exc()
-                print(f"Erro ao remover fundo localmente: {str(e)}")
-                raise HTTPException(status_code=500, detail=f"Erro IA rembg: {str(e)}")
+                print(f"Erro no DEBUG invert: {str(e)}")
+                raise HTTPException(status_code=500, detail=f"Erro Invert: {str(e)}")
             
         print("Fazendo upload para Cloudinary...")
         result = cloudinary.uploader.upload(contents, **options)
