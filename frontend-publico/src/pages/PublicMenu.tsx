@@ -152,15 +152,15 @@ const PublicMenu = () => {
                 onClick={() => setSelectedProduct(destaqueDoDia)}
               >
                 {/* Imagem Ampliada */}
-                <div className="w-full h-[280px] md:h-[340px] bg-[#0A0A0B] relative overflow-hidden flex items-center justify-center">
-                  {/* Spotlight (brilho radial atrás do hambúrguer) */}
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(249,115,22,0.15)_0%,transparent_65%)] pointer-events-none"></div>
+                <div className="w-full h-[280px] md:h-[340px] bg-[#111112] relative overflow-hidden flex items-center justify-center">
+                  {/* Spotlight FORTE (brilho radial laranja bem visível atrás do hambúrguer) */}
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(249,115,22,0.4)_0%,transparent_70%)] pointer-events-none mix-blend-screen opacity-80 group-hover:opacity-100 transition-opacity duration-700"></div>
                   
                   {destaqueDoDia.imagem_url ? (
                     <img 
                       src={destaqueDoDia.imagem_url} 
                       alt={destaqueDoDia.nome} 
-                      className="w-full h-full object-contain p-4 pb-20 md:pb-24 transition-transform duration-700 group-hover:scale-110 drop-shadow-[0_15px_25px_rgba(0,0,0,0.8)]" 
+                      className="w-full h-full object-contain scale-[1.25] md:scale-[1.15] -translate-y-4 transition-transform duration-700 group-hover:scale-[1.35] drop-shadow-[0_20px_40px_rgba(249,115,22,0.4)]" 
                       referrerPolicy="no-referrer" 
                     />
                   ) : (
@@ -173,8 +173,8 @@ const PublicMenu = () => {
                   </div>
                 </div>
 
-                {/* Informações overlay (Degradê subindo do fundo) */}
-                <div className="p-5 md:p-6 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/95 to-transparent absolute bottom-0 w-full flex flex-col justify-end pt-32">
+                {/* Informações overlay (Degradê suave subindo do fundo) */}
+                <div className="p-5 md:p-6 bg-gradient-to-t from-[#111112] via-[#111112]/80 to-transparent absolute bottom-0 w-full flex flex-col justify-end pt-28 pointer-events-none">
                   <div className="flex items-end justify-between gap-4">
                     <div className="flex-1">
                       <h3 className="font-sans font-bold text-white text-xl md:text-2xl tracking-tight leading-tight drop-shadow-md">
