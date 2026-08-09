@@ -7,21 +7,22 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
-        heading: ['Outfit', 'sans-serif'],
+        sans: ['Poppins', 'sans-serif'],
+        heading: ['Bebas Neue', 'sans-serif'],
+        price: ['Montserrat', 'sans-serif'],
       },
       colors: {
         brand: {
-          50: '#fff7ed',
-          100: '#ffedd5',
-          200: '#fed7aa',
-          300: '#fdba74',
-          400: '#fb923c',
-          500: '#f97316',
-          600: '#ea580c',
-          700: '#c2410c',
-          800: '#9a3412',
-          900: '#7c2d12',
+          50: '#fff3e5',
+          100: '#ffe4cc',
+          200: '#ffca99',
+          300: '#ffaa66',
+          400: '#ff8a33',
+          500: '#F58220', // Laranja principal
+          600: '#cc6111',
+          700: '#99440a',
+          800: '#662b05',
+          900: '#331301',
         },
         dark: {
           900: '#0a0a0b',
