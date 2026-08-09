@@ -146,7 +146,7 @@ const PublicMenu = () => {
                        )}
                     </div>
                     <div className="p-4 flex flex-col flex-1">
-                      <h3 className="font-semibold text-white text-[16px] md:text-[18px] tracking-tight leading-tight line-clamp-1">
+                      <h3 className="font-sans font-semibold text-white text-[16px] md:text-[18px] tracking-tight leading-tight line-clamp-1">
                         {produto.nome}
                       </h3>
                       {produto.descricao && (
@@ -200,7 +200,7 @@ const PublicMenu = () => {
 
                     <div className="flex-1 min-w-0 flex flex-col justify-between py-1 pr-2">
                       <div>
-                        <h3 className="font-semibold text-white text-[16px] md:text-[18px] tracking-tight leading-tight">
+                        <h3 className="font-sans font-semibold text-white text-[16px] md:text-[18px] tracking-tight leading-tight">
                           {produto.nome}
                         </h3>
                         {produto.descricao && (

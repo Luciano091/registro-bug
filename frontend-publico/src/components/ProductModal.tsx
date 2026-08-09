@@ -72,7 +72,7 @@ export const ProductModal = ({ produto, onClose }: ProductModalProps) => {
         <div className="flex-1 overflow-y-auto hide-scrollbar p-6">
           <div className="flex justify-between items-start gap-4">
             <div>
-              <h2 className="text-xl md:text-2xl font-semibold text-white tracking-wide leading-tight">{produto.nome}</h2>
+              <h2 className="font-sans text-xl md:text-2xl font-semibold text-white tracking-wide leading-tight">{produto.nome}</h2>
               {produto.descricao && (
                 <p className="text-zinc-400 text-sm mt-2 leading-relaxed">
                   {produto.descricao}
