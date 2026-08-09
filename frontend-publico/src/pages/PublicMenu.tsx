@@ -146,7 +146,7 @@ const PublicMenu = () => {
                        )}
                     </div>
                     <div className="p-4 flex flex-col flex-1">
-                      <h3 className="font-heading font-bold text-white text-xl tracking-wide line-clamp-1">
+                      <h3 className="font-bold text-white text-[16px] md:text-[18px] tracking-tight leading-tight line-clamp-1">
                         {produto.nome}
                       </h3>
                       {produto.descricao && (
