@@ -152,27 +152,29 @@ const PublicMenu = () => {
                 onClick={() => setSelectedProduct(destaqueDoDia)}
               >
                 {/* Imagem Ampliada */}
-                <div className="w-full h-[240px] md:h-[320px] bg-gradient-to-b from-[#1a1a1c] to-[#0D0D0D] relative overflow-hidden flex items-center justify-center">
-                  <div className="absolute inset-0 bg-brand-500/5 mix-blend-overlay"></div>
+                <div className="w-full h-[280px] md:h-[340px] bg-[#0A0A0B] relative overflow-hidden flex items-center justify-center">
+                  {/* Spotlight (brilho radial atrás do hambúrguer) */}
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(249,115,22,0.15)_0%,transparent_65%)] pointer-events-none"></div>
+                  
                   {destaqueDoDia.imagem_url ? (
                     <img 
                       src={destaqueDoDia.imagem_url} 
                       alt={destaqueDoDia.nome} 
-                      className="w-full h-full object-contain p-6 md:p-10 transition-transform duration-700 group-hover:scale-110 drop-shadow-2xl" 
+                      className="w-full h-full object-contain p-4 pb-20 md:pb-24 transition-transform duration-700 group-hover:scale-110 drop-shadow-[0_15px_25px_rgba(0,0,0,0.8)]" 
                       referrerPolicy="no-referrer" 
                     />
                   ) : (
-                    <Utensils size={64} strokeWidth={1} className="text-zinc-700" />
+                    <Utensils size={64} strokeWidth={1} className="text-zinc-700 mb-12" />
                   )}
                   
                   {/* Badge */}
-                  <div className="absolute top-4 right-4 bg-brand-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg uppercase tracking-wider">
+                  <div className="absolute top-4 right-4 bg-brand-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg uppercase tracking-wider z-20">
                     Especial
                   </div>
                 </div>
 
                 {/* Informações overlay (Degradê subindo do fundo) */}
-                <div className="p-5 md:p-6 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/90 to-transparent absolute bottom-0 w-full flex flex-col justify-end pt-24">
+                <div className="p-5 md:p-6 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/95 to-transparent absolute bottom-0 w-full flex flex-col justify-end pt-32">
                   <div className="flex items-end justify-between gap-4">
                     <div className="flex-1">
                       <h3 className="font-sans font-bold text-white text-xl md:text-2xl tracking-tight leading-tight drop-shadow-md">
