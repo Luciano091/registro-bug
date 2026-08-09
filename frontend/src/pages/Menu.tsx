@@ -38,17 +38,23 @@ const Menu = () => {
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    let file = e.target.files?.[0];
     if (!file) return;
 
     setUploadingImage(true);
-    const formData = new FormData();
-    formData.append('file', file);
-    if (removerFundo) {
-      formData.append('remover_fundo', 'true');
-    }
 
     try {
+      if (removerFundo) {
+        // Run AI locally in the browser
+        const { default: removeBackground } = await import('@imgly/background-removal');
+        const imageBlob = await removeBackground(file);
+        // Create a new File from the blob
+        file = new File([imageBlob], "image-transparent.png", { type: "image/png" });
+      }
+
+      const formData = new FormData();
+      formData.append('file', file);
+
       const response = await api.post('/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',

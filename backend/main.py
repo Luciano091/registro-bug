@@ -76,7 +76,6 @@ app.add_middleware(
 @app.post("/upload")
 def upload_image(
     file: UploadFile = File(...), 
-    remover_fundo: bool = Form(False),
     admin: bool = Depends(auth.get_current_admin)
 ):
     if not os.getenv("CLOUDINARY_CLOUD_NAME"):
@@ -84,43 +83,8 @@ def upload_image(
     try:
         contents = file.file.read()
         
-        options = {}
-        if remover_fundo:
-            try:
-                print("Iniciando remoção de fundo com rembg...")
-                from rembg import remove, new_session
-                from PIL import Image
-                import io
-                
-                global rembg_session
-                if 'rembg_session' not in globals():
-                    print("Carregando modelo silueta...")
-                    globals()['rembg_session'] = new_session("silueta")
-                
-                # Convert bytes to PIL Image
-                input_image = Image.open(io.BytesIO(contents))
-                
-                # Remove background with post processing
-                print("Aplicando IA silueta...")
-                output_image = remove(input_image, session=globals()['rembg_session'], post_process_mask=True)
-                
-                # Convert back to bytes
-                img_byte_arr = io.BytesIO()
-                output_image.save(img_byte_arr, format='PNG')
-                contents = img_byte_arr.getvalue()
-                options['format'] = 'png'
-                print("Remoção de fundo concluída com sucesso.")
-            except Exception as e:
-                import traceback
-                traceback.print_exc()
-                print(f"Erro ao remover fundo localmente: {str(e)}")
-                raise HTTPException(status_code=500, detail=f"Erro IA rembg: {str(e)}")
-            
-        print("Fazendo upload para Cloudinary...")
-        result = cloudinary.uploader.upload(contents, **options)
+        result = cloudinary.uploader.upload(contents)
         return {"url": result.get("secure_url")}
-    except HTTPException:
-        raise
     except Exception as e:
         print(f"Erro no Cloudinary: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Cloudinary error: {str(e)}")

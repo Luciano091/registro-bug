@@ -11,24 +11,25 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@imgly/background-removal": "^1.7.0",
     "axios": "^1.19.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
+    "idb": "latest",
     "lucide-react": "^1.27.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-router-dom": "^7.18.2",
     "recharts": "^3.10.1",
     "tailwind-merge": "^3.6.0",
-    "idb": "latest",
     "uuid": "latest"
   },
   "devDependencies": {
+    "@playwright/test": "^1.42.1",
     "@types/node": "^24.13.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@types/uuid": "^10.0.0",
-    "@playwright/test": "^1.42.1",
     "@vitejs/plugin-react": "^6.0.3",
     "autoprefixer": "^10.5.4",
     "oxlint": "^1.71.0",
