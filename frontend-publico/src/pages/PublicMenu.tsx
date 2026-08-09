@@ -127,11 +127,11 @@ const PublicMenu = () => {
                   >
                     <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
                       <div>
-                        <h3 className="font-bold text-white text-[16px] md:text-[17px] tracking-tight line-clamp-2 leading-tight">
+                        <h3 className="font-bold text-white text-[16px] md:text-[17px] tracking-tight leading-tight">
                           {produto.nome}
                         </h3>
                         {produto.descricao && (
-                          <p className="text-zinc-400 text-[13px] mt-1.5 line-clamp-2 leading-snug font-medium">
+                          <p className="text-zinc-400 text-[13px] mt-1.5 leading-snug font-medium">
                             {produto.descricao}
                           </p>
                         )}
