@@ -44,6 +44,13 @@
   .premium-btn {
     @apply bg-gradient-to-r from-brand-500 to-rose-600 hover:from-brand-400 hover:to-rose-500 text-white shadow-lg shadow-brand-500/25 transition-all duration-300 border border-white/10 active:scale-95;
   }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
 
 /* Print Styles */
