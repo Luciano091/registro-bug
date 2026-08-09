@@ -88,7 +88,7 @@ export const ProductModal = ({ produto, onClose }: ProductModalProps) => {
           {produto.adicionais && produto.adicionais.length > 0 && (
             <div className="mt-8">
               <div className="bg-[#18181A] p-4 rounded-2xl border border-white/5">
-                <h3 className="font-bold text-white mb-1">Turbine seu pedido</h3>
+                <h3 className="font-sans font-bold text-white mb-1">Turbine seu pedido</h3>
                 <p className="text-xs text-zinc-500 mb-4">Escolha opções adicionais (opcional)</p>
                 
                 <div className="space-y-3">
@@ -120,7 +120,7 @@ export const ProductModal = ({ produto, onClose }: ProductModalProps) => {
           )}
 
           <div className="mt-6">
-            <h3 className="font-bold text-white mb-3 text-sm">Alguma observação?</h3>
+            <h3 className="font-sans font-bold text-white mb-3 text-sm">Alguma observação?</h3>
             <textarea 
               value={observacao}
               onChange={(e) => setObservacao(e.target.value)}
