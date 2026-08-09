@@ -90,9 +90,9 @@ const Login = () => {
         </div>
         
         <div className="mt-8 text-center">
-           <button onClick={() => navigate('/menu-publico')} className="text-zinc-500 hover:text-brand-400 transition-colors text-sm font-semibold">
+           <a href="https://menu-burgerhouse.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-brand-400 transition-colors text-sm font-semibold">
               Ver Cardápio Público
-           </button>
+           </a>
         </div>
 
       </div>
