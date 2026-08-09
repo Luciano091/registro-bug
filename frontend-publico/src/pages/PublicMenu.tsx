@@ -22,8 +22,20 @@ const PublicMenu = () => {
           api.get('/configuracao'),
           api.get('/produtos')
         ]);
-        setConfig(configRes.data);
+        const conf = configRes.data;
+        setConfig(conf);
         setProdutos(prodRes.data.filter((p: any) => p.ativo));
+        
+        // Atualizar o ícone (favicon) dinamicamente com a logo do restaurante
+        if (conf.logo) {
+          let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+          if (!link) {
+            link = document.createElement('link');
+            link.rel = 'icon';
+            document.head.appendChild(link);
+          }
+          link.href = conf.logo;
+        }
       } catch (error) {
         console.error('Erro ao carregar cardápio:', error);
       } finally {
