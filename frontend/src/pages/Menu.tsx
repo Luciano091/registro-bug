@@ -46,7 +46,7 @@ const Menu = () => {
     try {
       if (removerFundo) {
         // Run AI locally in the browser
-        const { default: removeBackground } = await import('@imgly/background-removal');
+        const { removeBackground } = await import('@imgly/background-removal');
         const imageBlob = await removeBackground(file);
         // Create a new File from the blob
         file = new File([imageBlob], "image-transparent.png", { type: "image/png" });
