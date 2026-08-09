@@ -125,7 +125,7 @@ export const ProductModal = ({ produto, onClose }: ProductModalProps) => {
               value={observacao}
               onChange={(e) => setObservacao(e.target.value)}
               placeholder="Ex: Tirar cebola, ponto da carne, etc..."
-              className="w-full bg-[#18181A] border border-white/10 rounded-xl p-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-brand-500/50 resize-none h-24"
+              className="w-full bg-[#18181A] border border-white/10 rounded-xl p-3 text-base text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-brand-500/50 resize-none h-24"
             ></textarea>
           </div>
         </div>
