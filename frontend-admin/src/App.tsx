@@ -12,7 +12,7 @@ import CashFlow from './pages/CashFlow';
 import Login from './pages/Login';
 import { Navigate } from 'react-router-dom';
 import { NetworkProvider, useNetwork } from './contexts/NetworkContext';
-import { AppDataProvider, useAppData } from './contexts/AppDataContext';
+import { AppDataProvider } from './contexts/AppDataContext';
 import { WifiOff, RefreshCcw } from 'lucide-react';
 
 const NetworkBanner = () => {
