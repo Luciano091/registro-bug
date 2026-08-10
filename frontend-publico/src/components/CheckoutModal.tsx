@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { X, Trash2, MapPin, CreditCard, ChevronRight, ShoppingCart } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
+import { useNetwork } from '../contexts/NetworkContext';
+import { saveOfflineOrder } from '../services/db';
+import api from '../services/api';
 
 interface CheckoutModalProps {
   onClose: () => void;
@@ -9,6 +12,8 @@ interface CheckoutModalProps {
 
 export const CheckoutModal = ({ onClose, empresaPhone }: CheckoutModalProps) => {
   const { items, cartTotal, removeItem, updateQuantity, clearCart } = useCart();
+  const { isOnline } = useNetwork();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
   
   const [nome, setNome] = useState('');
@@ -17,8 +22,41 @@ export const CheckoutModal = ({ onClose, empresaPhone }: CheckoutModalProps) => 
   const [endereco, setEndereco] = useState('');
   const [pagamento, setPagamento] = useState('');
 
-  const sendToWhatsApp = () => {
-    let text = `*NOVO PEDIDO - BURGER HAUSE*\n\n`;
+  const sendToWhatsApp = async () => {
+    setIsSubmitting(true);
+    try {
+      const orderUuid = crypto.randomUUID();
+      const pedidoData = {
+        uuid: orderUuid,
+        cliente: nome,
+        telefone: telefone,
+        endereco: tipoPedido === 'entrega' ? endereco : undefined,
+        tipo_entrega: tipoPedido === 'entrega' ? 'Delivery' : 'Retirada',
+        forma_pagamento: pagamento,
+        itens: items.map(item => ({
+          produto_id: item.id,
+          quantidade: item.quantidade,
+          observacao: item.observacao
+        }))
+      };
+
+      if (!isOnline) {
+        await saveOfflineOrder(orderUuid, pedidoData);
+      } else {
+        try {
+          await api.post('/pedidos', pedidoData);
+        } catch (error: any) {
+          console.error("Erro ao salvar pedido na API:", error);
+          const detail = error.response?.data?.detail;
+          if (detail && detail.includes("Caixa está fechado")) {
+            alert(`Atenção: Seu pedido não foi salvo no sistema do restaurante pois o caixa está fechado.`);
+          } else {
+            await saveOfflineOrder(orderUuid, pedidoData);
+          }
+        }
+      }
+
+      let text = `*NOVO PEDIDO - BURGER HAUSE*\n\n`;
     text += `*Cliente:* ${nome}\n`;
     text += `*WhatsApp:* ${telefone}\n`;
     text += `*Tipo:* ${tipoPedido === 'entrega' ? 'Entrega' : 'Retirada no Local'}\n`;
@@ -55,6 +93,11 @@ export const CheckoutModal = ({ onClose, empresaPhone }: CheckoutModalProps) => 
     clearCart();
     window.open(whatsappUrl, '_blank');
     onClose();
+    } catch (e) {
+      alert("Ocorreu um erro ao processar seu pedido.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const isFormValid = () => {
@@ -248,10 +291,10 @@ export const CheckoutModal = ({ onClose, empresaPhone }: CheckoutModalProps) => 
               </button>
               <button 
                 onClick={sendToWhatsApp}
-                disabled={!isFormValid()}
+                disabled={!isFormValid() || isSubmitting}
                 className="flex-1 bg-[#22C55E] hover:bg-[#16a34a] disabled:bg-[#22C55E]/50 disabled:cursor-not-allowed text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors shadow-lg shadow-[#22C55E]/20 active:scale-[0.98]"
               >
-                <span>Enviar p/ WhatsApp</span>
+                <span>{isSubmitting ? 'Enviando...' : 'Enviar p/ WhatsApp'}</span>
               </button>
             </div>
           )}
