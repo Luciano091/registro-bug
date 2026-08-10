@@ -2,7 +2,10 @@ name: Keep Backend Alive
 
 on:
   schedule:
-    - cron: "*/10 * * * *" 
+    # Das 16h às 20h59 (Horário de Brasília) = 19h às 23h no servidor UTC
+    - cron: "*/10 19-23 * * *" 
+    # Das 21h às 23h50 (Horário de Brasília) = 00h às 02h no servidor UTC
+    - cron: "*/10 0-2 * * *"   
   workflow_dispatch: 
 
 jobs:
