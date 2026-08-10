@@ -7,10 +7,9 @@ import api from '../services/api';
 
 interface CheckoutModalProps {
   onClose: () => void;
-  empresaPhone: string;
 }
 
-export const CheckoutModal = ({ onClose, empresaPhone }: CheckoutModalProps) => {
+export const CheckoutModal = ({ onClose }: CheckoutModalProps) => {
   const { items, cartTotal, removeItem, updateQuantity, clearCart } = useCart();
   const { isOnline } = useNetwork();
   const [isSubmitting, setIsSubmitting] = useState(false);

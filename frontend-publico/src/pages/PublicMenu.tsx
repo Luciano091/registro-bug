@@ -300,7 +300,6 @@ const PublicMenu = () => {
       {isCheckoutOpen && (
         <CheckoutModal 
           onClose={() => setIsCheckoutOpen(false)} 
-          empresaPhone={config?.telefone || '559999999999'} 
         />
       )}
     </div>
