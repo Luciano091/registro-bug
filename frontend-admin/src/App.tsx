@@ -13,7 +13,7 @@ import Login from './pages/Login';
 import { Navigate } from 'react-router-dom';
 import { NetworkProvider, useNetwork } from './contexts/NetworkContext';
 import { AppDataProvider, useAppData } from './contexts/AppDataContext';
-import { WifiOff, RefreshCcw, MessageCircle } from 'lucide-react';
+import { WifiOff, RefreshCcw } from 'lucide-react';
 
 const NetworkBanner = () => {
   const { isOnline, isSyncing } = useNetwork();
@@ -69,7 +69,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 function AppContent() {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { hasUnreadChats } = useAppData();
   const location = useLocation();
   const isLoginRoute = location.pathname === '/login';
   

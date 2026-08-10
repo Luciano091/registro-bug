@@ -21,7 +21,6 @@ const statusIcons: any = {
 };
 
 const Orders = () => {
-  const navigate = useNavigate();
   const [filter, setFilter] = useState('Hoje');
   const [search, setSearch] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
