@@ -105,6 +105,13 @@ def update_produto(produto_id: int, produto: schemas.ProdutoCreate, db: Session 
         raise HTTPException(status_code=404, detail="Produto não encontrado")
     return db_produto
 
+@app.delete("/produtos/{produto_id}", response_model=schemas.Produto)
+def delete_produto(produto_id: int, db: Session = Depends(get_db)):
+    db_produto = crud.delete_produto(db, produto_id)
+    if db_produto is None:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+    return db_produto
+
 # --- Pedidos ---
 @app.get("/pedidos", response_model=List[schemas.Pedido])
 def read_pedidos(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):

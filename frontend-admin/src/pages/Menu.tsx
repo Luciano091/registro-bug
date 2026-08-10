@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Search, X } from 'lucide-react';
+import { Plus, Edit2, Search, X, Trash2 } from 'lucide-react';
 import api from '../services/api';
 import { useAppData } from '../contexts/AppDataContext';
 
@@ -100,6 +100,17 @@ const Menu = () => {
     }
   };
 
+  const handleDelete = async (id: number) => {
+    if (!window.confirm("Tem certeza que deseja excluir este produto?")) return;
+    try {
+      await api.delete(`/produtos/${id}`);
+      refreshProdutos();
+    } catch (error) {
+      console.error(error);
+      alert("Erro ao excluir produto");
+    }
+  };
+
   const categoriasUnicas = Array.from(new Set(produtos.map(p => {
     const cat = p.categoria.trim();
     return cat.charAt(0).toUpperCase() + cat.slice(1).toLowerCase();
@@ -191,6 +202,13 @@ const Menu = () => {
                     title="Editar"
                   >
                     <Edit2 size={16} />
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(produto.id)}
+                    className="text-zinc-500 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all bg-dark-900 p-1.5 rounded-lg border border-white/10 hover:border-red-500/50 ml-1"
+                    title="Excluir"
+                  >
+                    <Trash2 size={16} />
                   </button>
                 </div>
                 <h3 className="font-bold text-lg text-white mb-1 group-hover:text-brand-400 transition-colors font-heading">{produto.nome}</h3>

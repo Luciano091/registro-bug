@@ -23,6 +23,13 @@ def update_produto(db: Session, produto_id: int, produto: schemas.ProdutoCreate)
         db.refresh(db_produto)
     return db_produto
 
+def delete_produto(db: Session, produto_id: int):
+    db_produto = db.query(models.Produto).filter(models.Produto.id == produto_id).first()
+    if db_produto:
+        db.delete(db_produto)
+        db.commit()
+    return db_produto
+
 # --- Pedidos ---
 def get_pedidos(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Pedido).order_by(models.Pedido.id.desc()).offset(skip).limit(limit).all()
