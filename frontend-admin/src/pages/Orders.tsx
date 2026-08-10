@@ -47,24 +47,11 @@ const Orders = () => {
   };
 
   const handleWhatsApp = (passedOrder: any) => {
-    // Busca a versão mais recente do pedido no estado
-    const order = orders.find((o: any) => o.id === passedOrder.id) || passedOrder;
-    
-    if (!order.telefone) {
-      alert("O cliente não informou um número de telefone.");
+    if (!passedOrder.telefone) {
+      alert('Este pedido não possui telefone cadastrado.');
       return;
     }
-    
-    // Extrai apenas os números do telefone
-    const phoneDigits = order.telefone.replace(/\D/g, '');
-    if (phoneDigits.length < 10) {
-      alert("Número de telefone inválido.");
-      return;
-    }
-
-    // Now handled automatically by the backend via Webhooks & Meta API
-    // The button now redirects to our internal WhatsApp dashboard
-    navigate('/whatsapp');
+    window.open(`https://wa.me/55${passedOrder.telefone.replace(/\D/g, '')}`, '_blank');
   };
 
   const filteredOrders = orders.filter(order => {

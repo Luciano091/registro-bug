@@ -9,8 +9,7 @@ interface AppDataContextType {
   produtos: any[];
   dashboardResumo: any;
   caixa: any;
-  chats: any[];
-  hasUnreadChats: boolean;
+
   // Loading states (only for first load)
   ordersLoaded: boolean;
   produtosLoaded: boolean;
@@ -21,13 +20,13 @@ interface AppDataContextType {
   refreshProdutos: () => Promise<void>;
   refreshDashboard: () => Promise<void>;
   refreshCaixa: () => Promise<void>;
-  refreshChats: () => Promise<void>;
+
   // Optimistic updates
   addOptimisticOrder: (order: any) => void;
   updateOrderStatus: (orderId: number, newStatus: string) => void;
   addOrUpdateProduto: (produto: any) => void;
   setCaixaData: (data: any) => void;
-  markChatAsRead: (chatId: number) => void;
+
 }
 
 const AppDataContext = createContext<AppDataContextType | null>(null);
@@ -54,8 +53,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     alertas_estoque: []
   });
   const [caixa, setCaixa] = useState<any>(null);
-  const [chats, setChats] = useState<any[]>([]);
-  const [hasUnreadChats, setHasUnreadChats] = useState(false);
+
 
   // Track whether first load happened
   const [ordersLoaded, setOrdersLoaded] = useState(false);
@@ -146,63 +144,7 @@ const showBrowserNotification = (title: string, body: string) => {
     }
   }, []);
 
-  const refreshChats = useCallback(async () => {
-    if (!localStorage.getItem('adminToken')) return;
-    try {
-      const response = await api.get('/whatsapp/chats');
-      
-      setChats(prev => {
-        const novosChats = response.data;
-        
-        let shouldRing = false;
-        let hasNewIncoming = false;
 
-        novosChats.forEach((chat: any) => {
-          const prevChat = prev.find((p: any) => p.id === chat.id);
-          const inMsgs = chat.mensagens.filter((m: any) => m.direcao === 'in');
-          const prevInMsgs = prevChat ? prevChat.mensagens.filter((m: any) => m.direcao === 'in') : [];
-          
-          if (inMsgs.length > prevInMsgs.length) {
-            hasNewIncoming = true; // Still show red badge
-            
-            // Apply 2-hour rule for sound/notification
-            if (prevInMsgs.length > 0) {
-              const lastPrev = prevInMsgs[prevInMsgs.length - 1];
-              const lastNew = inMsgs[inMsgs.length - 1];
-              const diffMs = new Date(lastNew.data).getTime() - new Date(lastPrev.data).getTime();
-              
-              if (diffMs > 2 * 60 * 60 * 1000) {
-                shouldRing = true;
-              }
-            } else {
-              // First message ever from this contact
-              shouldRing = true;
-            }
-          }
-        });
-
-        // Always show badge if there is any new message
-        if (hasNewIncoming) {
-          setHasUnreadChats(true);
-        }
-
-        // Only ring and show popup if it passed the 2 hour rule
-        if (shouldRing) {
-          try {
-            const audio = new Audio(notificationSoundBase64);
-            audio.play().catch(e => console.log('Autoplay blocked:', e));
-            showBrowserNotification("Nova Mensagem!", "Você recebeu uma nova mensagem no WhatsApp do Burger Hause.");
-          } catch (e) {
-            console.error('Audio/Notification error', e);
-          }
-        }
-        
-        return novosChats;
-      });
-    } catch (error) {
-      console.error('Erro ao carregar chats do whatsapp:', error);
-    }
-  }, []);
 
   // ========== Optimistic Updates ==========
   const addOptimisticOrder = useCallback((order: any) => {
@@ -229,25 +171,20 @@ const showBrowserNotification = (title: string, body: string) => {
     setCaixaLoaded(true);
   }, []);
 
-  const markChatAsRead = useCallback(() => {
-    setHasUnreadChats(false);
-  }, []);
+
 
   // ========== Preload critical data on app start ==========
   useEffect(() => {
     refreshProdutos();
     refreshOrders();
-    refreshChats();
     
-    // Polling global (roda de 5 em 5 seg)
-    const intervalChats = setInterval(refreshChats, 5000);
+    // Polling global
     const intervalOrders = setInterval(refreshOrders, 10000);
     
     return () => {
-      clearInterval(intervalChats);
       clearInterval(intervalOrders);
     };
-  }, [refreshProdutos, refreshOrders, refreshChats]);
+  }, [refreshProdutos, refreshOrders]);
 
   return (
     <AppDataContext.Provider value={{
@@ -255,8 +192,7 @@ const showBrowserNotification = (title: string, body: string) => {
       produtos,
       dashboardResumo,
       caixa,
-      chats,
-      hasUnreadChats,
+
       ordersLoaded,
       produtosLoaded,
       dashboardLoaded,
@@ -265,12 +201,12 @@ const showBrowserNotification = (title: string, body: string) => {
       refreshProdutos,
       refreshDashboard,
       refreshCaixa,
-      refreshChats,
+
       addOptimisticOrder,
       updateOrderStatus,
       addOrUpdateProduto,
       setCaixaData,
-      markChatAsRead,
+
     }}>
       {children}
     </AppDataContext.Provider>

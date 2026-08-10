@@ -8,7 +8,7 @@ import Menu from './pages/Menu';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import CashFlow from './pages/CashFlow';
-import WhatsApp from './pages/WhatsApp';
+
 import Login from './pages/Login';
 import { Navigate } from 'react-router-dom';
 import { NetworkProvider, useNetwork } from './contexts/NetworkContext';
@@ -125,7 +125,7 @@ function AppContent() {
             <NavLink to="/" icon={Home} isCollapsed={isCollapsed}>Dashboard</NavLink>
             <NavLink to="/novo-pedido" icon={PlusCircle} isCollapsed={isCollapsed}>Novo Pedido</NavLink>
             <NavLink to="/pedidos" icon={ListOrdered} isCollapsed={isCollapsed}>Pedidos</NavLink>
-            <NavLink to="/whatsapp" icon={MessageCircle} isCollapsed={isCollapsed} hasBadge={hasUnreadChats}>WhatsApp</NavLink>
+
             <NavLink to="/caixa" icon={Wallet} isCollapsed={isCollapsed}>Caixa</NavLink>
             <NavLink to="/cardapio" icon={Utensils} isCollapsed={isCollapsed}>Cardápio</NavLink>
             <NavLink to="/relatorios" icon={BarChart3} isCollapsed={isCollapsed}>Relatórios</NavLink>
@@ -153,7 +153,7 @@ function AppContent() {
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/novo-pedido" element={<ProtectedRoute><NewOrder /></ProtectedRoute>} />
             <Route path="/pedidos" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
-            <Route path="/whatsapp" element={<ProtectedRoute><WhatsApp /></ProtectedRoute>} />
+
             <Route path="/caixa" element={<ProtectedRoute><CashFlow /></ProtectedRoute>} />
             <Route path="/cardapio" element={<ProtectedRoute><Menu /></ProtectedRoute>} />
             <Route path="/relatorios" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
