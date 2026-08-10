@@ -12,6 +12,7 @@ export const CheckoutModal = ({ onClose, empresaPhone }: CheckoutModalProps) => 
   const [step, setStep] = useState<1 | 2>(1);
   
   const [nome, setNome] = useState('');
+  const [telefone, setTelefone] = useState('');
   const [tipoPedido, setTipoPedido] = useState<'entrega' | 'retirada'>('entrega');
   const [endereco, setEndereco] = useState('');
   const [pagamento, setPagamento] = useState('');
@@ -19,6 +20,7 @@ export const CheckoutModal = ({ onClose, empresaPhone }: CheckoutModalProps) => 
   const sendToWhatsApp = () => {
     let text = `*NOVO PEDIDO - BURGER HAUSE*\n\n`;
     text += `*Cliente:* ${nome}\n`;
+    text += `*WhatsApp:* ${telefone}\n`;
     text += `*Tipo:* ${tipoPedido === 'entrega' ? 'Entrega' : 'Retirada no Local'}\n`;
     if (tipoPedido === 'entrega') {
       text += `*Endereço:* ${endereco}\n`;
@@ -57,6 +59,7 @@ export const CheckoutModal = ({ onClose, empresaPhone }: CheckoutModalProps) => 
 
   const isFormValid = () => {
     if (!nome.trim()) return false;
+    if (telefone.replace(/\D/g, '').length < 10) return false;
     if (tipoPedido === 'entrega' && !endereco.trim()) return false;
     if (!pagamento) return false;
     return true;
@@ -145,6 +148,24 @@ export const CheckoutModal = ({ onClose, empresaPhone }: CheckoutModalProps) => 
                   value={nome}
                   onChange={(e) => setNome(e.target.value)}
                   placeholder="Nome completo"
+                  className="w-full bg-[#18181A] border border-white/10 rounded-xl p-3.5 text-sm text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-brand-500/50"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-zinc-300 mb-2">Seu WhatsApp</label>
+                <input 
+                  type="tel"
+                  value={telefone}
+                  onChange={(e) => {
+                    let val = e.target.value.replace(/\D/g, '');
+                    if (val.length <= 11) {
+                      val = val.replace(/^(\d{2})(\d)/g, '($1) $2');
+                      val = val.replace(/(\d)(\d{4})$/, '$1-$2');
+                      setTelefone(val);
+                    }
+                  }}
+                  placeholder="(11) 99999-9999"
                   className="w-full bg-[#18181A] border border-white/10 rounded-xl p-3.5 text-sm text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-brand-500/50"
                 />
               </div>
