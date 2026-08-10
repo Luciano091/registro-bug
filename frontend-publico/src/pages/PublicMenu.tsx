@@ -150,15 +150,12 @@ const PublicMenu = () => {
               </div>
               
               <div 
-                className="group relative w-full cursor-pointer transition-all flex items-center min-h-[260px] md:min-h-[300px] mt-4"
+                className="group relative w-full bg-[#131313] rounded-3xl overflow-hidden cursor-pointer shadow-2xl border border-brand-500/20 transition-all hover:border-brand-500/50 flex items-center min-h-[260px] md:min-h-[300px] mt-4"
                 onClick={() => setSelectedProduct(destaqueDoDia)}
               >
-                {/* Background Layer with Overflow Hidden to contain glows */}
-                <div className="absolute inset-0 bg-[#131313] rounded-3xl overflow-hidden shadow-2xl border border-brand-500/20 group-hover:border-brand-500/40 transition-colors">
-                   {/* Glows */}
-                   <div className="absolute right-0 top-0 w-64 h-64 bg-brand-500/20 rounded-full blur-[80px] pointer-events-none translate-x-1/2 -translate-y-1/2"></div>
-                   <div className="absolute left-10 bottom-0 w-40 h-40 bg-orange-600/10 rounded-full blur-[60px] pointer-events-none"></div>
-                </div>
+                {/* Glows */}
+                <div className="absolute right-0 top-0 w-64 h-64 bg-brand-500/20 rounded-full blur-[80px] pointer-events-none translate-x-1/2 -translate-y-1/2"></div>
+                <div className="absolute left-10 bottom-0 w-40 h-40 bg-orange-600/10 rounded-full blur-[60px] pointer-events-none"></div>
 
                 {/* Left Content (Text) */}
                 <div className="relative z-30 w-[55%] md:w-1/2 p-4 md:p-8 flex flex-col justify-center">
