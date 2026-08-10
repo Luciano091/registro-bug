@@ -80,6 +80,7 @@ const showBrowserNotification = (title: string, body: string) => {
 
   // ========== Refresh Functions ==========
   const refreshOrders = useCallback(async () => {
+    if (!localStorage.getItem('adminToken')) return;
     try {
       const response = await api.get('/pedidos');
       setOrders(prev => {
@@ -146,6 +147,7 @@ const showBrowserNotification = (title: string, body: string) => {
   }, []);
 
   const refreshChats = useCallback(async () => {
+    if (!localStorage.getItem('adminToken')) return;
     try {
       const response = await api.get('/whatsapp/chats');
       
