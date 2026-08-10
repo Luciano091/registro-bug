@@ -76,7 +76,9 @@ const Orders = () => {
     text += `Qualquer dúvida, é só nos chamar!`;
 
     const encodedText = encodeURIComponent(text);
-    window.open(`https://wa.me/55${passedOrder.telefone.replace(/\D/g, '')}?text=${encodedText}`, '_blank');
+    // Ao invés de '_blank' (que sempre abre nova aba), usamos um nome específico
+    // Assim o navegador vai reutilizar a mesma aba do WhatsApp para os próximos pedidos!
+    window.open(`https://wa.me/55${passedOrder.telefone.replace(/\D/g, '')}?text=${encodedText}`, 'whatsapp_admin_tab');
   };
 
   const filteredOrders = orders.filter(order => {
