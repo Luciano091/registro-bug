@@ -50,7 +50,33 @@ const Orders = () => {
       alert('Este pedido não possui telefone cadastrado.');
       return;
     }
-    window.open(`https://wa.me/55${passedOrder.telefone.replace(/\D/g, '')}`, '_blank');
+
+    const orderNumber = passedOrder.numero.split('-')[1] || passedOrder.numero;
+    
+    let text = `Olá ${passedOrder.cliente}! Aqui é do *Burger Hause*. 🍔\n\n`;
+    text += `Recebemos o seu Pedido #${orderNumber}.\n\n`;
+    
+    text += `*Resumo do Pedido:*\n`;
+    passedOrder.itens?.forEach((item: any) => {
+      const productName = item.produto?.nome || 'Produto';
+      const itemTotal = item.subtotal || (item.quantidade * (item.produto?.preco || 0));
+      text += `${item.quantidade}x ${productName} - R$ ${itemTotal.toFixed(2)}\n`;
+    });
+    
+    text += `\n*Total:* R$ ${passedOrder.total?.toFixed(2) || '0.00'}\n`;
+    text += `*Pagamento:* ${passedOrder.forma_pagamento || 'Não informado'}\n`;
+    
+    if (passedOrder.tipo_entrega === 'Delivery' || passedOrder.tipo_entrega === 'Entrega') {
+      text += `*Endereço de Entrega:* ${passedOrder.endereco || 'Não informado'}\n`;
+    } else {
+      text += `*Retirada:* No balcão da lanchonete\n`;
+    }
+    
+    text += `\n*Status atual:* ${passedOrder.status}\n\n`;
+    text += `Qualquer dúvida, é só nos chamar!`;
+
+    const encodedText = encodeURIComponent(text);
+    window.open(`https://wa.me/55${passedOrder.telefone.replace(/\D/g, '')}?text=${encodedText}`, '_blank');
   };
 
   const filteredOrders = orders.filter(order => {
