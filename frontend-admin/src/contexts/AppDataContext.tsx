@@ -82,13 +82,23 @@ const showBrowserNotification = (title: string, body: string) => {
     try {
       const response = await api.get('/pedidos');
       setOrders(prev => {
-        if (prev.length > 0 && response.data.length > prev.length) {
-          try {
-            const audio = new Audio(notificationSoundBase64);
-            audio.play().catch(e => console.log('Autoplay blocked:', e));
-            showBrowserNotification("Novo Pedido!", "Um novo pedido acabou de chegar no Burger Hause.");
-          } catch (e) {
-            console.error('Audio/Notification error', e);
+        if (prev.length > 0) {
+          // Filtrar IDs otimistas (que são Date.now() e portanto gigantes)
+          const maxPrevId = Math.max(0, ...prev.filter(o => o.id < 1000000000).map(o => o.id));
+          const maxNewId = Math.max(0, ...response.data.filter((o: any) => o.id < 1000000000).map((o: any) => o.id));
+          
+          if (maxNewId > maxPrevId) {
+            try {
+              const audio = new Audio(notificationSoundBase64);
+              audio.volume = 1.0;
+              const playPromise = audio.play();
+              if (playPromise !== undefined) {
+                playPromise.catch(e => console.log('Autoplay blocked:', e));
+              }
+              showBrowserNotification("Novo Pedido!", "Um novo pedido acabou de chegar no Burger Hause.");
+            } catch (e) {
+              console.error('Audio/Notification error', e);
+            }
           }
         }
         return response.data;
