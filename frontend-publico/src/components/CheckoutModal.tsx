@@ -33,7 +33,7 @@ export const CheckoutModal = ({ onClose }: CheckoutModalProps) => {
         tipo_entrega: tipoPedido === 'entrega' ? 'Delivery' : 'Retirada',
         forma_pagamento: pagamento,
         itens: items.map(item => ({
-          produto_id: item.id,
+          produto_id: item.produtoId,
           quantidade: item.quantidade,
           observacao: item.observacao
         }))
