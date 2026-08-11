@@ -115,6 +115,24 @@ const Menu = () => {
     const cat = p.categoria.trim();
     return cat.charAt(0).toUpperCase() + cat.slice(1).toLowerCase();
   })));
+
+  const preferredOrder = [
+    'Hamburguer artesanal',
+    'Hamburguer',
+    'Frituras',
+    'Combo',
+    'Bebidas'
+  ];
+
+  categoriasUnicas.sort((a, b) => {
+    const indexA = preferredOrder.findIndex(cat => cat.toLowerCase() === (a as string).toLowerCase());
+    const indexB = preferredOrder.findIndex(cat => cat.toLowerCase() === (b as string).toLowerCase());
+    
+    if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+    if (indexA !== -1) return -1;
+    if (indexB !== -1) return 1;
+    return (a as string).localeCompare(b as string);
+  });
   
   const categorias = ['Todos', ...categoriasUnicas];
 

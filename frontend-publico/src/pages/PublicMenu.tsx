@@ -70,8 +70,27 @@ const PublicMenu = () => {
     );
   }
 
-  const categories = ['Todos', ...Array.from(new Set(produtos.map(p => p.categoria)))];
+  const preferredOrder = [
+    'Hamburguer artesanal',
+    'Hamburguer',
+    'Frituras',
+    'Combo',
+    'Bebidas'
+  ];
+
+  const uniqueCategories = Array.from(new Set(produtos.map(p => p.categoria.trim())));
   
+  uniqueCategories.sort((a, b) => {
+    const indexA = preferredOrder.findIndex(cat => cat.toLowerCase() === a.toLowerCase());
+    const indexB = preferredOrder.findIndex(cat => cat.toLowerCase() === b.toLowerCase());
+    
+    if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+    if (indexA !== -1) return -1;
+    if (indexB !== -1) return 1;
+    return a.localeCompare(b);
+  });
+
+  const categories = ['Todos', ...uniqueCategories];
   const filteredProducts = activeCategory === 'Todos' 
     ? produtos 
     : produtos.filter(p => p.categoria === activeCategory);
