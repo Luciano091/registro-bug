@@ -154,8 +154,8 @@ const PublicMenu = () => {
 
       <div className="max-w-4xl mx-auto px-4 md:px-6 relative z-20 mt-6">
         {/* NAVEGAÇÃO DE CATEGORIAS */}
-        <div className="sticky top-0 z-30 bg-[#0D0D0D]/95 backdrop-blur-md pt-2 pb-4 -mx-4 px-4 border-b border-white/5 mb-8">
-          <div className="flex gap-2 overflow-x-auto hide-scrollbar md:flex-wrap md:justify-center">
+        <div className="sticky top-0 z-30 bg-[#0D0D0D]/95 backdrop-blur-md pt-2 pb-2 -mx-4 px-4 border-b border-white/5 mb-8">
+          <div className="flex gap-2 overflow-x-auto pb-2 md:flex-wrap md:justify-center">
             {categories.map((cat, i) => (
               <button
                 key={i}
