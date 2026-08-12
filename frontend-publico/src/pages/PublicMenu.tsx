@@ -186,8 +186,8 @@ const PublicMenu = () => {
 
                     {/* Left Content (Text) */}
                     <div className="relative z-30 w-[55%] md:w-1/2 p-4 md:p-8 flex flex-col justify-center">
-                      <div className="inline-flex items-center gap-1.5 bg-orange-500 text-white text-[10px] md:text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider mb-2 w-fit shadow-[0_0_15px_rgba(249,115,22,0.5)] animate-pulse">
-                        <Flame size={12} fill="currentColor" /> OFERTA
+                      <div className="inline-flex items-center gap-2 bg-orange-500 text-white text-xs md:text-sm font-black px-3.5 py-1.5 rounded-full uppercase tracking-widest mb-3 w-fit shadow-[0_0_20px_rgba(249,115,22,0.6)] animate-pulse border border-orange-400">
+                        <Flame size={16} fill="currentColor" /> OFERTA
                       </div>
                       
                       <h3 className="font-heading font-bold text-white text-3xl md:text-5xl uppercase tracking-wide mb-2 leading-none drop-shadow-lg">
