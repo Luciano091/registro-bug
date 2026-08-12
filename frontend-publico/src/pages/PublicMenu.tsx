@@ -62,6 +62,12 @@ const PublicMenu = () => {
     return burgers[dayOfYear % burgers.length];
   }, [produtos, activeCategory]);
 
+  // Promoções do Dia
+  const promocoesAtivas = useMemo(() => {
+    if (activeCategory !== 'Todos') return [];
+    return produtos.filter(p => p.is_promocao).slice(0, 2);
+  }, [produtos, activeCategory]);
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-[#0D0D0D]">
@@ -159,8 +165,70 @@ const PublicMenu = () => {
 
         <div className="space-y-12">
           
-          {/* 🌟 DESTAQUE DO DIA */}
-          {destaqueDoDia && (
+          {/* 🔥 PROMOÇÕES DO DIA OU DESTAQUE */}
+          {promocoesAtivas.length > 0 ? (
+            <div className="mb-14">
+              <div className="flex items-center mb-4">
+                <h2 className="text-xl font-heading font-bold text-white flex items-center gap-2 uppercase tracking-wide">
+                  <Flame size={20} className="text-orange-500" /> Promoção do Dia
+                </h2>
+              </div>
+              <div className="flex flex-col gap-6">
+                {promocoesAtivas.map(promocao => (
+                  <div 
+                    key={promocao.id}
+                    className="group relative w-full bg-[#131313] rounded-3xl overflow-hidden cursor-pointer shadow-2xl border border-orange-500/30 transition-all hover:border-orange-500/60 flex items-center min-h-[260px] md:min-h-[300px]"
+                    onClick={() => setSelectedProduct(promocao)}
+                  >
+                    {/* Glows */}
+                    <div className="absolute right-0 top-0 w-64 h-64 bg-orange-500/20 rounded-full blur-[80px] pointer-events-none translate-x-1/2 -translate-y-1/2"></div>
+                    <div className="absolute left-10 bottom-0 w-40 h-40 bg-red-600/10 rounded-full blur-[60px] pointer-events-none"></div>
+
+                    {/* Left Content (Text) */}
+                    <div className="relative z-30 w-[55%] md:w-1/2 p-4 md:p-8 flex flex-col justify-center">
+                      <div className="inline-flex items-center gap-1.5 bg-orange-500 text-white text-[10px] md:text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider mb-2 w-fit shadow-[0_0_15px_rgba(249,115,22,0.5)] animate-pulse">
+                        <Flame size={12} fill="currentColor" /> OFERTA
+                      </div>
+                      
+                      <h3 className="font-heading font-bold text-white text-3xl md:text-5xl uppercase tracking-wide mb-2 leading-none drop-shadow-lg">
+                        {promocao.nome}
+                      </h3>
+                      
+                      <p className="text-zinc-300 text-[11px] md:text-sm leading-snug mb-4 line-clamp-4 md:line-clamp-3 drop-shadow-md font-medium pr-2">
+                        {promocao.descricao}
+                      </p>
+
+                      <div className="flex flex-col gap-1 mt-auto">
+                        <span className="font-price font-bold text-sm text-zinc-500 line-through">
+                          {promocao.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        </span>
+                        <span className="font-price font-bold text-3xl md:text-4xl text-orange-400 drop-shadow-md">
+                          {promocao.preco_promocao?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        </span>
+                        <div className="inline-flex items-center justify-center gap-2 bg-orange-500 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-orange-500/30 transition-transform group-hover:scale-105 active:scale-95 w-fit mt-2">
+                          <Plus size={16} /> Pedir
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right Content (Image) */}
+                    <div className="absolute right-[-12px] md:right-0 top-1/2 -translate-y-1/2 w-[210px] h-[210px] md:w-[320px] md:h-[320px] flex items-center justify-center pointer-events-none z-20">
+                      {promocao.imagem_url ? (
+                        <img 
+                          src={promocao.imagem_url} 
+                          alt={promocao.nome} 
+                          className="w-full h-full object-contain scale-[1.45] md:scale-[1.3] transition-transform duration-700 group-hover:scale-[1.55] drop-shadow-[0_20px_40px_rgba(0,0,0,0.8)]" 
+                          referrerPolicy="no-referrer" 
+                        />
+                      ) : (
+                        <Utensils size={64} strokeWidth={1} className="text-zinc-700" />
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : destaqueDoDia && (
             <div className="mb-14">
               <div className="flex items-center mb-4">
                 <h2 className="text-xl font-heading font-bold text-white flex items-center gap-2 uppercase tracking-wide">

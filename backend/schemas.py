@@ -13,6 +13,8 @@ class ProdutoBase(BaseModel):
     ativo: bool = True
     controlar_estoque: bool = False
     estoque: int = 0
+    is_promocao: bool = False
+    preco_promocao: Optional[float] = None
 
 class ProdutoCreate(ProdutoBase):
     pass

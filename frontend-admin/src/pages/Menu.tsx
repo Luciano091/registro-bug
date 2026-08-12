@@ -9,7 +9,7 @@ const Menu = () => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [removerFundo, setRemoverFundo] = useState(false);
-  const [novoProduto, setNovoProduto] = useState({ nome: '', preco: '', preco_compra: '', categoria: '', descricao: '', imagem_url: '', controlar_estoque: false, estoque: '' });
+  const [novoProduto, setNovoProduto] = useState({ nome: '', preco: '', preco_compra: '', categoria: '', descricao: '', imagem_url: '', controlar_estoque: false, estoque: '', is_promocao: false, preco_promocao: '' });
 
   const [activeCategory, setActiveCategory] = useState('Todos');
 
@@ -31,7 +31,9 @@ const Menu = () => {
       descricao: item.descricao || '',
       imagem_url: item.imagem_url || '',
       controlar_estoque: item.controlar_estoque || false,
-      estoque: item.estoque !== null && item.estoque !== undefined ? item.estoque.toString() : ''
+      estoque: item.estoque !== null && item.estoque !== undefined ? item.estoque.toString() : '',
+      is_promocao: item.is_promocao || false,
+      preco_promocao: item.preco_promocao ? item.preco_promocao.toString() : ''
     });
     setEditingId(item.id);
     setShowModal(true);
@@ -81,7 +83,9 @@ const Menu = () => {
         descricao: novoProduto.descricao || null,
         imagem_url: novoProduto.imagem_url || null,
         controlar_estoque: novoProduto.controlar_estoque,
-        estoque: parseInt(novoProduto.estoque) || 0
+        estoque: parseInt(novoProduto.estoque) || 0,
+        is_promocao: novoProduto.is_promocao,
+        preco_promocao: novoProduto.is_promocao && novoProduto.preco_promocao ? parseFloat(novoProduto.preco_promocao) : null
       };
 
       if (editingId) {
@@ -91,7 +95,7 @@ const Menu = () => {
       }
       
       setShowModal(false);
-      setNovoProduto({ nome: '', preco: '', preco_compra: '', categoria: '', descricao: '', imagem_url: '', controlar_estoque: false, estoque: '' });
+            setNovoProduto({ nome: '', preco: '', preco_compra: '', categoria: '', descricao: '', imagem_url: '', controlar_estoque: false, estoque: '', is_promocao: false, preco_promocao: '' });
       setEditingId(null);
       refreshProdutos();
     } catch (error) {
@@ -158,7 +162,7 @@ const Menu = () => {
         <button 
           onClick={() => {
             setEditingId(null);
-            setNovoProduto({ nome: '', preco: '', preco_compra: '', categoria: '', descricao: '', imagem_url: '', controlar_estoque: false, estoque: '' });
+                  setNovoProduto({ nome: '', preco: '', preco_compra: '', categoria: '', descricao: '', imagem_url: '', controlar_estoque: false, estoque: '', is_promocao: false, preco_promocao: '' });
             setShowModal(true);
           }}
           className="premium-btn px-5 py-2.5 rounded-xl font-semibold flex items-center gap-2"
@@ -212,6 +216,11 @@ const Menu = () => {
                   {produto.controlar_estoque && (
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ml-2 ${produto.estoque <= 3 ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20'}`}>
                       {produto.estoque <= 3 ? '🔥 ' : '📦 '}{produto.estoque} unid.
+                    </span>
+                  )}
+                  {produto.is_promocao && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ml-2 bg-orange-500/10 text-orange-400 border-orange-500/20">
+                      🔥 Promoção
                     </span>
                   )}
                   <button 
@@ -388,6 +397,33 @@ const Menu = () => {
                       onChange={e => setNovoProduto({...novoProduto, estoque: e.target.value})} 
                       placeholder="Ex: 50"
                       className="w-full bg-dark-800 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all text-white placeholder-zinc-600"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-dark-900 border border-white/5 p-4 rounded-xl space-y-4">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    checked={novoProduto.is_promocao}
+                    onChange={e => setNovoProduto({...novoProduto, is_promocao: e.target.checked})}
+                    className="w-5 h-5 rounded border-white/10 bg-dark-800 text-brand-500 focus:ring-brand-500/50 focus:ring-offset-dark-900"
+                  />
+                  <span className="text-sm text-white font-medium">Produto em Promoção?</span>
+                </label>
+                
+                {novoProduto.is_promocao && (
+                  <div>
+                    <label className="block text-sm text-zinc-400 mb-1">Preço Promocional (R$)</label>
+                    <input 
+                      type="number" 
+                      step="0.01"
+                      required={novoProduto.is_promocao}
+                      value={novoProduto.preco_promocao} 
+                      onChange={e => setNovoProduto({...novoProduto, preco_promocao: e.target.value})} 
+                      placeholder="Ex: 19.90"
+                      className="w-full bg-dark-800 border border-orange-500/30 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-white placeholder-zinc-600 font-bold"
                     />
                   </div>
                 )}

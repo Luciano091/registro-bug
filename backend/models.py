@@ -20,6 +20,8 @@ class Produto(Base):
     ativo = Column(Boolean, default=True)
     controlar_estoque = Column(Boolean, default=False)
     estoque = Column(Integer, default=0)
+    is_promocao = Column(Boolean, default=False)
+    preco_promocao = Column(Float, nullable=True)
 
 class Pedido(Base):
     __tablename__ = "pedidos"
