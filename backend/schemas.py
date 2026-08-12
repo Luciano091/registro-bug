@@ -90,6 +90,7 @@ class LoginRequest(BaseModel):
 
 class Configuracao(ConfiguracaoBase):
     id: int
+    loja_aberta: Optional[bool] = False
     class Config:
         from_attributes = True
 

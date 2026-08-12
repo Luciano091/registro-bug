@@ -217,7 +217,12 @@ def login(login_req: schemas.LoginRequest, db: Session = Depends(get_db)):
 # --- Configuracoes ---
 @app.get("/configuracao", response_model=schemas.Configuracao)
 def read_configuracao(db: Session = Depends(get_db)):
-    return crud.get_configuracao(db)
+    config = crud.get_configuracao(db)
+    caixa_aberto = crud.get_caixa_aberto(db)
+    
+    config_dict = {c.name: getattr(config, c.name) for c in config.__table__.columns}
+    config_dict["loja_aberta"] = caixa_aberto is not None
+    return config_dict
 
 @app.put("/configuracao", response_model=schemas.Configuracao)
 def update_configuracao(config: schemas.ConfiguracaoCreate, db: Session = Depends(get_db)):

@@ -132,8 +132,17 @@ const PublicMenu = () => {
           
           <div className="flex flex-wrap justify-center items-center gap-3">
              <div className="bg-[#171717]/80 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2 text-xs font-bold text-white shadow-lg">
-                <div className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse shrink-0"></div>
-                Aberto
+                {config?.loja_aberta ? (
+                  <>
+                    <div className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse shrink-0"></div>
+                    Aberto
+                  </>
+                ) : (
+                  <>
+                    <div className="w-2 h-2 rounded-full bg-red-500 shrink-0"></div>
+                    Fechado
+                  </>
+                )}
              </div>
              <div className="bg-[#171717]/80 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2 text-xs font-bold text-white shadow-lg">
                 <Clock size={14} className="text-brand-500 shrink-0" />
