@@ -334,7 +334,7 @@ const PublicMenu = () => {
                         <h3 className="font-sans font-semibold text-white text-[15px] md:text-[16px] tracking-tight leading-tight line-clamp-1">
                           {produto.nome}
                         </h3>
-                        <p className="text-zinc-500 text-[11px] md:text-xs mt-0.5 line-clamp-1">
+                        <p className="text-zinc-400 text-[11px] md:text-xs mt-1 line-clamp-2 leading-snug">
                           {produto.descricao || categoria}
                         </p>
                       </div>
