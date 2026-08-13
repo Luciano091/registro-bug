@@ -100,7 +100,7 @@ export const CheckoutModal = ({ onClose }: CheckoutModalProps) => {
               </div>
               <h3 className="text-2xl font-bold text-white font-heading">Pedido Recebido!</h3>
               <p className="text-zinc-400 max-w-sm">
-                Seu pedido já está com o restaurante. Em breve você receberá atualizações sobre ele no seu WhatsApp!
+                Seu pedido já está com a Burger-House. Em breve você receberá atualizações sobre ele no seu WhatsApp!
               </p>
               <button 
                 onClick={onClose}
