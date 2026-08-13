@@ -297,16 +297,13 @@ const PublicMenu = () => {
           {/* LISTAGEM DE PRODUTOS POR CATEGORIA */}
           {Object.entries(groupedProducts).map(([categoria, items]: [string, any]) => (
             <div key={categoria} className="pt-2">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center mb-4">
                 <h2 className="text-lg md:text-xl font-heading font-bold text-white uppercase tracking-wide flex items-center gap-2">
                   <div className="text-brand-500 border border-brand-500/30 p-1.5 rounded-lg bg-brand-500/10">
                     <Utensils size={18} />
                   </div>
                   {categoria}
                 </h2>
-                <button className="text-brand-400 text-xs md:text-sm font-bold flex items-center gap-1 hover:text-brand-300 transition-colors">
-                  Ver todas <ChevronRight size={14} />
-                </button>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
