@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Home, PlusCircle, ListOrdered, Utensils, BarChart3, Settings as SettingsIcon, ChevronLeft, ChevronRight, Wallet, LogOut } from 'lucide-react';
+import { Home, PlusCircle, ListOrdered, Utensils, BarChart3, Settings as SettingsIcon, ChevronLeft, ChevronRight, Wallet, LogOut, Menu as MenuIcon, X } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import NewOrder from './pages/NewOrder';
 import Orders from './pages/Orders';
@@ -69,6 +69,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 function AppContent() {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
   const isLoginRoute = location.pathname === '/login';
   
@@ -160,11 +161,49 @@ function AppContent() {
           </Routes>
         </main>
 
+        {/* Mobile Menu Overlay */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden fixed inset-0 z-[60] bg-[#0a0a0a]/95 backdrop-blur-xl flex flex-col p-6 animate-in fade-in duration-200">
+            <div className="flex justify-between items-center mb-8 mt-4">
+              <h2 className="text-2xl font-heading font-bold text-white">Menu</h2>
+              <button 
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-2 bg-white/10 rounded-full text-zinc-300 hover:text-white transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <nav className="flex flex-col gap-4 overflow-y-auto">
+              <Link to="/caixa" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><Wallet className="text-brand-400" /> Caixa</Link>
+              <Link to="/relatorios" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><BarChart3 className="text-brand-400" /> Relatórios</Link>
+              <Link to="/configuracoes" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><SettingsIcon className="text-brand-400" /> Configurações</Link>
+              
+              <div className="mt-8">
+                <button 
+                  onClick={() => {
+                    localStorage.removeItem('adminToken');
+                    window.location.href = '/login';
+                  }}
+                  className="w-full flex items-center gap-4 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-lg font-medium text-red-400 transition-colors hover:bg-red-500/20"
+                >
+                  <LogOut /> Sair
+                </button>
+              </div>
+            </nav>
+          </div>
+        )}
+
         {/* Mobile Bottom Nav */}
-        <nav className="md:hidden fixed bottom-0 w-full glass border-t border-white/10 flex justify-around p-2 z-50 print:hidden">
-          <Link to="/" className="p-3 text-zinc-400 hover:text-brand-400 transition-colors"><Home size={24} /></Link>
-          <Link to="/novo-pedido" className="p-4 premium-btn rounded-full -mt-8 shadow-xl"><PlusCircle size={28} /></Link>
-          <Link to="/pedidos" className="p-3 text-zinc-400 hover:text-brand-400 transition-colors"><ListOrdered size={24} /></Link>
+        <nav className="md:hidden fixed bottom-0 w-full glass border-t border-white/10 flex justify-between px-4 py-2 z-50 print:hidden pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+          <Link to="/" className="p-2 flex flex-col items-center text-zinc-400 hover:text-brand-400 transition-colors"><Home size={22} /><span className="text-[10px] mt-1 font-medium">Início</span></Link>
+          <Link to="/pedidos" className="p-2 flex flex-col items-center text-zinc-400 hover:text-brand-400 transition-colors"><ListOrdered size={22} /><span className="text-[10px] mt-1 font-medium">Pedidos</span></Link>
+          
+          <Link to="/novo-pedido" className="relative -top-6 p-4 premium-btn rounded-full shadow-xl shadow-brand-500/30 border-4 border-[#0a0a0a]">
+            <PlusCircle size={28} />
+          </Link>
+          
+          <Link to="/cardapio" className="p-2 flex flex-col items-center text-zinc-400 hover:text-brand-400 transition-colors"><Utensils size={22} /><span className="text-[10px] mt-1 font-medium">Cardápio</span></Link>
+          <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 flex flex-col items-center text-zinc-400 hover:text-brand-400 transition-colors"><MenuIcon size={22} /><span className="text-[10px] mt-1 font-medium">Mais</span></button>
         </nav>
       </div>
   );
