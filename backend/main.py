@@ -424,6 +424,19 @@ def get_dashboard_relatorios(periodo: str = "mes", start: str = None, end: str =
         
     heatmap_list = [{"turno": k, **v} for k, v in heatmap.items()]
 
+    pedidos_raw = [
+        {
+            "id": p.id,
+            "cliente": p.cliente or "Não informado",
+            "data": p.data.strftime("%Y-%m-%d %H:%M:%S") if p.data else "",
+            "total": float(p.total),
+            "forma_pagamento": p.forma_pagamento or "Não informada",
+            "status": p.status,
+            "tipo_entrega": p.tipo_entrega
+        }
+        for p in pedidos_periodo
+    ]
+
     return {
         "resumo": {
             "faturamento": {"atual": faturamento_total, "crescimento": calc_growth(faturamento_total, fat_ant)},
@@ -436,7 +449,8 @@ def get_dashboard_relatorios(periodo: str = "mes", start: str = None, end: str =
         "vendas_categoria": vendas_categoria,
         "vendas_pagamento": vendas_pagamento,
         "produtos_top": produtos_ord,
-        "heatmap": heatmap_list
+        "heatmap": heatmap_list,
+        "pedidos_raw": pedidos_raw
     }
 
 @app.get("/debug/relatorios")

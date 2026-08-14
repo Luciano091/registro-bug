@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Calendar, DollarSign, Package, Receipt, TrendingUp, TrendingDown, Download } from 'lucide-react';
+import { Calendar, DollarSign, Package, Receipt, TrendingUp, TrendingDown, Download, FileSpreadsheet } from 'lucide-react';
 import api from '../services/api';
 
 const CAT_COLORS = ['#f97316', '#3b82f6', '#f59e0b', '#8b5cf6', '#10b981'];
@@ -49,6 +49,34 @@ const Reports = () => {
 
   const exportPDF = () => {
     window.print();
+  };
+
+  const exportCSV = () => {
+    if (!data || !data.pedidos_raw) return;
+    
+    // Headers
+    const headers = ["ID", "Cliente", "Data", "Total (R$)", "Forma de Pagamento", "Tipo Entrega", "Status"];
+    
+    // Rows
+    const rows = data.pedidos_raw.map((p: any) => [
+      p.id,
+      `"${(p.cliente || '').replace(/"/g, '""')}"`,
+      p.data,
+      p.total.toFixed(2).replace('.', ','),
+      p.forma_pagamento,
+      p.tipo_entrega,
+      p.status
+    ]);
+    
+    const csvContent = [headers.join(';'), ...rows.map((r: any[]) => r.join(';'))].join('\n');
+    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `relatorio_pedidos_${periodo}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   if (isLoading) {
@@ -126,10 +154,16 @@ const Reports = () => {
              </select>
           </div>
           
-          <button onClick={exportPDF} className="flex items-center gap-2 bg-dark-900/60 border border-white/5 hover:bg-white/5 transition-colors px-4 py-2 rounded-lg text-sm text-zinc-300 backdrop-blur-md">
-            <Download size={16} />
-            <span>Exportar</span>
-          </button>
+          <div className="flex gap-2">
+            <button onClick={exportCSV} className="flex items-center gap-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30 hover:text-emerald-300 transition-colors px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-md" title="Exportar para Excel (Contador)">
+              <FileSpreadsheet size={16} />
+              <span className="hidden md:inline">Exportar Excel</span>
+            </button>
+            <button onClick={exportPDF} className="flex items-center gap-2 bg-dark-900/60 border border-white/5 hover:bg-white/5 transition-colors px-4 py-2 rounded-lg text-sm text-zinc-300 backdrop-blur-md">
+              <Download size={16} />
+              <span className="hidden md:inline">Baixar PDF</span>
+            </button>
+          </div>
         </div>
       </header>
 
