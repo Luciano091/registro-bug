@@ -204,55 +204,57 @@ const PublicMenu = () => {
                 {promocoesAtivas.map(promocao => (
                   <div 
                     key={promocao.id}
-                    className="group relative w-full bg-[#131313] rounded-3xl overflow-hidden cursor-pointer shadow-2xl border border-orange-500/30 transition-all hover:border-orange-500/60 flex items-center min-h-[260px] md:min-h-[300px]"
+                    className="group relative w-full bg-[#131313] rounded-3xl overflow-hidden cursor-pointer shadow-2xl border border-orange-500/30 transition-all hover:border-orange-500/60 flex flex-col md:flex-row md:items-center"
                     onClick={() => setSelectedProduct(promocao)}
                   >
                     {/* Glows */}
                     <div className="absolute right-0 top-0 w-64 h-64 bg-orange-500/20 rounded-full blur-[80px] pointer-events-none translate-x-1/2 -translate-y-1/2"></div>
                     <div className="absolute left-10 bottom-0 w-40 h-40 bg-red-600/10 rounded-full blur-[60px] pointer-events-none"></div>
 
-                    {/* Left Content (Text) */}
-                    <div className="relative z-30 w-[55%] md:w-1/2 p-4 md:p-8 flex flex-col justify-center">
-                      <div className="inline-flex items-center gap-2 bg-orange-500 text-white text-xs md:text-sm font-black px-3.5 py-1.5 rounded-full uppercase tracking-widest mb-3 w-fit shadow-[0_0_20px_rgba(249,115,22,0.6)] animate-pulse border border-orange-400">
-                        <Flame size={16} fill="currentColor" /> OFERTA
-                      </div>
-                      
-                      <h3 className="font-heading font-bold text-white text-3xl md:text-5xl uppercase tracking-wide mb-2 leading-none drop-shadow-lg">
-                        {promocao.nome}
-                      </h3>
-                      
-                      <p className="text-zinc-300 text-[11px] md:text-sm leading-snug mb-4 line-clamp-4 md:line-clamp-3 drop-shadow-md font-medium pr-2">
-                        {promocao.descricao}
-                      </p>
-
-                      <div className="flex flex-col gap-1 mt-auto">
-                        <span className="font-price font-bold text-sm text-zinc-500 line-through">
-                          {promocao.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                        </span>
-                        <span className="font-price font-bold text-3xl md:text-4xl text-orange-400 drop-shadow-md">
-                          {promocao.preco_promocao?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                        </span>
-                        <button 
-                          onClick={(e) => quickAdd(promocao, e)}
-                          className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg transition-all active:scale-95 w-fit mt-2 ${addedProductId === promocao.id ? 'bg-emerald-500 shadow-emerald-500/30 scale-105' : 'bg-orange-500 shadow-orange-500/30 group-hover:scale-105'}`}
-                        >
-                          {addedProductId === promocao.id ? <><Check size={16} /> Adicionado!</> : <><Plus size={16} /> Pedir</>}
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Right Content (Image) */}
-                    <div className="absolute right-[-12px] md:right-0 top-1/2 -translate-y-1/2 w-[210px] h-[210px] md:w-[320px] md:h-[320px] flex items-center justify-center pointer-events-none z-20">
+                    {/* Image - Top on mobile, Right on desktop */}
+                    <div className="relative w-full md:w-1/2 h-[200px] md:h-[300px] flex items-center justify-center md:order-2 overflow-hidden">
                       {promocao.imagem_url ? (
                         <img 
                           src={promocao.imagem_url} 
                           alt={promocao.nome} 
-                          className="w-full h-full object-contain scale-[1.45] md:scale-[1.3] transition-transform duration-700 group-hover:scale-[1.55] drop-shadow-[0_20px_40px_rgba(0,0,0,0.8)]" 
+                          className="w-[200px] h-[200px] md:w-[280px] md:h-[280px] object-contain transition-transform duration-700 group-hover:scale-110 drop-shadow-[0_20px_40px_rgba(0,0,0,0.8)]" 
                           referrerPolicy="no-referrer" 
                         />
                       ) : (
                         <Utensils size={64} strokeWidth={1} className="text-zinc-700" />
                       )}
+                    </div>
+
+                    {/* Content - Bottom on mobile, Left on desktop */}
+                    <div className="relative z-30 w-full md:w-1/2 p-5 md:p-8 flex flex-col md:order-1">
+                      <div className="inline-flex items-center gap-2 bg-orange-500 text-white text-xs md:text-sm font-black px-3.5 py-1.5 rounded-full uppercase tracking-widest mb-3 w-fit shadow-[0_0_20px_rgba(249,115,22,0.6)] animate-pulse border border-orange-400">
+                        <Flame size={16} fill="currentColor" /> OFERTA
+                      </div>
+                      
+                      <h3 className="font-heading font-bold text-white text-2xl md:text-5xl uppercase tracking-wide mb-2 leading-none drop-shadow-lg">
+                        {promocao.nome}
+                      </h3>
+                      
+                      <p className="text-zinc-300 text-xs md:text-sm leading-snug mb-4 drop-shadow-md font-medium">
+                        {promocao.descricao}
+                      </p>
+
+                      <div className="flex items-center gap-4 mt-auto">
+                        <div className="flex flex-col">
+                          <span className="font-price font-bold text-sm text-zinc-500 line-through">
+                            {promocao.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                          </span>
+                          <span className="font-price font-bold text-2xl md:text-3xl text-orange-400 drop-shadow-md">
+                            {promocao.preco_promocao?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                          </span>
+                        </div>
+                        <button 
+                          onClick={(e) => quickAdd(promocao, e)}
+                          className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold shadow-lg transition-all active:scale-95 ${addedProductId === promocao.id ? 'bg-emerald-500 shadow-emerald-500/30 scale-105' : 'bg-orange-500 shadow-orange-500/30 group-hover:scale-105'}`}
+                        >
+                          {addedProductId === promocao.id ? <><Check size={16} /> Adicionado!</> : <><Plus size={16} /> Pedir</>}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -267,52 +269,52 @@ const PublicMenu = () => {
               </div>
               
               <div 
-                className="group relative w-full bg-[#131313] rounded-3xl overflow-hidden cursor-pointer shadow-2xl border border-brand-500/20 transition-all hover:border-brand-500/50 flex items-center min-h-[260px] md:min-h-[300px] mt-4"
+                className="group relative w-full bg-[#131313] rounded-3xl overflow-hidden cursor-pointer shadow-2xl border border-brand-500/20 transition-all hover:border-brand-500/50 flex flex-col md:flex-row md:items-center mt-4"
                 onClick={() => setSelectedProduct(destaqueDoDia)}
               >
                 {/* Glows */}
                 <div className="absolute right-0 top-0 w-64 h-64 bg-brand-500/20 rounded-full blur-[80px] pointer-events-none translate-x-1/2 -translate-y-1/2"></div>
                 <div className="absolute left-10 bottom-0 w-40 h-40 bg-orange-600/10 rounded-full blur-[60px] pointer-events-none"></div>
 
-                {/* Left Content (Text) */}
-                <div className="relative z-30 w-[55%] md:w-1/2 p-4 md:p-8 flex flex-col justify-center">
-                  <div className="inline-flex items-center gap-1.5 bg-brand-500 text-white text-[10px] md:text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider mb-2 w-fit shadow-[0_0_15px_rgba(249,115,22,0.5)]">
-                    <Flame size={12} fill="currentColor" /> Especial
-                  </div>
-                  
-                  <h3 className="font-heading font-bold text-white text-3xl md:text-5xl uppercase tracking-wide mb-2 leading-none drop-shadow-lg">
-                    {destaqueDoDia.nome}
-                  </h3>
-                  
-                  <p className="text-zinc-300 text-[11px] md:text-sm leading-snug mb-4 line-clamp-4 md:line-clamp-3 drop-shadow-md font-medium pr-2">
-                    {destaqueDoDia.descricao || "Pão brioche, blend artesanal, cheddar, bacon crocante, alface, tomate e molho da casa."}
-                  </p>
-
-                  <div className="flex flex-col gap-2 mt-auto">
-                    <span className="font-price font-bold text-2xl md:text-3xl text-brand-400 drop-shadow-md">
-                      {destaqueDoDia.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                    </span>
-                    <button 
-                      onClick={(e) => quickAdd(destaqueDoDia, e)}
-                      className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg transition-all active:scale-95 w-fit mt-1 ${addedProductId === destaqueDoDia.id ? 'bg-emerald-500 shadow-emerald-500/30 scale-105' : 'bg-brand-500 shadow-brand-500/30 group-hover:scale-105'}`}
-                    >
-                      {addedProductId === destaqueDoDia.id ? <><Check size={16} /> Adicionado!</> : <><Plus size={16} /> Pedir</>}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Right Content (Image) completely absolute and NOT constrained by overflow-hidden! */}
-                <div className="absolute right-[-12px] md:right-0 top-1/2 -translate-y-1/2 w-[210px] h-[210px] md:w-[320px] md:h-[320px] flex items-center justify-center pointer-events-none z-20">
+                {/* Image - Top on mobile, Right on desktop */}
+                <div className="relative w-full md:w-1/2 h-[200px] md:h-[300px] flex items-center justify-center md:order-2 overflow-hidden">
                   {destaqueDoDia.imagem_url ? (
                     <img 
                       src={destaqueDoDia.imagem_url} 
                       alt={destaqueDoDia.nome} 
-                      className="w-full h-full object-contain scale-[1.45] md:scale-[1.3] transition-transform duration-700 group-hover:scale-[1.55] drop-shadow-[0_20px_40px_rgba(0,0,0,0.8)]" 
+                      className="w-[200px] h-[200px] md:w-[280px] md:h-[280px] object-contain transition-transform duration-700 group-hover:scale-110 drop-shadow-[0_20px_40px_rgba(0,0,0,0.8)]" 
                       referrerPolicy="no-referrer" 
                     />
                   ) : (
                     <Utensils size={64} strokeWidth={1} className="text-zinc-700" />
                   )}
+                </div>
+
+                {/* Content - Bottom on mobile, Left on desktop */}
+                <div className="relative z-30 w-full md:w-1/2 p-5 md:p-8 flex flex-col md:order-1">
+                  <div className="inline-flex items-center gap-1.5 bg-brand-500 text-white text-[10px] md:text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider mb-2 w-fit shadow-[0_0_15px_rgba(249,115,22,0.5)]">
+                    <Flame size={12} fill="currentColor" /> Especial
+                  </div>
+                  
+                  <h3 className="font-heading font-bold text-white text-2xl md:text-5xl uppercase tracking-wide mb-2 leading-none drop-shadow-lg">
+                    {destaqueDoDia.nome}
+                  </h3>
+                  
+                  <p className="text-zinc-300 text-xs md:text-sm leading-snug mb-4 drop-shadow-md font-medium">
+                    {destaqueDoDia.descricao || "Pão brioche, blend artesanal, cheddar, bacon crocante, alface, tomate e molho da casa."}
+                  </p>
+
+                  <div className="flex items-center gap-4 mt-auto">
+                    <span className="font-price font-bold text-2xl md:text-3xl text-brand-400 drop-shadow-md">
+                      {destaqueDoDia.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </span>
+                    <button 
+                      onClick={(e) => quickAdd(destaqueDoDia, e)}
+                      className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold shadow-lg transition-all active:scale-95 ${addedProductId === destaqueDoDia.id ? 'bg-emerald-500 shadow-emerald-500/30 scale-105' : 'bg-brand-500 shadow-brand-500/30 group-hover:scale-105'}`}
+                    >
+                      {addedProductId === destaqueDoDia.id ? <><Check size={16} /> Adicionado!</> : <><Plus size={16} /> Pedir</>}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
