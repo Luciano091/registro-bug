@@ -212,12 +212,12 @@ const PublicMenu = () => {
                     <div className="absolute left-10 bottom-0 w-40 h-40 bg-red-600/10 rounded-full blur-[60px] pointer-events-none"></div>
 
                     {/* Image - Top on mobile, Right on desktop */}
-                    <div className="relative w-full md:w-1/2 h-[200px] md:h-[300px] flex items-center justify-center md:order-2 overflow-hidden">
+                    <div className="relative w-full md:w-1/2 h-[260px] md:h-[300px] flex items-center justify-center md:order-2 overflow-hidden">
                       {promocao.imagem_url ? (
                         <img 
                           src={promocao.imagem_url} 
                           alt={promocao.nome} 
-                          className="w-[200px] h-[200px] md:w-[280px] md:h-[280px] object-contain transition-transform duration-700 group-hover:scale-110 drop-shadow-[0_20px_40px_rgba(0,0,0,0.8)]" 
+                          className="w-[260px] h-[260px] md:w-[280px] md:h-[280px] object-contain transition-transform duration-700 group-hover:scale-110 drop-shadow-[0_20px_40px_rgba(0,0,0,0.8)]" 
                           referrerPolicy="no-referrer" 
                         />
                       ) : (
@@ -277,12 +277,12 @@ const PublicMenu = () => {
                 <div className="absolute left-10 bottom-0 w-40 h-40 bg-orange-600/10 rounded-full blur-[60px] pointer-events-none"></div>
 
                 {/* Image - Top on mobile, Right on desktop */}
-                <div className="relative w-full md:w-1/2 h-[200px] md:h-[300px] flex items-center justify-center md:order-2 overflow-hidden">
+                <div className="relative w-full md:w-1/2 h-[260px] md:h-[300px] flex items-center justify-center md:order-2 overflow-hidden">
                   {destaqueDoDia.imagem_url ? (
                     <img 
                       src={destaqueDoDia.imagem_url} 
                       alt={destaqueDoDia.nome} 
-                      className="w-[200px] h-[200px] md:w-[280px] md:h-[280px] object-contain transition-transform duration-700 group-hover:scale-110 drop-shadow-[0_20px_40px_rgba(0,0,0,0.8)]" 
+                      className="w-[260px] h-[260px] md:w-[280px] md:h-[280px] object-contain transition-transform duration-700 group-hover:scale-110 drop-shadow-[0_20px_40px_rgba(0,0,0,0.8)]" 
                       referrerPolicy="no-referrer" 
                     />
                   ) : (
