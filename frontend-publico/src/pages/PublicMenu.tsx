@@ -217,7 +217,7 @@ const PublicMenu = () => {
                         <img 
                           src={promocao.imagem_url} 
                           alt={promocao.nome} 
-                          className="w-[260px] h-[260px] md:w-[280px] md:h-[280px] object-contain transition-transform duration-700 group-hover:scale-110 drop-shadow-[0_20px_40px_rgba(0,0,0,0.8)]" 
+                          className="w-[290px] h-[290px] md:w-[280px] md:h-[280px] object-contain transition-transform duration-700 group-hover:scale-110 drop-shadow-[0_20px_40px_rgba(0,0,0,0.8)]" 
                           referrerPolicy="no-referrer" 
                         />
                       ) : (
@@ -282,7 +282,7 @@ const PublicMenu = () => {
                     <img 
                       src={destaqueDoDia.imagem_url} 
                       alt={destaqueDoDia.nome} 
-                      className="w-[260px] h-[260px] md:w-[280px] md:h-[280px] object-contain transition-transform duration-700 group-hover:scale-110 drop-shadow-[0_20px_40px_rgba(0,0,0,0.8)]" 
+                      className="w-[290px] h-[290px] md:w-[280px] md:h-[280px] object-contain transition-transform duration-700 group-hover:scale-110 drop-shadow-[0_20px_40px_rgba(0,0,0,0.8)]" 
                       referrerPolicy="no-referrer" 
                     />
                   ) : (
