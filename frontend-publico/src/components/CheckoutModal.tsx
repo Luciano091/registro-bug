@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Trash2, MapPin, CreditCard, ChevronRight, ShoppingCart } from 'lucide-react';
+import { X, Trash2, MapPin, CreditCard, ChevronRight, ShoppingCart, MessageSquare } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useNetwork } from '../contexts/NetworkContext';
 import { saveOfflineOrder } from '../services/db';
@@ -10,7 +10,7 @@ interface CheckoutModalProps {
 }
 
 export const CheckoutModal = ({ onClose }: CheckoutModalProps) => {
-  const { items, cartTotal, removeItem, updateQuantity, clearCart } = useCart();
+  const { items, cartTotal, removeItem, updateQuantity, updateObservacao, clearCart } = useCart();
   const { isOnline } = useNetwork();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -20,6 +20,7 @@ export const CheckoutModal = ({ onClose }: CheckoutModalProps) => {
   const [tipoPedido, setTipoPedido] = useState<'entrega' | 'retirada'>('entrega');
   const [endereco, setEndereco] = useState('');
   const [pagamento, setPagamento] = useState('');
+  const [showObsFor, setShowObsFor] = useState<string | null>(null);
 
   const handleFinalizeOrder = async () => {
     setIsSubmitting(true);
@@ -112,52 +113,81 @@ export const CheckoutModal = ({ onClose }: CheckoutModalProps) => {
           ) : step === 1 ? (
             <div className="space-y-4">
               {items.map(item => (
-                <div key={item.id} className="bg-[#18181A] p-4 rounded-2xl border border-white/5 flex gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-bold text-white text-sm leading-tight">{item.quantidade}x {item.nome}</h3>
-                      <button onClick={() => removeItem(item.id)} className="text-zinc-600 hover:text-red-400">
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                    
-                    {item.adicionais.length > 0 && (
-                      <div className="mt-2 space-y-1">
-                        {item.adicionais.map((add, idx) => (
-                          <div key={idx} className="text-xs text-zinc-400 flex items-center gap-1">
-                            <span className="text-brand-500">+</span> {add.quantidade}x {add.nome}
-                          </div>
-                        ))}
+                <div key={item.id} className="bg-[#18181A] p-4 rounded-2xl border border-white/5">
+                  <div className="flex gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="font-bold text-white text-sm leading-tight">{item.quantidade}x {item.nome}</h3>
+                        <button onClick={() => removeItem(item.id)} className="text-zinc-600 hover:text-red-400">
+                          <Trash2 size={16} />
+                        </button>
                       </div>
-                    )}
-                    
-                    {item.observacao && (
-                      <div className="mt-2 text-xs text-zinc-500 italic bg-white/5 p-2 rounded-lg">
-                        Obs: {item.observacao}
-                      </div>
-                    )}
+                      
+                      {item.adicionais.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          {item.adicionais.map((add, idx) => (
+                            <div key={idx} className="text-xs text-zinc-400 flex items-center gap-1">
+                              <span className="text-brand-500">+</span> {add.quantidade}x {add.nome}
+                            </div>
+                          ))}
+                        </div>
+                      )}
 
-                    <div className="mt-4 flex items-center justify-between">
-                      <div className="flex items-center gap-3 bg-[#202022] rounded-lg p-1 border border-white/5">
-                        <button 
-                          className="w-8 h-8 flex items-center justify-center text-zinc-400 hover:text-white rounded-md hover:bg-white/5 transition-colors"
-                          onClick={() => updateQuantity(item.id, -1)}
-                        >
-                          -
-                        </button>
-                        <span className="font-bold text-white text-sm w-4 text-center">{item.quantidade}</span>
-                        <button 
-                          className="w-8 h-8 flex items-center justify-center text-zinc-400 hover:text-white rounded-md hover:bg-white/5 transition-colors"
-                          onClick={() => updateQuantity(item.id, 1)}
-                        >
-                          +
-                        </button>
+                      <div className="mt-4 flex items-center justify-between">
+                        <div className="flex items-center gap-3 bg-[#202022] rounded-lg p-1 border border-white/5">
+                          <button 
+                            className="w-8 h-8 flex items-center justify-center text-zinc-400 hover:text-white rounded-md hover:bg-white/5 transition-colors"
+                            onClick={() => updateQuantity(item.id, -1)}
+                          >
+                            -
+                          </button>
+                          <span className="font-bold text-white text-sm w-4 text-center">{item.quantidade}</span>
+                          <button 
+                            className="w-8 h-8 flex items-center justify-center text-zinc-400 hover:text-white rounded-md hover:bg-white/5 transition-colors"
+                            onClick={() => updateQuantity(item.id, 1)}
+                          >
+                            +
+                          </button>
+                        </div>
+                        <span className="font-price font-bold text-brand-400">
+                          {((item.precoBase + item.adicionais.reduce((s, a) => s + a.preco, 0)) * item.quantidade).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        </span>
                       </div>
-                      <span className="font-price font-bold text-brand-400">
-                        {((item.precoBase + item.adicionais.reduce((s, a) => s + a.preco, 0)) * item.quantidade).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                      </span>
                     </div>
                   </div>
+                  
+                  {/* Observation toggle and input */}
+                  {item.observacao ? (
+                    <div className="mt-3">
+                      <input 
+                        type="text"
+                        value={item.observacao}
+                        onChange={(e) => updateObservacao(item.id, e.target.value)}
+                        placeholder="Ex: Tirar cebola..."
+                        className="w-full bg-[#0F0F11] border border-white/10 rounded-lg px-3 py-2 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-brand-500/50"
+                      />
+                    </div>
+                  ) : showObsFor === item.id ? (
+                    <div className="mt-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                      <input 
+                        type="text"
+                        autoFocus
+                        value={item.observacao || ''}
+                        onChange={(e) => updateObservacao(item.id, e.target.value)}
+                        placeholder="Ex: Tirar cebola, sem salada..."
+                        className="w-full bg-[#0F0F11] border border-white/10 rounded-lg px-3 py-2 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-brand-500/50"
+                        onBlur={() => { if (!item.observacao) setShowObsFor(null); }}
+                      />
+                    </div>
+                  ) : (
+                    <button 
+                      onClick={() => setShowObsFor(item.id)}
+                      className="mt-3 flex items-center gap-1.5 text-[11px] text-zinc-500 hover:text-brand-400 transition-colors"
+                    >
+                      <MessageSquare size={12} />
+                      Adicionar observação
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

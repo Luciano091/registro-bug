@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo } from 'react';
-import { MapPin, Clock, Utensils, Plus, Flame } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { MapPin, Clock, Utensils, Plus, Flame, Check } from 'lucide-react';
 import api from '../services/api';
 import { ProductModal } from '../components/ProductModal';
 import { FloatingCart } from '../components/FloatingCart';
 import { CheckoutModal } from '../components/CheckoutModal';
+import { useCart } from '../contexts/CartContext';
 
 const PublicMenu = () => {
   const [config, setConfig] = useState<any>(null);
@@ -14,6 +15,23 @@ const PublicMenu = () => {
   // Modals state
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const { addItem } = useCart();
+  const [addedProductId, setAddedProductId] = useState<number | null>(null);
+
+  const quickAdd = useCallback((produto: any, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    addItem({
+      id: crypto.randomUUID(),
+      produtoId: produto.id,
+      nome: produto.nome,
+      precoBase: produto.is_promocao && produto.preco_promocao ? produto.preco_promocao : produto.preco,
+      quantidade: 1,
+      adicionais: [],
+      observacao: ''
+    });
+    setAddedProductId(produto.id);
+    setTimeout(() => setAddedProductId(null), 1200);
+  }, [addItem]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -214,9 +232,12 @@ const PublicMenu = () => {
                         <span className="font-price font-bold text-3xl md:text-4xl text-orange-400 drop-shadow-md">
                           {promocao.preco_promocao?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                         </span>
-                        <div className="inline-flex items-center justify-center gap-2 bg-orange-500 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-orange-500/30 transition-transform group-hover:scale-105 active:scale-95 w-fit mt-2">
-                          <Plus size={16} /> Pedir
-                        </div>
+                        <button 
+                          onClick={(e) => quickAdd(promocao, e)}
+                          className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg transition-all active:scale-95 w-fit mt-2 ${addedProductId === promocao.id ? 'bg-emerald-500 shadow-emerald-500/30 scale-105' : 'bg-orange-500 shadow-orange-500/30 group-hover:scale-105'}`}
+                        >
+                          {addedProductId === promocao.id ? <><Check size={16} /> Adicionado!</> : <><Plus size={16} /> Pedir</>}
+                        </button>
                       </div>
                     </div>
 
@@ -271,9 +292,12 @@ const PublicMenu = () => {
                     <span className="font-price font-bold text-2xl md:text-3xl text-brand-400 drop-shadow-md">
                       {destaqueDoDia.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </span>
-                    <div className="inline-flex items-center justify-center gap-2 bg-brand-500 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-brand-500/30 transition-transform group-hover:scale-105 active:scale-95 w-fit mt-1">
-                      <Plus size={16} /> Pedir
-                    </div>
+                    <button 
+                      onClick={(e) => quickAdd(destaqueDoDia, e)}
+                      className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg transition-all active:scale-95 w-fit mt-1 ${addedProductId === destaqueDoDia.id ? 'bg-emerald-500 shadow-emerald-500/30 scale-105' : 'bg-brand-500 shadow-brand-500/30 group-hover:scale-105'}`}
+                    >
+                      {addedProductId === destaqueDoDia.id ? <><Check size={16} /> Adicionado!</> : <><Plus size={16} /> Pedir</>}
+                    </button>
                   </div>
                 </div>
 
@@ -339,9 +363,12 @@ const PublicMenu = () => {
                         <span className="font-price font-bold text-[15px] md:text-[16px] text-brand-400 tracking-wide">
                           {produto.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                         </span>
-                        <div className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center text-zinc-400 group-hover:bg-brand-500 group-hover:text-white transition-colors">
-                          <Plus size={16} />
-                        </div>
+                        <button 
+                          onClick={(e) => quickAdd(produto, e)}
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 ${addedProductId === produto.id ? 'bg-emerald-500 text-white scale-110' : 'bg-white/5 text-zinc-400 hover:bg-brand-500 hover:text-white active:scale-90'}`}
+                        >
+                          {addedProductId === produto.id ? <Check size={16} /> : <Plus size={16} />}
+                        </button>
                       </div>
                     </div>
                   </div>

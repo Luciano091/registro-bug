@@ -20,6 +20,7 @@ interface CartContextType {
   addItem: (item: CartItem) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, delta: number) => void;
+  updateObservacao: (id: string, obs: string) => void;
   clearCart: () => void;
   cartTotal: number;
   cartCount: number;
@@ -61,13 +62,22 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }));
   }, []);
 
+  const updateObservacao = useCallback((id: string, obs: string) => {
+    setItems(prev => prev.map(item => {
+      if (item.id === id) {
+        return { ...item, observacao: obs };
+      }
+      return item;
+    }));
+  }, []);
+
   const clearCart = useCallback(() => {
     setItems([]);
   }, []);
 
   return (
     <CartContext.Provider value={{
-      items, addItem, removeItem, updateQuantity, clearCart, cartTotal, cartCount
+      items, addItem, removeItem, updateQuantity, updateObservacao, clearCart, cartTotal, cartCount
     }}>
       {children}
     </CartContext.Provider>
