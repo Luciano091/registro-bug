@@ -5,9 +5,10 @@ import { useCart } from '../contexts/CartContext';
 interface ProductModalProps {
   produto: any;
   onClose: () => void;
+  lojaAberta?: boolean;
 }
 
-export const ProductModal = ({ produto, onClose }: ProductModalProps) => {
+export const ProductModal = ({ produto, onClose, lojaAberta = true }: ProductModalProps) => {
   const { addItem } = useCart();
   const [quantidade, setQuantidade] = useState(1);
   const [observacao, setObservacao] = useState('');
@@ -19,6 +20,10 @@ export const ProductModal = ({ produto, onClose }: ProductModalProps) => {
   const [selectedAdicionais, setSelectedAdicionais] = useState<any[]>([]);
 
   const handleAdd = () => {
+    if (!lojaAberta) {
+      alert("Desculpe, a loja está fechada no momento.");
+      return;
+    }
     addItem({
       id: crypto.randomUUID(),
       produtoId: produto.id,
@@ -151,9 +156,10 @@ export const ProductModal = ({ produto, onClose }: ProductModalProps) => {
           
           <button 
             onClick={handleAdd}
-            className="flex-1 bg-brand-500 hover:bg-brand-600 text-white p-3.5 md:p-4 rounded-xl font-bold flex items-center justify-between transition-colors shadow-lg shadow-brand-500/20 active:scale-[0.98] min-w-0"
+            disabled={!lojaAberta}
+            className={`flex-1 ${!lojaAberta ? 'bg-zinc-700 cursor-not-allowed' : 'bg-brand-500 hover:bg-brand-600 shadow-lg shadow-brand-500/20 active:scale-[0.98]'} text-white p-3.5 md:p-4 rounded-xl font-bold flex items-center justify-between transition-colors min-w-0`}
           >
-            <span className="truncate mr-2">Adicionar</span>
+            <span className="truncate mr-2">{!lojaAberta ? 'Loja Fechada' : 'Adicionar'}</span>
             <span className="font-price tracking-tight shrink-0">
               {totalPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
             </span>

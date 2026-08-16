@@ -20,6 +20,12 @@ const PublicMenu = () => {
 
   const quickAdd = useCallback((produto: any, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    
+    if (config && !config.loja_aberta) {
+      alert("Desculpe, a loja está fechada no momento.");
+      return;
+    }
+
     addItem({
       id: crypto.randomUUID(),
       produtoId: produto.id,
@@ -31,7 +37,7 @@ const PublicMenu = () => {
     });
     setAddedProductId(produto.id);
     setTimeout(() => setAddedProductId(null), 1200);
-  }, [addItem]);
+  }, [addItem, config]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -414,6 +420,7 @@ const PublicMenu = () => {
         <ProductModal 
           produto={selectedProduct} 
           onClose={() => setSelectedProduct(null)} 
+          lojaAberta={config?.loja_aberta}
         />
       )}
       
@@ -422,6 +429,7 @@ const PublicMenu = () => {
       {isCheckoutOpen && (
         <CheckoutModal 
           onClose={() => setIsCheckoutOpen(false)} 
+          lojaAberta={config?.loja_aberta}
         />
       )}
     </div>

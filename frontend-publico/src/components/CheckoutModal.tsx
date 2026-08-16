@@ -7,9 +7,10 @@ import api from '../services/api';
 
 interface CheckoutModalProps {
   onClose: () => void;
+  lojaAberta?: boolean;
 }
 
-export const CheckoutModal = ({ onClose }: CheckoutModalProps) => {
+export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps) => {
   const { items, cartTotal, removeItem, updateQuantity, updateObservacao, clearCart } = useCart();
   const { isOnline } = useNetwork();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -286,11 +287,18 @@ export const CheckoutModal = ({ onClose }: CheckoutModalProps) => {
             
             {step === 1 ? (
               <button 
-                onClick={() => setStep(2)}
-                className="w-full bg-brand-500 hover:bg-brand-600 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors shadow-lg shadow-brand-500/20 active:scale-[0.98]"
+                onClick={() => {
+                  if (!lojaAberta) {
+                    alert("A loja está fechada. Não é possível realizar pedidos no momento.");
+                    return;
+                  }
+                  setStep(2);
+                }}
+                disabled={!lojaAberta}
+                className={`w-full ${!lojaAberta ? 'bg-zinc-700 cursor-not-allowed' : 'bg-brand-500 hover:bg-brand-600 shadow-lg shadow-brand-500/20 active:scale-[0.98]'} text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors`}
               >
-                <span>Confirmar Pedido</span>
-                <ChevronRight size={18} />
+                <span>{!lojaAberta ? 'Loja Fechada' : 'Confirmar Pedido'}</span>
+                {lojaAberta && <ChevronRight size={18} />}
               </button>
             ) : (
               <div className="flex gap-3">
