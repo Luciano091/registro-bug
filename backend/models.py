@@ -119,3 +119,24 @@ class WhatsAppMensagem(Base):
     meta_message_id = Column(String, nullable=True, unique=True) # ID da mensagem na Meta
 
     contato = relationship("WhatsAppContato", back_populates="mensagens")
+
+class Insumo(Base):
+    __tablename__ = "insumos"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nome = Column(String, index=True)
+    unidade_medida = Column(String) # "UN", "KG", "G", "L", "ML"
+    custo_unitario = Column(Float, default=0.0)
+    
+    fichas_tecnicas = relationship("ProdutoInsumo", back_populates="insumo")
+
+class ProdutoInsumo(Base):
+    __tablename__ = "produto_insumos"
+
+    id = Column(Integer, primary_key=True, index=True)
+    produto_id = Column(Integer, ForeignKey("produtos.id", ondelete="CASCADE"))
+    insumo_id = Column(Integer, ForeignKey("insumos.id", ondelete="CASCADE"))
+    quantidade = Column(Float, default=1.0) # Quantity of the insumo used in the product
+    
+    produto = relationship("Produto")
+    insumo = relationship("Insumo", back_populates="fichas_tecnicas")

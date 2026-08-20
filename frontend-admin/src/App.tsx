@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Home, PlusCircle, ListOrdered, Utensils, BarChart3, Settings as SettingsIcon, ChevronLeft, ChevronRight, Wallet, LogOut, Menu as MenuIcon, X } from 'lucide-react';
+import { Home, PlusCircle, ListOrdered, Utensils, BarChart3, Settings as SettingsIcon, ChevronLeft, ChevronRight, Wallet, LogOut, Menu as MenuIcon, X, Package } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import NewOrder from './pages/NewOrder';
 import Orders from './pages/Orders';
@@ -8,6 +8,7 @@ import Menu from './pages/Menu';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import CashFlow from './pages/CashFlow';
+import Insumos from './pages/Insumos';
 
 import Login from './pages/Login';
 import { Navigate } from 'react-router-dom';
@@ -128,6 +129,7 @@ function AppContent() {
 
             <NavLink to="/caixa" icon={Wallet} isCollapsed={isCollapsed}>Caixa</NavLink>
             <NavLink to="/cardapio" icon={Utensils} isCollapsed={isCollapsed}>Cardápio</NavLink>
+            <NavLink to="/insumos" icon={Package} isCollapsed={isCollapsed}>Insumos</NavLink>
             <NavLink to="/relatorios" icon={BarChart3} isCollapsed={isCollapsed}>Relatórios</NavLink>
             <NavLink to="/configuracoes" icon={SettingsIcon} isCollapsed={isCollapsed}>Configurações</NavLink>
           </nav>
@@ -156,6 +158,7 @@ function AppContent() {
 
             <Route path="/caixa" element={<ProtectedRoute><CashFlow /></ProtectedRoute>} />
             <Route path="/cardapio" element={<ProtectedRoute><Menu /></ProtectedRoute>} />
+            <Route path="/insumos" element={<ProtectedRoute><Insumos /></ProtectedRoute>} />
             <Route path="/relatorios" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
             <Route path="/configuracoes" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           </Routes>
@@ -175,6 +178,7 @@ function AppContent() {
             </div>
             <nav className="flex flex-col gap-4 overflow-y-auto">
               <Link to="/caixa" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><Wallet className="text-brand-400" /> Caixa</Link>
+              <Link to="/insumos" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><Package className="text-brand-400" /> Insumos</Link>
               <Link to="/relatorios" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><BarChart3 className="text-brand-400" /> Relatórios</Link>
               <Link to="/configuracoes" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><SettingsIcon className="text-brand-400" /> Configurações</Link>
               

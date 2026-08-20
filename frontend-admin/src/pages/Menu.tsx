@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Search, X, Trash2 } from 'lucide-react';
+import { Plus, Edit2, Search, X, Trash2, Package } from 'lucide-react';
 import api from '../services/api';
 import { useAppData } from '../contexts/AppDataContext';
+import FichaTecnicaModal from '../components/FichaTecnicaModal';
 
 const Menu = () => {
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [showFichaModal, setShowFichaModal] = useState<{id: number, nome: string} | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [removerFundo, setRemoverFundo] = useState(false);
@@ -224,6 +226,13 @@ const Menu = () => {
                     </span>
                   )}
                   <button 
+                    onClick={() => setShowFichaModal({id: produto.id, nome: produto.nome})}
+                    className="text-zinc-500 hover:text-white opacity-0 group-hover:opacity-100 transition-all bg-dark-900 p-1.5 rounded-lg border border-white/10 hover:border-brand-500/50"
+                    title="Ficha Técnica / Insumos"
+                  >
+                    <Package size={16} />
+                  </button>
+                  <button 
                     onClick={() => openEditProductModal(produto)}
                     className="text-zinc-500 hover:text-white opacity-0 group-hover:opacity-100 transition-all bg-dark-900 p-1.5 rounded-lg border border-white/10 hover:border-brand-500/50"
                     title="Editar"
@@ -435,6 +444,17 @@ const Menu = () => {
             </form>
           </div>
         </div>
+      )}
+
+      {showFichaModal && (
+        <FichaTecnicaModal 
+          produtoId={showFichaModal.id} 
+          produtoNome={showFichaModal.nome} 
+          onClose={() => {
+            setShowFichaModal(null);
+            refreshProdutos();
+          }} 
+        />
       )}
     </div>
   );

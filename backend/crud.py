@@ -182,3 +182,56 @@ def add_movimentacao(db: Session, caixa_id: int, movimentacao: schemas.Movimenta
     db.commit()
     db.refresh(db_mov)
     return db_mov
+
+# --- Insumos ---
+def get_insumos(db: Session, skip: int = 0, limit: int = 500):
+    return db.query(models.Insumo).offset(skip).limit(limit).all()
+
+def create_insumo(db: Session, insumo: schemas.InsumoCreate):
+    db_insumo = models.Insumo(**insumo.model_dump())
+    db.add(db_insumo)
+    db.commit()
+    db.refresh(db_insumo)
+    return db_insumo
+
+def update_insumo(db: Session, insumo_id: int, insumo: schemas.InsumoCreate):
+    db_insumo = db.query(models.Insumo).filter(models.Insumo.id == insumo_id).first()
+    if db_insumo:
+        for key, value in insumo.model_dump().items():
+            setattr(db_insumo, key, value)
+        db.commit()
+        db.refresh(db_insumo)
+    return db_insumo
+
+def delete_insumo(db: Session, insumo_id: int):
+    db_insumo = db.query(models.Insumo).filter(models.Insumo.id == insumo_id).first()
+    if db_insumo:
+        db.delete(db_insumo)
+        db.commit()
+    return db_insumo
+
+# --- Ficha Tecnica ---
+def get_ficha_tecnica(db: Session, produto_id: int):
+    return db.query(models.ProdutoInsumo).filter(models.ProdutoInsumo.produto_id == produto_id).all()
+
+def update_ficha_tecnica(db: Session, produto_id: int, itens: list[schemas.ProdutoInsumoCreate]):
+    # Limpa ficha anterior
+    db.query(models.ProdutoInsumo).filter(models.ProdutoInsumo.produto_id == produto_id).delete()
+    
+    total_cost = 0.0
+    for item in itens:
+        db_item = models.ProdutoInsumo(produto_id=produto_id, insumo_id=item.insumo_id, quantidade=item.quantidade)
+        db.add(db_item)
+        
+        # Calculate cost
+        insumo = db.query(models.Insumo).filter(models.Insumo.id == item.insumo_id).first()
+        if insumo:
+            total_cost += insumo.custo_unitario * item.quantidade
+
+    # Atualiza preco de compra do produto
+    produto = db.query(models.Produto).filter(models.Produto.id == produto_id).first()
+    if produto:
+        produto.preco_compra = total_cost
+        
+    db.commit()
+    return get_ficha_tecnica(db, produto_id)

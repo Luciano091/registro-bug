@@ -532,3 +532,35 @@ async def send_manual_message(telefone: str, texto: str, background_tasks: Backg
             
     background_tasks.add_task(send_msg_task)
     return {"status": "queued"}
+
+# --- Insumos ---
+@app.get("/insumos", response_model=List[schemas.Insumo])
+def get_insumos(db: Session = Depends(get_db)):
+    return crud.get_insumos(db)
+
+@app.post("/insumos", response_model=schemas.Insumo)
+def create_insumo(insumo: schemas.InsumoCreate, db: Session = Depends(get_db), admin: bool = Depends(auth.get_current_admin)):
+    return crud.create_insumo(db=db, insumo=insumo)
+
+@app.put("/insumos/{insumo_id}", response_model=schemas.Insumo)
+def update_insumo(insumo_id: int, insumo: schemas.InsumoCreate, db: Session = Depends(get_db), admin: bool = Depends(auth.get_current_admin)):
+    db_insumo = crud.update_insumo(db, insumo_id, insumo)
+    if not db_insumo:
+        raise HTTPException(status_code=404, detail="Insumo não encontrado")
+    return db_insumo
+
+@app.delete("/insumos/{insumo_id}")
+def delete_insumo(insumo_id: int, db: Session = Depends(get_db), admin: bool = Depends(auth.get_current_admin)):
+    db_insumo = crud.delete_insumo(db, insumo_id)
+    if not db_insumo:
+        raise HTTPException(status_code=404, detail="Insumo não encontrado")
+    return {"status": "ok"}
+
+# --- Ficha Tecnica ---
+@app.get("/produtos/{produto_id}/ficha-tecnica", response_model=List[schemas.ProdutoInsumo])
+def get_ficha_tecnica(produto_id: int, db: Session = Depends(get_db), admin: bool = Depends(auth.get_current_admin)):
+    return crud.get_ficha_tecnica(db, produto_id)
+
+@app.put("/produtos/{produto_id}/ficha-tecnica", response_model=List[schemas.ProdutoInsumo])
+def update_ficha_tecnica(produto_id: int, itens: List[schemas.ProdutoInsumoCreate], db: Session = Depends(get_db), admin: bool = Depends(auth.get_current_admin)):
+    return crud.update_ficha_tecnica(db, produto_id, itens)

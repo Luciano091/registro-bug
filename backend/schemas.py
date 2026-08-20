@@ -162,3 +162,33 @@ class WhatsAppContato(WhatsAppContatoBase):
 
     class Config:
         from_attributes = True
+
+# --- Insumo ---
+class InsumoBase(BaseModel):
+    nome: str
+    unidade_medida: str
+    custo_unitario: float
+
+class InsumoCreate(InsumoBase):
+    pass
+
+class Insumo(InsumoBase):
+    id: int
+    class Config:
+        from_attributes = True
+
+# --- ProdutoInsumo (Ficha Tecnica) ---
+class ProdutoInsumoBase(BaseModel):
+    insumo_id: int
+    quantidade: float
+
+class ProdutoInsumoCreate(ProdutoInsumoBase):
+    pass
+
+class ProdutoInsumo(ProdutoInsumoBase):
+    id: int
+    produto_id: int
+    insumo: Optional[Insumo] = None
+    
+    class Config:
+        from_attributes = True
