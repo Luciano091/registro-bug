@@ -115,9 +115,9 @@ const Insumos = () => {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-auto max-h-[60vh] custom-scrollbar">
           <table className="w-full text-left border-collapse">
-            <thead>
+            <thead className="sticky top-0 z-10 shadow-sm">
               <tr className="border-b border-white/5 bg-[#131313]">
                 <th className="p-4 text-sm font-semibold text-zinc-400">Nome</th>
                 <th className="p-4 text-sm font-semibold text-zinc-400">Unidade</th>
