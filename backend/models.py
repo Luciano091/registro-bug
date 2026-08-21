@@ -127,6 +127,8 @@ class Insumo(Base):
     nome = Column(String, index=True)
     unidade_medida = Column(String) # "UN", "KG", "G", "L", "ML"
     custo_unitario = Column(Float, default=0.0)
+    controlar_estoque = Column(Boolean, default=False)
+    estoque = Column(Float, default=0.0)
     
     fichas_tecnicas = relationship("ProdutoInsumo", back_populates="insumo")
 

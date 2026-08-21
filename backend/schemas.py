@@ -164,15 +164,14 @@ class WhatsAppContato(WhatsAppContatoBase):
         from_attributes = True
 
 # --- Insumo ---
-class InsumoBase(BaseModel):
+class InsumoCreate(BaseModel):
     nome: str
     unidade_medida: str
     custo_unitario: float
+    controlar_estoque: bool = False
+    estoque: float = 0.0
 
-class InsumoCreate(InsumoBase):
-    pass
-
-class Insumo(InsumoBase):
+class Insumo(InsumoCreate):
     id: int
     class Config:
         from_attributes = True

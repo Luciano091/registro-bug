@@ -12,7 +12,9 @@ const Insumos = () => {
   const [novoInsumo, setNovoInsumo] = useState({
     nome: '',
     unidade_medida: 'UN',
-    custo_unitario: ''
+    custo_unitario: '',
+    controlar_estoque: false,
+    estoque: ''
   });
 
   const fetchInsumos = async () => {
@@ -35,7 +37,9 @@ const Insumos = () => {
     const payload = {
       nome: novoInsumo.nome,
       unidade_medida: novoInsumo.unidade_medida,
-      custo_unitario: parseFloat(novoInsumo.custo_unitario) || 0
+      custo_unitario: parseFloat(novoInsumo.custo_unitario) || 0,
+      controlar_estoque: novoInsumo.controlar_estoque,
+      estoque: parseFloat(novoInsumo.estoque) || 0
     };
 
     try {
@@ -45,7 +49,7 @@ const Insumos = () => {
         await api.post('/insumos', payload);
       }
       setIsModalOpen(false);
-      setNovoInsumo({ nome: '', unidade_medida: 'UN', custo_unitario: '' });
+      setNovoInsumo({ nome: '', unidade_medida: 'UN', custo_unitario: '', controlar_estoque: false, estoque: '' });
       setEditingId(null);
       fetchInsumos();
     } catch (error) {
@@ -70,7 +74,9 @@ const Insumos = () => {
     setNovoInsumo({
       nome: insumo.nome,
       unidade_medida: insumo.unidade_medida,
-      custo_unitario: insumo.custo_unitario.toString()
+      custo_unitario: insumo.custo_unitario.toString(),
+      controlar_estoque: insumo.controlar_estoque || false,
+      estoque: insumo.estoque !== null ? insumo.estoque.toString() : ''
     });
     setIsModalOpen(true);
   };
@@ -121,15 +127,16 @@ const Insumos = () => {
               <tr className="border-b border-white/5 bg-[#131313]">
                 <th className="p-4 text-sm font-semibold text-zinc-400">Nome</th>
                 <th className="p-4 text-sm font-semibold text-zinc-400">Unidade</th>
+                <th className="p-4 text-sm font-semibold text-zinc-400">Estoque</th>
                 <th className="p-4 text-sm font-semibold text-zinc-400">Custo (R$)</th>
                 <th className="p-4 text-sm font-semibold text-zinc-400 w-24">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
               {loading ? (
-                <tr><td colSpan={4} className="p-8 text-center text-zinc-500">Carregando...</td></tr>
+                <tr><td colSpan={5} className="p-8 text-center text-zinc-500">Carregando...</td></tr>
               ) : filteredInsumos.length === 0 ? (
-                <tr><td colSpan={4} className="p-8 text-center text-zinc-500">Nenhum insumo encontrado.</td></tr>
+                <tr><td colSpan={5} className="p-8 text-center text-zinc-500">Nenhum insumo encontrado.</td></tr>
               ) : (
                 filteredInsumos.map(insumo => (
                   <tr key={insumo.id} className="hover:bg-white/[0.02] transition-colors group">
@@ -140,6 +147,17 @@ const Insumos = () => {
                       <span className="bg-dark-800 text-zinc-300 px-2.5 py-1 rounded-md text-xs font-bold border border-white/5">
                         {insumo.unidade_medida}
                       </span>
+                    </td>
+                    <td className="p-4">
+                      {insumo.controlar_estoque ? (
+                        <div className="flex flex-col">
+                          <span className={`font-bold ${insumo.estoque <= 5 ? 'text-red-400' : 'text-zinc-300'}`}>
+                            {insumo.estoque}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-zinc-600 text-sm">Não controla</span>
+                      )}
                     </td>
                     <td className="p-4">
                       <div className="font-price text-brand-400 font-bold">
@@ -222,6 +240,33 @@ const Insumos = () => {
                     className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all text-white placeholder-zinc-600 font-bold"
                   />
                 </div>
+              </div>
+
+              <div className="bg-dark-900 border border-white/5 p-4 rounded-xl space-y-4">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    checked={novoInsumo.controlar_estoque}
+                    onChange={e => setNovoInsumo({...novoInsumo, controlar_estoque: e.target.checked})}
+                    className="w-5 h-5 rounded border-white/10 bg-dark-800 text-brand-500 focus:ring-brand-500/50 focus:ring-offset-dark-900"
+                  />
+                  <span className="text-sm text-white font-medium">Controlar Estoque?</span>
+                </label>
+                
+                {novoInsumo.controlar_estoque && (
+                  <div>
+                    <label className="block text-sm text-zinc-400 mb-1.5">Quantidade em Estoque</label>
+                    <input 
+                      type="number"
+                      step="0.01" 
+                      required={novoInsumo.controlar_estoque}
+                      value={novoInsumo.estoque} 
+                      onChange={e => setNovoInsumo({...novoInsumo, estoque: e.target.value})} 
+                      placeholder="Ex: 50"
+                      className="w-full bg-dark-800 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all text-white placeholder-zinc-600"
+                    />
+                  </div>
+                )}
               </div>
 
               <button type="submit" className="w-full premium-btn py-3.5 rounded-xl font-bold mt-4 text-base">
