@@ -97,7 +97,7 @@ const Insumos = () => {
         <button 
           onClick={() => {
             setEditingId(null);
-            setNovoInsumo({ nome: '', unidade_medida: 'UN', custo_unitario: '' });
+            setNovoInsumo({ nome: '', unidade_medida: 'UN', custo_unitario: '', controlar_estoque: false, estoque: '' });
             setIsModalOpen(true);
           }}
           className="premium-btn py-2.5 px-5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-brand-500/20"
