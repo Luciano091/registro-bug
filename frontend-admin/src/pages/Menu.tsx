@@ -212,40 +212,44 @@ const Menu = () => {
             <div key={produto.id} className="glass-card p-5 rounded-2xl group flex flex-col justify-between">
               <div>
                 <div className="flex justify-between items-start mb-2">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-500/10 text-brand-400 border border-brand-500/20">
-                    {produto.categoria}
-                  </span>
-                  {produto.controlar_estoque && (
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ml-2 ${produto.estoque <= 3 ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20'}`}>
-                      {produto.estoque <= 3 ? '🔥 ' : '📦 '}{produto.estoque} unid.
+                  <div className="flex flex-wrap gap-2">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-500/10 text-brand-400 border border-brand-500/20">
+                      {produto.categoria}
                     </span>
-                  )}
-                  {produto.is_promocao && (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ml-2 bg-orange-500/10 text-orange-400 border-orange-500/20">
-                      🔥 Promoção
-                    </span>
-                  )}
-                  <button 
-                    onClick={() => setShowFichaModal({id: produto.id, nome: produto.nome})}
-                    className="text-zinc-500 hover:text-white opacity-0 group-hover:opacity-100 transition-all bg-dark-900 p-1.5 rounded-lg border border-white/10 hover:border-brand-500/50"
-                    title="Ficha Técnica / Insumos"
-                  >
-                    <Package size={16} />
-                  </button>
-                  <button 
-                    onClick={() => openEditProductModal(produto)}
-                    className="text-zinc-500 hover:text-white opacity-0 group-hover:opacity-100 transition-all bg-dark-900 p-1.5 rounded-lg border border-white/10 hover:border-brand-500/50"
-                    title="Editar"
-                  >
-                    <Edit2 size={16} />
-                  </button>
-                  <button 
-                    onClick={() => handleDelete(produto.id)}
-                    className="text-zinc-500 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all bg-dark-900 p-1.5 rounded-lg border border-white/10 hover:border-red-500/50 ml-1"
-                    title="Excluir"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                    {produto.controlar_estoque && (
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${produto.estoque <= 3 ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20'}`}>
+                        {produto.estoque <= 3 ? '🔥 ' : '📦 '}{produto.estoque} unid.
+                      </span>
+                    )}
+                    {produto.is_promocao && (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border bg-orange-500/10 text-orange-400 border-orange-500/20">
+                        🔥 Promoção
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0 ml-2">
+                    <button 
+                      onClick={() => setShowFichaModal({id: produto.id, nome: produto.nome})}
+                      className="text-zinc-500 hover:text-white opacity-0 group-hover:opacity-100 transition-all bg-dark-900 p-1.5 rounded-lg border border-white/10 hover:border-brand-500/50"
+                      title="Ficha Técnica / Insumos"
+                    >
+                      <Package size={16} />
+                    </button>
+                    <button 
+                      onClick={() => openEditProductModal(produto)}
+                      className="text-zinc-500 hover:text-white opacity-0 group-hover:opacity-100 transition-all bg-dark-900 p-1.5 rounded-lg border border-white/10 hover:border-brand-500/50"
+                      title="Editar"
+                    >
+                      <Edit2 size={16} />
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(produto.id)}
+                      className="text-zinc-500 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all bg-dark-900 p-1.5 rounded-lg border border-white/10 hover:border-red-500/50"
+                      title="Excluir"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
                 <h3 className="font-bold text-lg text-white mb-1 group-hover:text-brand-400 transition-colors font-heading">{produto.nome}</h3>
               </div>
