@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, Store, Phone, MapPin, Clock, MessageSquare, Lock } from 'lucide-react';
+import { Save, Store, Phone, MapPin, Clock, Lock } from 'lucide-react';
 import api from '../services/api';
 
 const Settings = () => {
