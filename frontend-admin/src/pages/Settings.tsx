@@ -18,7 +18,9 @@ const Settings = () => {
     const fetchConfig = async () => {
       try {
         const response = await api.get('/configuracao');
-        setConfig(response.data);
+        const data = response.data;
+        data.senha_admin = '';
+        setConfig(data);
       } catch (error) {
         console.error(error);
       }
