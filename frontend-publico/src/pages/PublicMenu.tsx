@@ -137,11 +137,11 @@ const PublicMenu = () => {
       
       {/* HEADER / HERO */}
       <div className="w-full relative flex flex-col items-center justify-end min-h-[260px] md:min-h-[300px] pt-12 pb-6">
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0D0D0D] via-[#0D0D0D]/70 to-black/30 z-10 pointer-events-none"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0D0D0D] via-[#0D0D0D]/80 to-[#0D0D0D]/40 z-10 pointer-events-none"></div>
         <img 
           src="https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=1400&q=80" 
           alt="Capa" 
-          className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
+          className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none opacity-30 md:opacity-40"
         />
         
         {/* Informações da Loja por cima do Hero */}
