@@ -368,9 +368,22 @@ const PublicMenu = () => {
                         </p>
                       </div>
                       <div className="flex items-center justify-between mt-3">
-                        <span className="font-price font-bold text-[15px] md:text-[16px] text-brand-400 tracking-wide">
-                          {produto.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                        </span>
+                        <div className="flex flex-col">
+                          {produto.is_promocao && produto.preco_promocao ? (
+                            <>
+                              <span className="font-price text-[11px] text-zinc-500 line-through leading-none mb-0.5">
+                                {produto.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                              </span>
+                              <span className="font-price font-bold text-[15px] md:text-[16px] text-brand-400 tracking-wide leading-none">
+                                {produto.preco_promocao.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="font-price font-bold text-[15px] md:text-[16px] text-brand-400 tracking-wide">
+                              {produto.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                            </span>
+                          )}
+                        </div>
                         <button 
                           onClick={(e) => quickAdd(produto, e)}
                           className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 ${addedProductId === produto.id ? 'bg-emerald-500 text-white scale-110' : 'bg-white/5 text-zinc-400 hover:bg-brand-500 hover:text-white active:scale-90'}`}
