@@ -87,7 +87,7 @@ function AppContent() {
           <NetworkBanner />
         {/* Global Background Image */}
         <div 
-          className="absolute inset-0 z-0 opacity-70 pointer-events-none bg-no-repeat bg-center bg-cover mix-blend-screen"
+          className="absolute inset-0 z-0 opacity-15 pointer-events-none bg-no-repeat bg-center bg-cover"
           style={{ backgroundImage: "url('https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=2000&q=80')" }}
         ></div>
         {/* Soft Vignette */}
