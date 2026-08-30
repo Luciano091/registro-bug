@@ -43,7 +43,7 @@ const Login = () => {
             <Lock size={32} className="text-brand-500" />
           </div>
           <h1 className="text-3xl font-bold font-heading text-white mb-2">Área Restrita</h1>
-          <p className="text-zinc-500 text-center">
+          <p className="text-zinc-400 text-center">
             Digite a senha administrativa para acessar o painel de controle.
           </p>
         </div>
@@ -63,7 +63,7 @@ const Login = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 transition-colors"
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
@@ -90,7 +90,7 @@ const Login = () => {
         </div>
         
         <div className="mt-8 text-center">
-           <a href="https://menu-burgerhouse.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-brand-400 transition-colors text-sm font-semibold">
+           <a href="https://menu-burgerhouse.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-zinc-400 hover:text-brand-400 transition-colors text-sm font-semibold">
               Ver Cardápio Público
            </a>
         </div>

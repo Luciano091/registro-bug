@@ -43,7 +43,7 @@ const NavLink = ({ to, icon: Icon, children, isCollapsed, hasBadge }: { to: stri
     <Link 
       to={to} 
       title={isCollapsed ? children as string : undefined}
-      className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 px-4'} py-3 rounded-xl transition-all duration-300 font-medium relative group ${isActive ? 'text-white' : 'text-zinc-400 hover:text-white'}`}
+      className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 px-4'} py-3 rounded-xl transition-all duration-300 font-medium relative group ${isActive ? 'text-white' : 'text-zinc-300 hover:text-white'}`}
     >
       {isActive && (
         <div className="absolute inset-0 bg-gradient-to-r from-brand-500/20 to-transparent rounded-xl border border-brand-500/30 shadow-[inset_0px_1px_1px_rgba(255,255,255,0.1)]"></div>
@@ -52,7 +52,7 @@ const NavLink = ({ to, icon: Icon, children, isCollapsed, hasBadge }: { to: stri
         <div className="absolute inset-0 bg-white/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
       )}
       <div className="relative">
-        <Icon size={20} className={`relative z-10 transition-colors flex-shrink-0 ${isActive ? 'text-brand-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
+        <Icon size={20} className={`relative z-10 transition-colors flex-shrink-0 ${isActive ? 'text-brand-400' : 'text-zinc-400 group-hover:text-zinc-200'}`} />
         {hasBadge && (
           <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-red-500 rounded-full shadow-[0_0_12px_rgba(239,68,68,1)] border-[1.5px] border-dark-950 z-20 animate-pulse"></span>
         )}
@@ -115,7 +115,7 @@ function AppContent() {
             
             <button 
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-zinc-400 hover:text-white transition-colors flex-shrink-0"
+              className="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-zinc-300 hover:text-white transition-colors flex-shrink-0"
               title={isCollapsed ? "Expandir" : "Recolher"}
             >
               {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
@@ -171,7 +171,7 @@ function AppContent() {
               <h2 className="text-2xl font-heading font-bold text-white">Menu</h2>
               <button 
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-2 bg-white/10 rounded-full text-zinc-300 hover:text-white transition-colors"
+                className="p-2 bg-white/10 rounded-full text-zinc-200 hover:text-white transition-colors"
               >
                 <X size={24} />
               </button>
@@ -199,15 +199,15 @@ function AppContent() {
 
         {/* Mobile Bottom Nav */}
         <nav className="md:hidden fixed bottom-0 w-full glass border-t border-white/10 flex justify-between px-4 py-2 z-50 print:hidden pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-          <Link to="/" className="p-2 flex flex-col items-center text-zinc-400 hover:text-brand-400 transition-colors"><Home size={22} /><span className="text-[10px] mt-1 font-medium">Início</span></Link>
-          <Link to="/pedidos" className="p-2 flex flex-col items-center text-zinc-400 hover:text-brand-400 transition-colors"><ListOrdered size={22} /><span className="text-[10px] mt-1 font-medium">Pedidos</span></Link>
+          <Link to="/" className="p-2 flex flex-col items-center text-zinc-300 hover:text-brand-400 transition-colors"><Home size={22} /><span className="text-[10px] mt-1 font-medium">Início</span></Link>
+          <Link to="/pedidos" className="p-2 flex flex-col items-center text-zinc-300 hover:text-brand-400 transition-colors"><ListOrdered size={22} /><span className="text-[10px] mt-1 font-medium">Pedidos</span></Link>
           
           <Link to="/novo-pedido" className="relative -top-6 p-4 premium-btn rounded-full shadow-xl shadow-brand-500/30 border-4 border-[#0a0a0a]">
             <PlusCircle size={28} />
           </Link>
           
-          <Link to="/cardapio" className="p-2 flex flex-col items-center text-zinc-400 hover:text-brand-400 transition-colors"><Utensils size={22} /><span className="text-[10px] mt-1 font-medium">Cardápio</span></Link>
-          <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 flex flex-col items-center text-zinc-400 hover:text-brand-400 transition-colors"><MenuIcon size={22} /><span className="text-[10px] mt-1 font-medium">Mais</span></button>
+          <Link to="/cardapio" className="p-2 flex flex-col items-center text-zinc-300 hover:text-brand-400 transition-colors"><Utensils size={22} /><span className="text-[10px] mt-1 font-medium">Cardápio</span></Link>
+          <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 flex flex-col items-center text-zinc-300 hover:text-brand-400 transition-colors"><MenuIcon size={22} /><span className="text-[10px] mt-1 font-medium">Mais</span></button>
         </nav>
       </div>
   );

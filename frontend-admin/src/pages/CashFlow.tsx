@@ -119,13 +119,13 @@ export default function CashFlow() {
             <Lock className="text-brand-500 w-10 h-10" />
           </div>
           <h2 className="text-2xl font-bold text-white mb-2">Caixa Fechado</h2>
-          <p className="text-zinc-400 mb-8">Para iniciar as vendas do dia, é necessário abrir o caixa e informar o saldo de troco inicial.</p>
+          <p className="text-zinc-300 mb-8">Para iniciar as vendas do dia, é necessário abrir o caixa e informar o saldo de troco inicial.</p>
           
           <form onSubmit={handleAbrirCaixa} className="w-full flex flex-col gap-4 text-left">
             <div>
-              <label className="block text-sm text-zinc-400 mb-1">Operador Responsável</label>
+              <label className="block text-sm text-zinc-300 mb-1">Operador Responsável</label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 w-5 h-5" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 w-5 h-5" />
                 <input 
                   type="text" 
                   value={operador}
@@ -137,9 +137,9 @@ export default function CashFlow() {
               </div>
             </div>
             <div>
-              <label className="block text-sm text-zinc-400 mb-1">Saldo Inicial (Troco em R$)</label>
+              <label className="block text-sm text-zinc-300 mb-1">Saldo Inicial (Troco em R$)</label>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 w-5 h-5" />
+                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 w-5 h-5" />
                 <input 
                   type="number" 
                   min="0"
@@ -171,7 +171,7 @@ export default function CashFlow() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-heading font-bold gradient-text">Gestão de Caixa</h1>
-          <p className="text-zinc-400">Operador: <span className="text-white font-medium">{caixa.operador}</span> | Aberto em: {new Date(caixa.data_abertura).toLocaleString()}</p>
+          <p className="text-zinc-300">Operador: <span className="text-white font-medium">{caixa.operador}</span> | Aberto em: {new Date(caixa.data_abertura).toLocaleString()}</p>
         </div>
         <button onClick={handleFecharCaixa} className="bg-red-500/10 text-red-500 hover:bg-red-500/20 px-6 py-3 rounded-xl font-bold transition-colors flex items-center gap-2 border border-red-500/20">
           <Lock size={18} /> Fechar Caixa
@@ -180,7 +180,7 @@ export default function CashFlow() {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="glass-card p-6 rounded-2xl flex flex-col justify-center">
-          <span className="text-zinc-400 text-sm font-medium mb-1 flex items-center gap-2"><DollarSign size={16}/> Saldo Inicial</span>
+          <span className="text-zinc-300 text-sm font-medium mb-1 flex items-center gap-2"><DollarSign size={16}/> Saldo Inicial</span>
           <span className="text-2xl font-bold text-white">R$ {caixa.saldo_inicial.toFixed(2)}</span>
         </div>
         <div className="glass-card p-6 rounded-2xl flex flex-col justify-center bg-green-500/5 border-green-500/20">
@@ -219,7 +219,7 @@ export default function CashFlow() {
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="bg-white/5 text-zinc-400 text-sm">
+            <thead className="bg-white/5 text-zinc-300 text-sm">
               <tr>
                 <th className="p-4 font-medium">Data/Hora</th>
                 <th className="p-4 font-medium">Tipo</th>
@@ -231,7 +231,7 @@ export default function CashFlow() {
             <tbody className="divide-y divide-white/5">
               {caixa.movimentacoes.slice().reverse().map((mov, idx) => (
                 <tr key={idx} className="hover:bg-white/5 transition-colors">
-                  <td className="p-4 text-zinc-300 text-sm">{new Date(mov.data).toLocaleString()}</td>
+                  <td className="p-4 text-zinc-200 text-sm">{new Date(mov.data).toLocaleString()}</td>
                   <td className="p-4">
                     <span className={`px-2 py-1 rounded text-xs font-medium ${
                       mov.tipo === 'venda' ? 'bg-brand-500/20 text-brand-400' :
@@ -241,8 +241,8 @@ export default function CashFlow() {
                       {mov.tipo.toUpperCase()}
                     </span>
                   </td>
-                  <td className="p-4 text-zinc-300">{mov.descricao || "-"}</td>
-                  <td className="p-4 text-zinc-400 text-sm">{mov.forma_pagamento}</td>
+                  <td className="p-4 text-zinc-200">{mov.descricao || "-"}</td>
+                  <td className="p-4 text-zinc-300 text-sm">{mov.forma_pagamento}</td>
                   <td className={`p-4 text-right font-medium ${
                     mov.tipo === 'sangria' ? 'text-red-400' : 'text-emerald-400'
                   }`}>
@@ -252,7 +252,7 @@ export default function CashFlow() {
               ))}
               {caixa.movimentacoes.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="p-8 text-center text-zinc-500">Nenhuma movimentação registrada ainda.</td>
+                  <td colSpan={5} className="p-8 text-center text-zinc-400">Nenhuma movimentação registrada ainda.</td>
                 </tr>
               )}
             </tbody>
@@ -269,9 +269,9 @@ export default function CashFlow() {
             </h3>
             <form onSubmit={handleMovimentacao} className="flex flex-col gap-4">
               <div>
-                <label className="block text-sm text-zinc-400 mb-1">Valor (R$)</label>
+                <label className="block text-sm text-zinc-300 mb-1">Valor (R$)</label>
                 <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 w-5 h-5" />
+                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 w-5 h-5" />
                   <input 
                     type="number" 
                     min="0.01" step="0.01" required
@@ -282,7 +282,7 @@ export default function CashFlow() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm text-zinc-400 mb-1">Descrição / Motivo</label>
+                <label className="block text-sm text-zinc-300 mb-1">Descrição / Motivo</label>
                 <input 
                   type="text" required
                   value={movDescricao} onChange={e => setMovDescricao(e.target.value)}

@@ -159,7 +159,7 @@ const Menu = () => {
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-white font-heading drop-shadow-sm">Cardápio</h2>
-          <p className="text-zinc-400 mt-1">Gerencie os produtos e categorias.</p>
+          <p className="text-zinc-300 mt-1">Gerencie os produtos e categorias.</p>
         </div>
         <button 
           onClick={() => {
@@ -186,7 +186,7 @@ const Menu = () => {
               className={`px-4 py-2 rounded-lg text-sm transition-all whitespace-nowrap ${
                 activeCategory === cat && !search 
                   ? 'bg-white/10 text-white font-medium shadow-sm' 
-                  : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'
+                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'
               }`}
             >
               {cat as string}
@@ -195,7 +195,7 @@ const Menu = () => {
         </div>
 
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
           <input 
             type="text" 
             placeholder="Buscar produto..."
@@ -217,7 +217,7 @@ const Menu = () => {
                       {produto.categoria}
                     </span>
                     {produto.controlar_estoque && (
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${produto.estoque <= 3 ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20'}`}>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${produto.estoque <= 3 ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-zinc-500/10 text-zinc-300 border-zinc-500/20'}`}>
                         {produto.estoque <= 3 ? '🔥 ' : '📦 '}{produto.estoque} unid.
                       </span>
                     )}
@@ -230,21 +230,21 @@ const Menu = () => {
                   <div className="flex items-center gap-1 shrink-0 ml-2">
                     <button 
                       onClick={() => setShowFichaModal({id: produto.id, nome: produto.nome})}
-                      className="text-zinc-500 hover:text-white opacity-0 group-hover:opacity-100 transition-all bg-dark-900 p-1.5 rounded-lg border border-white/10 hover:border-brand-500/50"
+                      className="text-zinc-400 hover:text-white opacity-0 group-hover:opacity-100 transition-all bg-dark-900 p-1.5 rounded-lg border border-white/10 hover:border-brand-500/50"
                       title="Ficha Técnica / Insumos"
                     >
                       <Package size={16} />
                     </button>
                     <button 
                       onClick={() => openEditProductModal(produto)}
-                      className="text-zinc-500 hover:text-white opacity-0 group-hover:opacity-100 transition-all bg-dark-900 p-1.5 rounded-lg border border-white/10 hover:border-brand-500/50"
+                      className="text-zinc-400 hover:text-white opacity-0 group-hover:opacity-100 transition-all bg-dark-900 p-1.5 rounded-lg border border-white/10 hover:border-brand-500/50"
                       title="Editar"
                     >
                       <Edit2 size={16} />
                     </button>
                     <button 
                       onClick={() => handleDelete(produto.id)}
-                      className="text-zinc-500 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all bg-dark-900 p-1.5 rounded-lg border border-white/10 hover:border-red-500/50"
+                      className="text-zinc-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all bg-dark-900 p-1.5 rounded-lg border border-white/10 hover:border-red-500/50"
                       title="Excluir"
                     >
                       <Trash2 size={16} />
@@ -254,12 +254,12 @@ const Menu = () => {
                 <h3 className="font-bold text-lg text-white mb-1 group-hover:text-brand-400 transition-colors font-heading">{produto.nome}</h3>
               </div>
               <div className="mt-4 flex flex-col gap-1">
-                <span className="text-xl font-bold text-zinc-300">
+                <span className="text-xl font-bold text-zinc-200">
                   {produto.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                 </span>
                 {produto.preco_compra > 0 && (
                   <div className="flex justify-between items-center text-xs">
-                    <span className="text-zinc-500">Custo: {produto.preco_compra.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                    <span className="text-zinc-400">Custo: {produto.preco_compra.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
                     <span className="text-emerald-500 font-medium">Lucro: {(produto.preco - produto.preco_compra).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
                   </div>
                 )}
@@ -269,7 +269,7 @@ const Menu = () => {
         </div>
         {filtered.length === 0 && (
           <div className="text-center py-10 bg-zinc-900/50 rounded-2xl border border-zinc-800 border-dashed">
-            <p className="text-zinc-500">Nenhum produto encontrado nesta categoria.</p>
+            <p className="text-zinc-400">Nenhum produto encontrado nesta categoria.</p>
           </div>
         )}
       </div>
@@ -279,14 +279,14 @@ const Menu = () => {
           <div className="glass border border-white/10 rounded-3xl p-6 w-full max-w-md animate-in zoom-in-95 shadow-2xl max-h-[95vh] overflow-y-auto custom-scrollbar">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-2xl font-bold font-heading">{editingId ? 'Editar Produto' : 'Novo Produto'}</h3>
-              <button onClick={() => setShowModal(false)} className="text-zinc-500 hover:text-white transition-colors bg-white/5 p-2 rounded-full hover:bg-white/10">
+              <button onClick={() => setShowModal(false)} className="text-zinc-400 hover:text-white transition-colors bg-white/5 p-2 rounded-full hover:bg-white/10">
                 <X size={20} />
               </button>
             </div>
             
             <form onSubmit={handleSave} className="space-y-4">
               <div>
-                <label className="block text-sm text-zinc-400 mb-1">Nome do Produto</label>
+                <label className="block text-sm text-zinc-300 mb-1">Nome do Produto</label>
                 <input 
                   required 
                   value={novoProduto.nome} 
@@ -297,7 +297,7 @@ const Menu = () => {
               </div>
               
               <div>
-                <label className="block text-sm text-zinc-400 mb-1">Categoria</label>
+                <label className="block text-sm text-zinc-300 mb-1">Categoria</label>
                 <input 
                   required 
                   list="categorias-list"
@@ -314,7 +314,7 @@ const Menu = () => {
               </div>
 
               <div>
-                <label className="block text-sm text-zinc-400 mb-1">Descrição (Ingredientes)</label>
+                <label className="block text-sm text-zinc-300 mb-1">Descrição (Ingredientes)</label>
                 <textarea 
                   value={novoProduto.descricao || ''} 
                   onChange={e => setNovoProduto({...novoProduto, descricao: e.target.value})} 
@@ -325,7 +325,7 @@ const Menu = () => {
               </div>
 
               <div>
-                <label className="block text-sm text-zinc-400 mb-1">Imagem do Produto</label>
+                <label className="block text-sm text-zinc-300 mb-1">Imagem do Produto</label>
                 <div className="flex gap-3">
                   <div className="flex-1">
                     <input 
@@ -345,7 +345,7 @@ const Menu = () => {
                         className="hidden" 
                       />
                     </label>
-                    <label className="flex items-center gap-2 text-sm text-zinc-400 cursor-pointer">
+                    <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
                       <input 
                         type="checkbox" 
                         checked={removerFundo}
@@ -365,18 +365,18 @@ const Menu = () => {
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-zinc-400 mb-1">Preço Custo (R$)</label>
+                  <label className="block text-sm text-zinc-300 mb-1">Preço Custo (R$)</label>
                   <input 
                     type="number" 
                     step="0.01" 
                     value={novoProduto.preco_compra} 
                     onChange={e => setNovoProduto({...novoProduto, preco_compra: e.target.value})} 
                     placeholder="10.00"
-                    className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all text-zinc-300 placeholder-zinc-600"
+                    className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all text-zinc-200 placeholder-zinc-600"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-zinc-400 mb-1">Preço Venda (R$)</label>
+                  <label className="block text-sm text-zinc-300 mb-1">Preço Venda (R$)</label>
                   <input 
                     required 
                     type="number" 
@@ -402,7 +402,7 @@ const Menu = () => {
                 
                 {novoProduto.controlar_estoque && (
                   <div>
-                    <label className="block text-sm text-zinc-400 mb-1">Quantidade em Estoque</label>
+                    <label className="block text-sm text-zinc-300 mb-1">Quantidade em Estoque</label>
                     <input 
                       type="number" 
                       required={novoProduto.controlar_estoque}
@@ -428,7 +428,7 @@ const Menu = () => {
                 
                 {novoProduto.is_promocao && (
                   <div>
-                    <label className="block text-sm text-zinc-400 mb-1">Preço Promocional (R$)</label>
+                    <label className="block text-sm text-zinc-300 mb-1">Preço Promocional (R$)</label>
                     <input 
                       type="number" 
                       step="0.01"

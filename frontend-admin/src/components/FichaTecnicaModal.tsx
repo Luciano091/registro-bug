@@ -97,7 +97,7 @@ const FichaTecnicaModal = ({ produtoId, produtoNome, onClose }: FichaTecnicaModa
             </h3>
             <p className="text-brand-400 font-semibold">{produtoNome}</p>
           </div>
-          <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors bg-white/5 p-2 rounded-full hover:bg-white/10">
+          <button onClick={onClose} className="text-zinc-400 hover:text-white transition-colors bg-white/5 p-2 rounded-full hover:bg-white/10">
             <X size={20} />
           </button>
         </div>
@@ -106,7 +106,7 @@ const FichaTecnicaModal = ({ produtoId, produtoNome, onClose }: FichaTecnicaModa
           {/* Lado Esquerdo: Buscar Insumos */}
           <div className="flex flex-col border-r border-white/5 pr-0 md:pr-4">
             <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={16} />
               <input 
                 type="text"
                 placeholder="Buscar insumo..."
@@ -118,12 +118,12 @@ const FichaTecnicaModal = ({ produtoId, produtoNome, onClose }: FichaTecnicaModa
             
             <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 max-h-[300px]">
               {loading ? (
-                <p className="text-sm text-zinc-500">Carregando...</p>
+                <p className="text-sm text-zinc-400">Carregando...</p>
               ) : filteredInsumos.map(insumo => (
                 <div key={insumo.id} className="flex justify-between items-center p-2 hover:bg-white/5 rounded-lg mb-1 group transition-colors">
                   <div>
                     <p className="text-sm text-white font-medium">{insumo.nome}</p>
-                    <p className="text-[10px] text-zinc-500">{insumo.custo_unitario.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} / {insumo.unidade_medida}</p>
+                    <p className="text-[10px] text-zinc-400">{insumo.custo_unitario.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} / {insumo.unidade_medida}</p>
                   </div>
                   <button 
                     onClick={() => addInsumoToFicha(insumo)}
@@ -138,17 +138,17 @@ const FichaTecnicaModal = ({ produtoId, produtoNome, onClose }: FichaTecnicaModa
 
           {/* Lado Direito: Itens da Ficha */}
           <div className="flex flex-col">
-            <h4 className="text-sm font-bold text-zinc-400 mb-4 uppercase tracking-wider">Ingredientes do Produto</h4>
+            <h4 className="text-sm font-bold text-zinc-300 mb-4 uppercase tracking-wider">Ingredientes do Produto</h4>
             
             <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 max-h-[300px]">
               {ficha.length === 0 ? (
-                <p className="text-sm text-zinc-500 text-center mt-10">Nenhum insumo adicionado.</p>
+                <p className="text-sm text-zinc-400 text-center mt-10">Nenhum insumo adicionado.</p>
               ) : (
                 ficha.map((item, index) => (
                   <div key={index} className="flex items-center gap-3 mb-3 p-3 bg-dark-900 border border-white/5 rounded-xl">
                     <div className="flex-1">
                       <p className="text-sm text-white font-semibold">{item.insumo?.nome}</p>
-                      <p className="text-xs text-zinc-500">{(item.insumo?.custo_unitario * (item.quantidade || 0)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                      <p className="text-xs text-zinc-400">{(item.insumo?.custo_unitario * (item.quantidade || 0)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <input 
@@ -158,10 +158,10 @@ const FichaTecnicaModal = ({ produtoId, produtoNome, onClose }: FichaTecnicaModa
                         onChange={(e) => updateQuantidade(index, e.target.value)}
                         className="w-20 bg-[#131313] border border-white/10 rounded-lg p-1.5 text-center text-white text-sm focus:outline-none focus:border-brand-500"
                       />
-                      <span className="text-xs text-zinc-500 w-6">{item.insumo?.unidade_medida}</span>
+                      <span className="text-xs text-zinc-400 w-6">{item.insumo?.unidade_medida}</span>
                       <button 
                         onClick={() => removeInsumo(index)}
-                        className="p-1.5 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors"
+                        className="p-1.5 text-zinc-400 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors"
                       >
                         <Trash2 size={16} />
                       </button>
@@ -173,7 +173,7 @@ const FichaTecnicaModal = ({ produtoId, produtoNome, onClose }: FichaTecnicaModa
             
             <div className="mt-4 pt-4 border-t border-white/10">
               <div className="flex justify-between items-center mb-4">
-                <span className="text-zinc-400">Custo Total Calculado:</span>
+                <span className="text-zinc-300">Custo Total Calculado:</span>
                 <span className="text-xl font-bold font-price text-brand-400">
                   {calcularCustoTotal().toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                 </span>

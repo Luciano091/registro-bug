@@ -91,7 +91,7 @@ const Insumos = () => {
             <Package className="text-brand-500" size={32} />
             Tabela de Insumos
           </h1>
-          <p className="text-zinc-400 mt-1">Gerencie os custos de ingredientes e embalagens.</p>
+          <p className="text-zinc-300 mt-1">Gerencie os custos de ingredientes e embalagens.</p>
         </div>
         
         <button 
@@ -110,7 +110,7 @@ const Insumos = () => {
       <div className="bg-dark-900 border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
         <div className="p-4 border-b border-white/5 flex gap-4">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
             <input 
               type="text"
               placeholder="Buscar insumo..."
@@ -125,18 +125,18 @@ const Insumos = () => {
           <table className="w-full text-left border-collapse">
             <thead className="sticky top-0 z-10 shadow-sm">
               <tr className="border-b border-white/5 bg-[#131313]">
-                <th className="p-4 text-sm font-semibold text-zinc-400">Nome</th>
-                <th className="p-4 text-sm font-semibold text-zinc-400">Unidade</th>
-                <th className="p-4 text-sm font-semibold text-zinc-400">Estoque</th>
-                <th className="p-4 text-sm font-semibold text-zinc-400">Custo (R$)</th>
-                <th className="p-4 text-sm font-semibold text-zinc-400 w-24">Ações</th>
+                <th className="p-4 text-sm font-semibold text-zinc-300">Nome</th>
+                <th className="p-4 text-sm font-semibold text-zinc-300">Unidade</th>
+                <th className="p-4 text-sm font-semibold text-zinc-300">Estoque</th>
+                <th className="p-4 text-sm font-semibold text-zinc-300">Custo (R$)</th>
+                <th className="p-4 text-sm font-semibold text-zinc-300 w-24">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
               {loading ? (
-                <tr><td colSpan={5} className="p-8 text-center text-zinc-500">Carregando...</td></tr>
+                <tr><td colSpan={5} className="p-8 text-center text-zinc-400">Carregando...</td></tr>
               ) : filteredInsumos.length === 0 ? (
-                <tr><td colSpan={5} className="p-8 text-center text-zinc-500">Nenhum insumo encontrado.</td></tr>
+                <tr><td colSpan={5} className="p-8 text-center text-zinc-400">Nenhum insumo encontrado.</td></tr>
               ) : (
                 filteredInsumos.map(insumo => (
                   <tr key={insumo.id} className="hover:bg-white/[0.02] transition-colors group">
@@ -144,14 +144,14 @@ const Insumos = () => {
                       <div className="font-semibold text-white">{insumo.nome}</div>
                     </td>
                     <td className="p-4">
-                      <span className="bg-dark-800 text-zinc-300 px-2.5 py-1 rounded-md text-xs font-bold border border-white/5">
+                      <span className="bg-dark-800 text-zinc-200 px-2.5 py-1 rounded-md text-xs font-bold border border-white/5">
                         {insumo.unidade_medida}
                       </span>
                     </td>
                     <td className="p-4">
                       {insumo.controlar_estoque ? (
                         <div className="flex flex-col">
-                          <span className={`font-bold ${insumo.estoque <= 5 ? 'text-red-400' : 'text-zinc-300'}`}>
+                          <span className={`font-bold ${insumo.estoque <= 5 ? 'text-red-400' : 'text-zinc-200'}`}>
                             {insumo.estoque}
                           </span>
                         </div>
@@ -168,13 +168,13 @@ const Insumos = () => {
                       <div className="flex items-center gap-2">
                         <button 
                           onClick={() => openEditModal(insumo)}
-                          className="p-2 text-zinc-400 hover:text-white bg-dark-800 hover:bg-white/10 rounded-lg transition-colors border border-white/5"
+                          className="p-2 text-zinc-300 hover:text-white bg-dark-800 hover:bg-white/10 rounded-lg transition-colors border border-white/5"
                         >
                           <Edit2 size={16} />
                         </button>
                         <button 
                           onClick={() => handleDelete(insumo.id)}
-                          className="p-2 text-zinc-400 hover:text-red-400 bg-dark-800 hover:bg-red-500/10 rounded-lg transition-colors border border-white/5"
+                          className="p-2 text-zinc-300 hover:text-red-400 bg-dark-800 hover:bg-red-500/10 rounded-lg transition-colors border border-white/5"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -195,14 +195,14 @@ const Insumos = () => {
               <h2 className="text-xl font-heading font-bold text-white">
                 {editingId ? 'Editar Insumo' : 'Novo Insumo'}
               </h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-zinc-500 hover:text-white transition-colors bg-white/5 p-1.5 rounded-full hover:bg-white/10">
+              <button onClick={() => setIsModalOpen(false)} className="text-zinc-400 hover:text-white transition-colors bg-white/5 p-1.5 rounded-full hover:bg-white/10">
                 <Plus size={20} className="rotate-45" />
               </button>
             </div>
             
             <form onSubmit={handleSubmit} className="p-6 space-y-5">
               <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-1.5">Nome do Insumo</label>
+                <label className="block text-sm font-medium text-zinc-300 mb-1.5">Nome do Insumo</label>
                 <input 
                   required 
                   type="text" 
@@ -215,7 +215,7 @@ const Insumos = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-zinc-400 mb-1.5">Unidade</label>
+                  <label className="block text-sm font-medium text-zinc-300 mb-1.5">Unidade</label>
                   <select 
                     value={novoInsumo.unidade_medida} 
                     onChange={e => setNovoInsumo({...novoInsumo, unidade_medida: e.target.value})} 
@@ -229,7 +229,7 @@ const Insumos = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-zinc-400 mb-1.5">Custo (R$)</label>
+                  <label className="block text-sm font-medium text-zinc-300 mb-1.5">Custo (R$)</label>
                   <input 
                     required 
                     type="number" 
@@ -255,7 +255,7 @@ const Insumos = () => {
                 
                 {novoInsumo.controlar_estoque && (
                   <div>
-                    <label className="block text-sm text-zinc-400 mb-1.5">Quantidade em Estoque</label>
+                    <label className="block text-sm text-zinc-300 mb-1.5">Quantidade em Estoque</label>
                     <input 
                       type="number"
                       step="0.01" 

@@ -50,7 +50,7 @@ const Settings = () => {
       <header className="mb-8 flex flex-col md:flex-row justify-between md:items-end gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-white font-heading drop-shadow-sm">Configurações</h2>
-          <p className="text-zinc-400 mt-1">Gerencie as informações da sua hamburgueria.</p>
+          <p className="text-zinc-300 mt-1">Gerencie as informações da sua hamburgueria.</p>
         </div>
         <button 
           onClick={handleSave}
@@ -67,7 +67,7 @@ const Settings = () => {
         
         <div className="space-y-6 max-w-2xl">
           <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-zinc-400 mb-2">
+            <label className="flex items-center gap-2 text-sm font-medium text-zinc-300 mb-2">
               <Store className="text-brand-400" size={18} /> Nome da Hamburgueria
             </label>
             <input 
@@ -79,7 +79,7 @@ const Settings = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-zinc-400 mb-2">
+              <label className="flex items-center gap-2 text-sm font-medium text-zinc-300 mb-2">
                 <Phone className="text-brand-400" size={18} /> Telefone Principal
               </label>
               <input 
@@ -90,7 +90,7 @@ const Settings = () => {
             </div>
             
             <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-zinc-400 mb-2">
+              <label className="flex items-center gap-2 text-sm font-medium text-zinc-300 mb-2">
                 <Clock className="text-brand-400" size={18} /> Tempo Médio de Preparo (min)
               </label>
               <input 
@@ -102,7 +102,7 @@ const Settings = () => {
           </div>
 
           <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-zinc-400 mb-2">
+            <label className="flex items-center gap-2 text-sm font-medium text-zinc-300 mb-2">
               <MapPin className="text-brand-400" size={18} /> Endereço
             </label>
             <textarea 
@@ -124,7 +124,7 @@ const Settings = () => {
             </div>
             <div>
               <h3 className="text-xl font-bold text-white font-heading">Automação do WhatsApp</h3>
-              <p className="text-zinc-400 text-sm">Responda automaticamente a novos clientes.</p>
+              <p className="text-zinc-300 text-sm">Responda automaticamente a novos clientes.</p>
             </div>
           </div>
 
@@ -132,7 +132,7 @@ const Settings = () => {
             <div className="flex items-center justify-between bg-dark-900 border border-white/10 rounded-xl px-4 py-4">
               <div>
                 <p className="text-white font-medium">Ativar Resposta Automática</p>
-                <p className="text-zinc-400 text-sm mt-0.5">Envia uma mensagem automática se o cliente não interagiu nas últimas 2 horas.</p>
+                <p className="text-zinc-300 text-sm mt-0.5">Envia uma mensagem automática se o cliente não interagiu nas últimas 2 horas.</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" name="whatsapp_auto_reply_enabled" className="sr-only peer" checked={config.whatsapp_auto_reply_enabled} onChange={handleChange} />
@@ -142,7 +142,7 @@ const Settings = () => {
 
             {config.whatsapp_auto_reply_enabled && (
               <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                <label className="flex items-center gap-2 text-sm font-medium text-zinc-400 mb-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-zinc-300 mb-2">
                   Mensagem Automática
                 </label>
                 <textarea 
@@ -166,13 +166,13 @@ const Settings = () => {
             </div>
             <div>
               <h3 className="text-xl font-bold text-white font-heading">Segurança</h3>
-              <p className="text-zinc-400 text-sm">Proteja o acesso ao painel de controle.</p>
+              <p className="text-zinc-300 text-sm">Proteja o acesso ao painel de controle.</p>
             </div>
           </div>
 
           <div className="space-y-6 relative z-10">
             <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-zinc-400 mb-2">
+              <label className="flex items-center gap-2 text-sm font-medium text-zinc-300 mb-2">
                 Senha de Administrador (PIN)
               </label>
               <input 
@@ -183,7 +183,7 @@ const Settings = () => {
                 placeholder="Ex: burger123"
                 className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all text-white"
               />
-              <p className="text-xs text-zinc-500 mt-2">
+              <p className="text-xs text-zinc-400 mt-2">
                 Esta é a senha solicitada na tela de login para acessar o painel administrativo.
               </p>
             </div>

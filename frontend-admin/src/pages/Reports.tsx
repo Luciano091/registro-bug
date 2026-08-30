@@ -89,7 +89,7 @@ const Reports = () => {
 
   if (hasError || !data) {
     return (
-      <div className="flex flex-col items-center justify-center h-full min-h-[600px] text-zinc-400 gap-4">
+      <div className="flex flex-col items-center justify-center h-full min-h-[600px] text-zinc-300 gap-4">
         <p className="text-lg">Ocorreu um erro ao buscar os dados do relatório.</p>
         <p className="text-sm">Por favor, verifique sua conexão ou tente novamente mais tarde.</p>
         <button onClick={() => setPeriodo(periodo === 'custom' ? 'mes' : periodo)} className="px-4 py-2 mt-4 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors">Tentar Novamente</button>
@@ -108,7 +108,7 @@ const Reports = () => {
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 print:hidden">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-white font-heading">Relatórios</h2>
-          <p className="text-zinc-400 mt-1 text-sm">Acompanhe o desempenho completo do seu negócio.</p>
+          <p className="text-zinc-300 mt-1 text-sm">Acompanhe o desempenho completo do seu negócio.</p>
         </div>
         
         <div className="flex items-center gap-3 w-full md:w-auto flex-wrap">
@@ -118,22 +118,22 @@ const Reports = () => {
                 type="date" 
                 value={customStart} 
                 onChange={(e) => setCustomStart(e.target.value)} 
-                className="bg-transparent text-sm text-zinc-300 outline-none cursor-pointer"
+                className="bg-transparent text-sm text-zinc-200 outline-none cursor-pointer"
                 style={{ colorScheme: 'dark' }}
               />
-              <span className="text-zinc-500 text-xs">até</span>
+              <span className="text-zinc-400 text-xs">até</span>
               <input 
                 type="date" 
                 value={customEnd} 
                 onChange={(e) => setCustomEnd(e.target.value)} 
-                className="bg-transparent text-sm text-zinc-300 outline-none cursor-pointer"
+                className="bg-transparent text-sm text-zinc-200 outline-none cursor-pointer"
                 style={{ colorScheme: 'dark' }}
               />
             </div>
           )}
 
           <div className="flex items-center bg-dark-900/60 border border-white/5 rounded-lg p-1 backdrop-blur-md">
-             <Calendar size={16} className="text-zinc-400 ml-2 mr-1" />
+             <Calendar size={16} className="text-zinc-300 ml-2 mr-1" />
              <select 
                value={periodo} 
                onChange={(e) => {
@@ -145,7 +145,7 @@ const Reports = () => {
                    setCustomEnd(today.toISOString().split('T')[0]);
                  }
                }}
-               className="bg-transparent text-sm text-zinc-300 py-1.5 px-2 outline-none cursor-pointer"
+               className="bg-transparent text-sm text-zinc-200 py-1.5 px-2 outline-none cursor-pointer"
              >
                <option value="hoje">Hoje</option>
                <option value="7d">Últimos 7 Dias</option>
@@ -159,7 +159,7 @@ const Reports = () => {
               <FileSpreadsheet size={16} />
               <span className="hidden md:inline">Exportar Excel</span>
             </button>
-            <button onClick={exportPDF} className="flex items-center gap-2 bg-dark-900/60 border border-white/5 hover:bg-white/5 transition-colors px-4 py-2 rounded-lg text-sm text-zinc-300 backdrop-blur-md">
+            <button onClick={exportPDF} className="flex items-center gap-2 bg-dark-900/60 border border-white/5 hover:bg-white/5 transition-colors px-4 py-2 rounded-lg text-sm text-zinc-200 backdrop-blur-md">
               <Download size={16} />
               <span className="hidden md:inline">Baixar PDF</span>
             </button>
@@ -174,7 +174,7 @@ const Reports = () => {
             <DollarSign size={24} />
           </div>
           <div>
-            <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-1">Faturamento Total</p>
+            <p className="text-xs font-medium text-zinc-300 uppercase tracking-wider mb-1">Faturamento Total</p>
             <h3 className="text-2xl font-bold text-white font-heading mb-1">
               {data.resumo.faturamento.atual.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
             </h3>
@@ -187,7 +187,7 @@ const Reports = () => {
             <Package size={24} />
           </div>
           <div>
-            <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-1">Total de Pedidos</p>
+            <p className="text-xs font-medium text-zinc-300 uppercase tracking-wider mb-1">Total de Pedidos</p>
             <h3 className="text-2xl font-bold text-white font-heading mb-1">{data.resumo.pedidos.atual}</h3>
             <GrowthBadge value={data.resumo.pedidos.crescimento} />
           </div>
@@ -198,7 +198,7 @@ const Reports = () => {
             <Receipt size={24} />
           </div>
           <div>
-            <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-1">Ticket Médio</p>
+            <p className="text-xs font-medium text-zinc-300 uppercase tracking-wider mb-1">Ticket Médio</p>
             <h3 className="text-2xl font-bold text-white font-heading mb-1">
               {data.resumo.ticket_medio.atual.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
             </h3>
@@ -211,7 +211,7 @@ const Reports = () => {
             <TrendingUp size={24} />
           </div>
           <div>
-            <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-1">Lucro Líquido</p>
+            <p className="text-xs font-medium text-zinc-300 uppercase tracking-wider mb-1">Lucro Líquido</p>
             <h3 className="text-2xl font-bold text-white font-heading mb-1">{data.resumo.lucro.atual.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</h3>
             <GrowthBadge value={data.resumo.lucro.crescimento} />
           </div>
@@ -225,7 +225,7 @@ const Reports = () => {
         <div className="lg:col-span-1 glass-card p-5 rounded-xl flex flex-col">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-sm font-bold text-white font-heading">Faturamento Diário</h3>
-            <span className="text-xs text-zinc-500 bg-black/40 px-2 py-1 rounded border border-white/5">Por dia</span>
+            <span className="text-xs text-zinc-400 bg-black/40 px-2 py-1 rounded border border-white/5">Por dia</span>
           </div>
           <div className="flex-1 min-h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -276,7 +276,7 @@ const Reports = () => {
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                  <span className="text-xs text-white font-bold">{data.resumo.faturamento.atual.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
-                 <span className="text-[10px] text-zinc-500">Total</span>
+                 <span className="text-[10px] text-zinc-400">Total</span>
               </div>
             </div>
             
@@ -284,11 +284,11 @@ const Reports = () => {
               {data.vendas_categoria.map((cat: any, idx: number) => (
                 <div key={idx} className="flex justify-between items-start text-xs">
                   <div>
-                    <div className="flex items-center gap-1.5 text-zinc-300">
+                    <div className="flex items-center gap-1.5 text-zinc-200">
                       <div className="w-2 h-2 rounded-full" style={{ backgroundColor: CAT_COLORS[idx % CAT_COLORS.length] }}></div>
                       {cat.name}
                     </div>
-                    <div className="text-zinc-500 text-[10px] ml-3.5 mt-0.5">{cat.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+                    <div className="text-zinc-400 text-[10px] ml-3.5 mt-0.5">{cat.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
                   </div>
                   <div className="font-medium text-white">{data.resumo.faturamento.atual > 0 ? ((cat.value / data.resumo.faturamento.atual) * 100).toFixed(1) : 0}%</div>
                 </div>
@@ -306,10 +306,10 @@ const Reports = () => {
               return (
                 <div key={idx} className="flex flex-col gap-1">
                   <div className="flex justify-between text-xs">
-                    <span className="text-zinc-300">{pag.name}</span>
+                    <span className="text-zinc-200">{pag.name}</span>
                     <div className="text-right">
                       <span className="text-white font-medium">{pct.toFixed(1)}%</span>
-                      <span className="text-zinc-500 ml-2 text-[10px]">{pag.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                      <span className="text-zinc-400 ml-2 text-[10px]">{pag.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
                     </div>
                   </div>
                   <div className="w-full bg-black/40 h-2 rounded-full overflow-hidden border border-white/5">
@@ -329,22 +329,22 @@ const Reports = () => {
         <div className="glass-card p-5 rounded-xl flex flex-col">
           <div className="flex justify-between items-center mb-4 border-b border-white/5 pb-3">
              <h3 className="text-sm font-bold text-white font-heading">Produtos Mais Vendidos</h3>
-             <span className="text-xs text-zinc-500">Quantidade</span>
+             <span className="text-xs text-zinc-400">Quantidade</span>
           </div>
           <div className="flex-1 flex flex-col gap-3">
              {data.produtos_top.length === 0 ? (
-               <p className="text-xs text-zinc-500 text-center py-4">Nenhum dado</p>
+               <p className="text-xs text-zinc-400 text-center py-4">Nenhum dado</p>
              ) : (
                data.produtos_top.map((p: any, idx: number) => (
                  <div key={idx} className="flex items-center justify-between group cursor-default">
                    <div className="flex items-center gap-3">
-                     <span className="text-xs font-bold text-zinc-500 w-3">{idx + 1}</span>
+                     <span className="text-xs font-bold text-zinc-400 w-3">{idx + 1}</span>
                      <div className="w-8 h-8 rounded-full bg-dark-900 border border-white/5 flex items-center justify-center overflow-hidden shrink-0">
                        <span className="text-lg">🍔</span>
                      </div>
                      <span className="text-sm font-medium text-zinc-200 group-hover:text-white transition-colors line-clamp-1">{p.nome}</span>
                    </div>
-                   <span className="text-xs text-zinc-400">{p.qtd} unidades</span>
+                   <span className="text-xs text-zinc-300">{p.qtd} unidades</span>
                  </div>
                ))
              )}
@@ -357,7 +357,7 @@ const Reports = () => {
           <div className="flex-1 overflow-x-auto custom-scrollbar">
             <table className="w-full text-xs text-center border-separate border-spacing-1">
               <thead>
-                <tr className="text-zinc-500">
+                <tr className="text-zinc-400">
                   <th className="font-normal text-left pb-2 w-1/4"></th>
                   <th className="font-normal pb-2">Seg</th>
                   <th className="font-normal pb-2">Ter</th>
@@ -373,7 +373,7 @@ const Reports = () => {
                 {data.heatmap.map((row: any, rIdx: number) => {
                   const isTotal = row.turno === "Total";
                   return (
-                    <tr key={rIdx} className={isTotal ? "font-bold text-white" : "text-zinc-300"}>
+                    <tr key={rIdx} className={isTotal ? "font-bold text-white" : "text-zinc-200"}>
                       <td className={`text-left py-1.5 ${isTotal ? 'pt-4' : ''}`}>{row.turno}</td>
                       {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom', 'Total'].map((col, cIdx) => {
                         const val = row[col];
@@ -548,7 +548,7 @@ const Reports = () => {
         </div>
       </div>
 
-      <div className="mt-12 pt-4 border-t border-zinc-200 text-center text-[10px] text-zinc-400">
+      <div className="mt-12 pt-4 border-t border-zinc-200 text-center text-[10px] text-zinc-300">
         Gerado pelo sistema Burger Hause. Documento de uso interno, confidencial.
       </div>
     </div>
