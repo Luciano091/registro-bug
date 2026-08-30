@@ -399,8 +399,23 @@ const PublicMenu = () => {
         </div>
       </div>
 
+      {/* AVISO IMPORTANTE */}
+      <div className="max-w-4xl mx-auto px-6 mt-16">
+        <div className="bg-[#171717] border border-white/5 rounded-2xl p-6 text-center flex flex-col items-center">
+          <span className="bg-brand-500/20 text-brand-400 text-xs font-bold px-3 py-1 rounded-full mb-3 uppercase tracking-wider">
+            Aviso Importante
+          </span>
+          <p className="text-zinc-400 text-sm max-w-lg leading-relaxed">
+            Trabalhamos com duas linhas de hambúrgueres para melhor te atender: 
+            nossa tradicional linha de <strong className="text-white">Hambúrgueres Artesanais</strong> (100% Carne Bovina fresca) 
+            e nossa linha econômica com <strong className="text-white">Hambúrgueres Tradicionais</strong> (Processados). 
+            Verifique a descrição de cada produto!
+          </p>
+        </div>
+      </div>
+
       {/* RODAPÉ */}
-      <footer className="mt-20 border-t border-white/5 bg-[#0A0A0B] py-12">
+      <footer className="mt-12 border-t border-white/5 bg-[#0A0A0B] py-12">
         <div className="max-w-4xl mx-auto px-6 flex flex-col items-center text-center">
           <div className="w-16 h-16 bg-[#171717] rounded-full p-1 border border-white/10 mb-4 opacity-70 grayscale">
             <img src={config?.logo || "/logo.jpg"} alt="Logo" className="w-full h-full object-cover rounded-full" />
