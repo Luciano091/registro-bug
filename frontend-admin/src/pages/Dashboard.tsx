@@ -14,14 +14,14 @@ const Dashboard = () => {
   }, [dashboardLoaded, refreshDashboard]);
 
 
-  const data = [
-    { name: 'Seg', vendas: 780 },
-    { name: 'Ter', vendas: 920 },
-    { name: 'Qua', vendas: 1120 },
-    { name: 'Qui', vendas: 870 },
-    { name: 'Sex', vendas: 1940 },
-    { name: 'Sáb', vendas: 3800 },
-    { name: 'Dom', vendas: 2950 },
+  const data = resumo.vendas_semana || [
+    { name: 'Seg', vendas: 0 },
+    { name: 'Ter', vendas: 0 },
+    { name: 'Qua', vendas: 0 },
+    { name: 'Qui', vendas: 0 },
+    { name: 'Sex', vendas: 0 },
+    { name: 'Sáb', vendas: 0 },
+    { name: 'Dom', vendas: 0 },
   ];
 
   return (
