@@ -40,24 +40,24 @@ const Dashboard = () => {
         {/* Card 1 */}
         <div className="glass-card p-5 rounded-2xl group flex flex-col justify-between">
           <div className="flex justify-between items-start mb-2">
-            <p className="text-sm font-medium text-zinc-300">Pedidos Hoje</p>
+            <p className="text-xs uppercase tracking-wider font-bold text-zinc-400">Pedidos Hoje</p>
             <div className="p-2.5 bg-brand-500/10 rounded-xl text-brand-500 flex-shrink-0 group-hover:bg-brand-500 group-hover:text-white transition-colors duration-300">
               <Package size={20} />
             </div>
           </div>
-          <h3 className="text-4xl font-bold text-white group-hover:text-brand-400 transition-colors truncate font-heading">{resumo.pedidos_hoje}</h3>
+          <h3 className="text-4xl mt-2 font-bold text-white group-hover:text-brand-400 transition-colors truncate font-heading">{resumo.pedidos_hoje}</h3>
         </div>
 
         {/* Card 2 */}
         <div className="glass-card p-5 rounded-2xl group flex flex-col justify-between overflow-hidden relative">
           <div className="absolute -right-4 -top-4 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all duration-500"></div>
           <div className="flex justify-between items-start mb-2 relative z-10">
-            <p className="text-sm font-medium text-zinc-300">Faturamento</p>
+            <p className="text-xs uppercase tracking-wider font-bold text-zinc-400">Faturamento</p>
             <div className="p-2.5 bg-emerald-500/10 rounded-xl text-emerald-500 flex-shrink-0 group-hover:bg-emerald-500 group-hover:text-white transition-colors duration-300">
               <DollarSign size={20} />
             </div>
           </div>
-          <h3 className="text-4xl font-bold text-white group-hover:text-emerald-400 transition-colors truncate font-heading relative z-10">
+          <h3 className="text-4xl mt-2 font-bold text-white group-hover:text-emerald-400 transition-colors truncate font-heading relative z-10">
             {resumo.faturamento_hoje.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
           </h3>
         </div>
@@ -66,12 +66,12 @@ const Dashboard = () => {
         <div className="glass-card p-5 rounded-2xl group flex flex-col justify-between overflow-hidden relative">
           <div className="absolute -right-4 -top-4 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all duration-500"></div>
           <div className="flex justify-between items-start mb-2 relative z-10">
-            <p className="text-sm font-medium text-zinc-300">Ticket Médio</p>
+            <p className="text-xs uppercase tracking-wider font-bold text-zinc-400">Ticket Médio</p>
             <div className="p-2.5 bg-blue-500/10 rounded-xl text-blue-500 flex-shrink-0 group-hover:bg-blue-500 group-hover:text-white transition-colors duration-300">
               <Receipt size={20} />
             </div>
           </div>
-          <h3 className="text-4xl font-bold text-white group-hover:text-blue-400 transition-colors truncate font-heading relative z-10">
+          <h3 className="text-4xl mt-2 font-bold text-white group-hover:text-blue-400 transition-colors truncate font-heading relative z-10">
             {resumo.ticket_medio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
           </h3>
         </div>
@@ -80,12 +80,12 @@ const Dashboard = () => {
         <div className="glass-card p-5 rounded-2xl group flex flex-col justify-between overflow-hidden relative">
           <div className="absolute -right-4 -top-4 w-24 h-24 bg-violet-500/10 rounded-full blur-2xl group-hover:bg-violet-500/20 transition-all duration-500"></div>
           <div className="flex justify-between items-start mb-2 relative z-10">
-            <p className="text-sm font-medium text-zinc-300">Lucro Líquido</p>
+            <p className="text-xs uppercase tracking-wider font-bold text-zinc-400">Lucro Líquido</p>
             <div className="p-2.5 bg-violet-500/10 rounded-xl text-violet-500 flex-shrink-0 group-hover:bg-violet-500 group-hover:text-white transition-colors duration-300">
               <TrendingUp size={20} />
             </div>
           </div>
-          <h3 className="text-4xl font-bold text-white group-hover:text-violet-400 transition-colors truncate font-heading relative z-10">
+          <h3 className="text-4xl mt-2 font-bold text-white group-hover:text-violet-400 transition-colors truncate font-heading relative z-10">
             {resumo.lucro_hoje?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) || 'R$ 0,00'}
           </h3>
         </div>
