@@ -1,16 +1,28 @@
 import { useState, useEffect } from 'react';
-import { User, Save, Phone, MapPin } from 'lucide-react';
+import { User, Save, Phone, MapPin, LogOut } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
+import api from '../services/api';
 
 export const ContaView = () => {
   const [nome, setNome] = useState('');
   const [telefone, setTelefone] = useState('');
   const [endereco, setEndereco] = useState('');
   const [saved, setSaved] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [foto, setFoto] = useState('');
+  const [email, setEmail] = useState('');
 
   useEffect(() => {
     setNome(localStorage.getItem('user_nome') || '');
     setTelefone(localStorage.getItem('user_telefone') || '');
     setEndereco(localStorage.getItem('user_endereco') || '');
+    
+    const token = localStorage.getItem('cliente_token');
+    if (token) {
+      setIsLoggedIn(true);
+      setFoto(localStorage.getItem('user_foto') || '');
+      setEmail(localStorage.getItem('user_email') || '');
+    }
   }, []);
 
   const handleSave = () => {
@@ -21,17 +33,75 @@ export const ContaView = () => {
     setTimeout(() => setSaved(false), 2000);
   };
 
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    try {
+      const response = await api.post('/auth/google', { token: credentialResponse.credential });
+      const data = response.data;
+      
+      localStorage.setItem('cliente_token', data.token);
+      localStorage.setItem('user_nome', data.cliente.nome);
+      localStorage.setItem('user_email', data.cliente.email);
+      if (data.cliente.foto_url) localStorage.setItem('user_foto', data.cliente.foto_url);
+      if (data.cliente.telefone) localStorage.setItem('user_telefone', data.cliente.telefone);
+      if (data.cliente.endereco) localStorage.setItem('user_endereco', data.cliente.endereco);
+      
+      setNome(data.cliente.nome);
+      setEmail(data.cliente.email);
+      setFoto(data.cliente.foto_url || '');
+      if (data.cliente.telefone) setTelefone(data.cliente.telefone);
+      if (data.cliente.endereco) setEndereco(data.cliente.endereco);
+      
+      setIsLoggedIn(true);
+    } catch (error) {
+      console.error('Erro ao fazer login:', error);
+      alert('Falha ao autenticar com o Google. Tente novamente.');
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('cliente_token');
+    localStorage.removeItem('user_email');
+    localStorage.removeItem('user_foto');
+    setIsLoggedIn(false);
+    setFoto('');
+    setEmail('');
+  };
+
   return (
     <div className="p-6 max-w-lg mx-auto">
       <div className="flex items-center gap-4 mb-8">
-        <div className="w-16 h-16 bg-brand-500/10 rounded-full flex items-center justify-center text-brand-500">
-          <User size={32} />
-        </div>
-        <div>
+        {isLoggedIn && foto ? (
+          <img src={foto} alt="Perfil" className="w-16 h-16 rounded-full border-2 border-brand-500 object-cover" />
+        ) : (
+          <div className="w-16 h-16 bg-brand-500/10 rounded-full flex items-center justify-center text-brand-500">
+            <User size={32} />
+          </div>
+        )}
+        
+        <div className="flex-1">
           <h2 className="text-xl font-heading font-bold text-zinc-900">Minha Conta</h2>
-          <p className="text-zinc-500 text-sm">Seus dados para agilizar o pedido</p>
+          <p className="text-zinc-500 text-sm">{isLoggedIn ? email : 'Seus dados para agilizar o pedido'}</p>
         </div>
+        
+        {isLoggedIn && (
+          <button onClick={handleLogout} className="p-2 text-zinc-400 hover:text-red-500 transition-colors">
+            <LogOut size={20} />
+          </button>
+        )}
       </div>
+
+      {!isLoggedIn && (
+        <div className="mb-8 p-4 bg-white border border-zinc-200 rounded-xl flex flex-col items-center text-center">
+          <p className="text-sm font-bold text-zinc-700 mb-4">Cadastre-se rapidamente para não precisar preencher seus dados sempre</p>
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => {
+              console.log('Login Failed');
+            }}
+            useOneTap
+          />
+        </div>
+      )}
 
       <div className="space-y-4">
         <div>
