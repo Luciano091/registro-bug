@@ -177,8 +177,20 @@ def auth_google(token_data: dict, db: Session = Depends(get_db)):
                 "endereco": cliente.endereco
             }
         }
-    except ValueError as e:
-        raise HTTPException(status_code=401, detail="Token inválido")
+    except Exception as e:
+        import traceback
+        err_str = traceback.format_exc()
+        # Save error globally to read it later
+        global last_google_auth_error
+        last_google_auth_error = err_str
+        print("GOOGLE AUTH ERROR:", err_str)
+        raise HTTPException(status_code=500, detail=str(e))
+
+last_google_auth_error = "Nenhum erro ainda"
+
+@app.get("/auth/google/debug")
+def debug_google_auth():
+    return {"error": last_google_auth_error}
 @app.post("/pedidos", response_model=schemas.Pedido)
 def create_pedido(pedido: schemas.PedidoCreate, db: Session = Depends(get_db), cliente_id: Optional[str] = Depends(auth.get_current_cliente_optional)):
     if cliente_id:
