@@ -145,47 +145,48 @@ const PublicMenu = () => {
         <div className="animate-in fade-in duration-300">
           {/* HEADER / HERO */}
 
-      <div className="w-full relative flex flex-col items-center justify-end min-h-[260px] md:min-h-[300px] pt-12 pb-6">
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0D0D0D] via-[#0D0D0D]/80 to-[#0D0D0D]/40 z-10 pointer-events-none"></div>
-        <img 
-          src="https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=1400&q=80" 
-          alt="Capa" 
-          className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none opacity-30 md:opacity-40"
-        />
-        
-        {/* Informações da Loja por cima do Hero */}
-        <div className="relative z-20 flex flex-col items-center w-full px-4 mt-auto">
-          <div className="w-28 h-28 md:w-32 md:h-32 bg-white rounded-full p-1 border-2 border-zinc-200 shadow-2xl mb-4 shrink-0">
-            <img src={config?.logo || "/logo.jpg"} alt={config?.nome_empresa || "Logo"} className="w-full h-full object-cover rounded-full" />
-          </div>
-          <h1 className="text-3xl md:text-4xl font-heading font-bold text-white tracking-wide text-center drop-shadow-md">
-            {config?.nome_empresa || 'Burger Hause'}
-          </h1>
-          <p className="text-brand-400 font-bold tracking-widest text-sm uppercase mt-1 mb-4 text-center">O Lanche</p>
-          
-          <div className="flex flex-wrap justify-center items-center gap-3">
-             <div className="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full border border-zinc-200 flex items-center gap-2 text-xs font-bold text-zinc-900 shadow-lg">
+      <div className="w-full bg-white border-b border-zinc-200 pt-6 pb-4 shadow-sm">
+        <div className="max-w-4xl mx-auto px-4 md:px-6">
+          <div className="flex items-center gap-4">
+            <div className="w-20 h-20 md:w-24 md:h-24 bg-white rounded-full p-0.5 border border-zinc-200 shrink-0 overflow-hidden shadow-sm">
+              <img src={config?.logo || "/logo.jpg"} alt={config?.nome_empresa || "Logo"} className="w-full h-full object-cover rounded-full" />
+            </div>
+            
+            <div className="flex-1">
+              <h1 className="text-xl md:text-2xl font-heading font-black text-zinc-900 uppercase tracking-tight flex items-center justify-between">
+                {config?.nome_empresa || 'Burger Hause'}
+              </h1>
+              
+              <div className="flex items-center gap-2 mt-1">
                 {config?.loja_aberta ? (
                   <>
-                    <div className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse shrink-0"></div>
-                    Aberto
+                    <div className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse"></div>
+                    <span className="text-sm font-bold text-[#22C55E]">Aberto</span>
                   </>
                 ) : (
                   <>
-                    <div className="w-2 h-2 rounded-full bg-red-500 shrink-0"></div>
-                    Fechado
+                    <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                    <span className="text-sm font-bold text-red-500">Fechado</span>
                   </>
                 )}
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex flex-wrap items-center gap-2 mt-4">
+             <div className="bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold border border-emerald-100">
+                <MapPin size={14} />
+                {config?.taxa_entrega === 0 || !config?.taxa_entrega ? 'Grátis' : `Taxa: R$ ${config.taxa_entrega.toFixed(2).replace('.', ',')}`}
              </div>
-             <div className="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full border border-zinc-200 flex items-center gap-2 text-xs font-bold text-zinc-900 shadow-lg">
-                <Clock size={14} className="text-brand-500 shrink-0" />
-                ~ {config?.tempo_medio_preparo || 30} min
+             <div className="bg-zinc-100 text-zinc-600 px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold border border-zinc-200">
+                <Clock size={14} />
+                {config?.tempo_medio_preparo || 30} min
              </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 md:px-6 relative z-20 mt-6">
+      <div className="max-w-4xl mx-auto px-4 md:px-6 relative z-20 mt-4">
         {/* NAVEGAÇÃO DE CATEGORIAS */}
         <div className="sticky top-0 z-30 bg-zinc-50/95 backdrop-blur-md pt-2 pb-2 -mx-4 px-4 border-b border-zinc-200 mb-8">
           <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2 md:flex-wrap md:justify-center">
