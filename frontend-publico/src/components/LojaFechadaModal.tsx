@@ -1,11 +1,11 @@
-import { X, Clock, Moon } from 'lucide-react';
+import { X, Moon } from 'lucide-react';
 
 interface LojaFechadaModalProps {
   onClose: () => void;
   tempoMedio?: number;
 }
 
-export const LojaFechadaModal = ({ onClose, tempoMedio = 30 }: LojaFechadaModalProps) => {
+export const LojaFechadaModal = ({ onClose }: LojaFechadaModalProps) => {
   return (
     <div
       className="fixed inset-0 z-[200] flex items-center justify-center p-4"
