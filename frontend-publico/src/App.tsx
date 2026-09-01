@@ -8,7 +8,7 @@ function App() {
     <NetworkProvider>
       <CartProvider>
         <Router>
-          <div className="min-h-screen flex flex-col bg-[#0F0F11]">
+          <div className="min-h-screen flex flex-col bg-zinc-50">
             <Routes>
               <Route path="/" element={<PublicMenu />} />
               <Route path="/:estabelecimento" element={<PublicMenu />} />

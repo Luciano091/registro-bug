@@ -94,7 +94,7 @@ const PublicMenu = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-[#0D0D0D]">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-zinc-50">
         <div className="w-12 h-12 border-4 border-brand-500/30 border-t-brand-500 rounded-full animate-spin"></div>
       </div>
     );
@@ -133,7 +133,7 @@ const PublicMenu = () => {
   }, {});
 
   return (
-    <div className="min-h-screen bg-[#0D0D0D] text-zinc-100 font-sans pb-24 selection:bg-brand-500/30 selection:text-white">
+    <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans pb-24 selection:bg-brand-500/30 selection:text-zinc-900">
       
       {/* HEADER / HERO */}
       <div className="w-full relative flex flex-col items-center justify-end min-h-[260px] md:min-h-[300px] pt-12 pb-6">
@@ -146,16 +146,16 @@ const PublicMenu = () => {
         
         {/* Informações da Loja por cima do Hero */}
         <div className="relative z-20 flex flex-col items-center w-full px-4 mt-auto">
-          <div className="w-28 h-28 md:w-32 md:h-32 bg-[#171717] rounded-full p-1 border-2 border-white/10 shadow-2xl mb-4 shrink-0">
+          <div className="w-28 h-28 md:w-32 md:h-32 bg-white rounded-full p-1 border-2 border-zinc-200 shadow-2xl mb-4 shrink-0">
             <img src={config?.logo || "/logo.jpg"} alt={config?.nome_empresa || "Logo"} className="w-full h-full object-cover rounded-full" />
           </div>
-          <h1 className="text-3xl md:text-4xl font-heading font-bold text-white tracking-wide text-center">
+          <h1 className="text-3xl md:text-4xl font-heading font-bold text-zinc-900 tracking-wide text-center">
             {config?.nome_empresa || 'Burger Hause'}
           </h1>
           <p className="text-brand-400 font-bold tracking-widest text-sm uppercase mt-1 mb-4 text-center">O Lanche</p>
           
           <div className="flex flex-wrap justify-center items-center gap-3">
-             <div className="bg-[#171717]/80 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2 text-xs font-bold text-white shadow-lg">
+             <div className="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full border border-zinc-200 flex items-center gap-2 text-xs font-bold text-zinc-900 shadow-lg">
                 {config?.loja_aberta ? (
                   <>
                     <div className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse shrink-0"></div>
@@ -168,7 +168,7 @@ const PublicMenu = () => {
                   </>
                 )}
              </div>
-             <div className="bg-[#171717]/80 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2 text-xs font-bold text-white shadow-lg">
+             <div className="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full border border-zinc-200 flex items-center gap-2 text-xs font-bold text-zinc-900 shadow-lg">
                 <Clock size={14} className="text-brand-500 shrink-0" />
                 ~ {config?.tempo_medio_preparo || 30} min
              </div>
@@ -178,7 +178,7 @@ const PublicMenu = () => {
 
       <div className="max-w-4xl mx-auto px-4 md:px-6 relative z-20 mt-6">
         {/* NAVEGAÇÃO DE CATEGORIAS */}
-        <div className="sticky top-0 z-30 bg-[#0D0D0D]/95 backdrop-blur-md pt-2 pb-2 -mx-4 px-4 border-b border-white/5 mb-8">
+        <div className="sticky top-0 z-30 bg-zinc-50/95 backdrop-blur-md pt-2 pb-2 -mx-4 px-4 border-b border-zinc-200 mb-8">
           <div className="flex gap-2 overflow-x-auto pb-2 md:flex-wrap md:justify-center">
             {categories.map((cat, i) => (
               <button
@@ -187,7 +187,7 @@ const PublicMenu = () => {
                 className={`whitespace-nowrap px-6 py-2.5 rounded-full font-bold text-sm transition-all duration-300 ${
                   activeCategory === cat 
                     ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20' 
-                    : 'bg-[#171717] border border-white/5 text-zinc-400 hover:text-white hover:bg-[#262626]'
+                    : 'bg-white border border-zinc-200 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100'
                 }`}
               >
                 {cat}
@@ -202,7 +202,7 @@ const PublicMenu = () => {
           {promocoesAtivas.length > 0 ? (
             <div className="mb-14">
               <div className="flex items-center mb-4">
-                <h2 className="text-xl font-heading font-bold text-white flex items-center gap-2 uppercase tracking-wide">
+                <h2 className="text-xl font-heading font-bold text-zinc-900 flex items-center gap-2 uppercase tracking-wide">
                   <Flame size={20} className="text-orange-500" /> Promoção do Dia
                 </h2>
               </div>
@@ -210,7 +210,7 @@ const PublicMenu = () => {
                 {promocoesAtivas.map(promocao => (
                   <div 
                     key={promocao.id}
-                    className={`group relative shrink-0 ${promocoesAtivas.length > 1 ? 'w-[85vw] md:w-[600px] snap-center' : 'w-full'} bg-[#131313] rounded-3xl overflow-hidden cursor-pointer shadow-2xl border border-orange-500/30 transition-all hover:border-orange-500/60 flex flex-col md:flex-row md:items-center`}
+                    className={`group relative shrink-0 ${promocoesAtivas.length > 1 ? 'w-[85vw] md:w-[600px] snap-center' : 'w-full'} bg-white rounded-3xl overflow-hidden cursor-pointer shadow-2xl border border-orange-500/30 transition-all hover:border-orange-500/60 flex flex-col md:flex-row md:items-center`}
                     onClick={() => setSelectedProduct(promocao)}
                   >
                     {/* Glows */}
@@ -237,11 +237,11 @@ const PublicMenu = () => {
                         <Flame size={16} fill="currentColor" /> OFERTA
                       </div>
                       
-                      <h3 className="font-heading font-bold text-white text-2xl md:text-3xl lg:text-4xl uppercase tracking-wide mb-2 leading-none drop-shadow-lg">
+                      <h3 className="font-heading font-bold text-zinc-900 text-2xl md:text-3xl lg:text-4xl uppercase tracking-wide mb-2 leading-none drop-shadow-lg">
                         {promocao.nome}
                       </h3>
                       
-                      <p className="text-zinc-300 text-xs md:text-sm leading-snug mb-4 drop-shadow-md font-medium">
+                      <p className="text-zinc-500 text-xs md:text-sm leading-snug mb-4 drop-shadow-md font-medium">
                         {promocao.descricao}
                       </p>
 
@@ -269,13 +269,13 @@ const PublicMenu = () => {
           ) : destaqueDoDia && (
             <div className="mb-14">
               <div className="flex items-center mb-4">
-                <h2 className="text-xl font-heading font-bold text-white flex items-center gap-2 uppercase tracking-wide">
+                <h2 className="text-xl font-heading font-bold text-zinc-900 flex items-center gap-2 uppercase tracking-wide">
                   <Flame size={20} className="text-brand-500" /> Destaque do Dia
                 </h2>
               </div>
               
               <div 
-                className="group relative w-full bg-[#131313] rounded-3xl overflow-hidden cursor-pointer shadow-2xl border border-brand-500/20 transition-all hover:border-brand-500/50 flex flex-col md:flex-row md:items-center mt-4"
+                className="group relative w-full bg-white rounded-3xl overflow-hidden cursor-pointer shadow-2xl border border-brand-500/20 transition-all hover:border-brand-500/50 flex flex-col md:flex-row md:items-center mt-4"
                 onClick={() => setSelectedProduct(destaqueDoDia)}
               >
                 {/* Glows */}
@@ -302,11 +302,11 @@ const PublicMenu = () => {
                     <Flame size={12} fill="currentColor" /> Especial
                   </div>
                   
-                  <h3 className="font-heading font-bold text-white text-2xl md:text-5xl uppercase tracking-wide mb-2 leading-none drop-shadow-lg">
+                  <h3 className="font-heading font-bold text-zinc-900 text-2xl md:text-5xl uppercase tracking-wide mb-2 leading-none drop-shadow-lg">
                     {destaqueDoDia.nome}
                   </h3>
                   
-                  <p className="text-zinc-300 text-xs md:text-sm leading-snug mb-4 drop-shadow-md font-medium">
+                  <p className="text-zinc-500 text-xs md:text-sm leading-snug mb-4 drop-shadow-md font-medium">
                     {destaqueDoDia.descricao || "Pão brioche, blend artesanal, cheddar, bacon crocante, alface, tomate e molho da casa."}
                   </p>
 
@@ -330,7 +330,7 @@ const PublicMenu = () => {
           {Object.entries(groupedProducts).map(([categoria, items]: [string, any]) => (
             <div key={categoria} className="pt-2">
               <div className="flex items-center mb-4">
-                <h2 className="text-lg md:text-xl font-heading font-bold text-white uppercase tracking-wide flex items-center gap-2">
+                <h2 className="text-lg md:text-xl font-heading font-bold text-zinc-900 uppercase tracking-wide flex items-center gap-2">
                   <div className="text-brand-500 border border-brand-500/30 p-1.5 rounded-lg bg-brand-500/10">
                     <Utensils size={18} />
                   </div>
@@ -342,10 +342,10 @@ const PublicMenu = () => {
                 {items.map((produto: any) => (
                   <div 
                     key={produto.id} 
-                    className="group bg-[#131313] rounded-2xl p-3 flex gap-4 transition-all hover:bg-[#1a1a1a] cursor-pointer shadow-lg shadow-black/20 border border-white/5"
+                    className="group bg-white rounded-2xl p-3 flex gap-4 transition-all hover:bg-zinc-50 cursor-pointer shadow-lg shadow-zinc-200/50 border border-zinc-200"
                     onClick={() => setSelectedProduct(produto)}
                   >
-                    <div className="w-[80px] md:w-[100px] h-[80px] md:h-[100px] bg-[#0A0A0B] rounded-xl overflow-hidden shrink-0 relative flex items-center justify-center border border-white/5">
+                    <div className="w-[80px] md:w-[100px] h-[80px] md:h-[100px] bg-white rounded-xl overflow-hidden shrink-0 relative flex items-center justify-center border border-zinc-200">
                        {produto.imagem_url ? (
                          <img 
                            src={produto.imagem_url} 
@@ -360,10 +360,10 @@ const PublicMenu = () => {
 
                     <div className="flex-1 min-w-0 flex flex-col justify-center py-1 pr-1">
                       <div>
-                        <h3 className="font-sans font-semibold text-white text-[15px] md:text-[16px] tracking-tight leading-tight line-clamp-1">
+                        <h3 className="font-sans font-semibold text-zinc-900 text-[15px] md:text-[16px] tracking-tight leading-tight line-clamp-1">
                           {produto.nome}
                         </h3>
-                        <p className="text-zinc-300 text-[11px] md:text-xs mt-1 leading-snug font-medium">
+                        <p className="text-zinc-500 text-[11px] md:text-xs mt-1 leading-snug font-medium">
                           {produto.descricao || categoria}
                         </p>
                       </div>
@@ -386,7 +386,7 @@ const PublicMenu = () => {
                         </div>
                         <button 
                           onClick={(e) => quickAdd(produto, e)}
-                          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 ${addedProductId === produto.id ? 'bg-emerald-500 text-white scale-110' : 'bg-white/5 text-zinc-400 hover:bg-brand-500 hover:text-white active:scale-90'}`}
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 ${addedProductId === produto.id ? 'bg-emerald-500 text-white scale-110' : 'bg-zinc-100 text-zinc-500 hover:bg-brand-500 hover:text-zinc-900 active:scale-90'}`}
                         >
                           {addedProductId === produto.id ? <Check size={16} /> : <Plus size={16} />}
                         </button>
@@ -399,7 +399,7 @@ const PublicMenu = () => {
           ))}
 
           {Object.keys(groupedProducts).length === 0 && (
-            <div className="text-center py-16 bg-[#171717] rounded-3xl border border-white/5">
+            <div className="text-center py-16 bg-white rounded-3xl border border-zinc-200">
               <p className="text-zinc-500 font-medium">Nenhum produto encontrado nesta categoria.</p>
               <button 
                 onClick={() => setActiveCategory('Todos')}
@@ -414,23 +414,23 @@ const PublicMenu = () => {
 
       {/* AVISO IMPORTANTE */}
       <div className="max-w-4xl mx-auto px-6 mt-16">
-        <div className="bg-[#171717] border border-white/5 rounded-2xl p-6 text-center flex flex-col items-center">
+        <div className="bg-white border border-zinc-200 rounded-2xl p-6 text-center flex flex-col items-center">
           <span className="bg-brand-500/20 text-brand-400 text-xs font-bold px-3 py-1 rounded-full mb-3 uppercase tracking-wider">
             Aviso Importante
           </span>
-          <p className="text-zinc-400 text-sm max-w-lg leading-relaxed">
+          <p className="text-zinc-500 text-sm max-w-lg leading-relaxed">
             Trabalhamos com duas linhas de hambúrgueres para melhor te atender: 
-            nossa tradicional linha de <strong className="text-white">Hambúrgueres Artesanais</strong> (100% Carne Bovina fresca) 
-            e nossa linha econômica com <strong className="text-white">Hambúrgueres Tradicionais</strong> (Processados). 
+            nossa tradicional linha de <strong className="text-zinc-900">Hambúrgueres Artesanais</strong> (100% Carne Bovina fresca) 
+            e nossa linha econômica com <strong className="text-zinc-900">Hambúrgueres Tradicionais</strong> (Processados). 
             Verifique a descrição de cada produto!
           </p>
         </div>
       </div>
 
       {/* RODAPÉ */}
-      <footer className="mt-12 border-t border-white/5 bg-[#0A0A0B] py-12">
+      <footer className="mt-12 border-t border-zinc-200 bg-white py-12">
         <div className="max-w-4xl mx-auto px-6 flex flex-col items-center text-center">
-          <div className="w-16 h-16 bg-[#171717] rounded-full p-1 border border-white/10 mb-4 opacity-70 grayscale">
+          <div className="w-16 h-16 bg-white rounded-full p-1 border border-zinc-200 mb-4 opacity-70 grayscale">
             <img src={config?.logo || "/logo.jpg"} alt="Logo" className="w-full h-full object-cover rounded-full" />
           </div>
           <h4 className="font-heading text-xl text-zinc-500 mb-2">{config?.nome_empresa || 'Burger Hause'}</h4>
