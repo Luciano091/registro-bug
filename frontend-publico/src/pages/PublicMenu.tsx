@@ -176,7 +176,7 @@ const PublicMenu = () => {
           <div className="flex flex-wrap items-center gap-2 mt-4">
              <div className="bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold border border-emerald-100">
                 <MapPin size={14} />
-                {config?.taxa_entrega === 0 || !config?.taxa_entrega ? 'Grátis' : `Taxa: R$ ${config.taxa_entrega.toFixed(2).replace('.', ',')}`}
+                {config?.taxa_entrega === 0 || !config?.taxa_entrega ? 'Grátis' : `( Taxa ${Math.floor(config.taxa_entrega)} Real )`}
              </div>
              <div className="bg-zinc-100 text-zinc-600 px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold border border-zinc-200">
                 <Clock size={14} />
