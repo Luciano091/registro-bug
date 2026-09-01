@@ -6,9 +6,10 @@ interface ProductModalProps {
   produto: any;
   onClose: () => void;
   lojaAberta?: boolean;
+  onLojaFechada?: () => void;
 }
 
-export const ProductModal = ({ produto, onClose, lojaAberta = true }: ProductModalProps) => {
+export const ProductModal = ({ produto, onClose, lojaAberta = true, onLojaFechada }: ProductModalProps) => {
   const { addItem } = useCart();
   const [quantidade, setQuantidade] = useState(1);
   const [observacao, setObservacao] = useState('');
@@ -21,7 +22,7 @@ export const ProductModal = ({ produto, onClose, lojaAberta = true }: ProductMod
 
   const handleAdd = () => {
     if (!lojaAberta) {
-      alert("Desculpe, a loja está fechada no momento.");
+      if (onLojaFechada) onLojaFechada();
       return;
     }
     addItem({

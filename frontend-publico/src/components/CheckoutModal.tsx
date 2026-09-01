@@ -306,7 +306,6 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
               <button 
                 onClick={() => {
                   if (!lojaAberta) {
-                    alert("A loja está fechada. Não é possível realizar pedidos no momento.");
                     return;
                   }
                   setStep(2);

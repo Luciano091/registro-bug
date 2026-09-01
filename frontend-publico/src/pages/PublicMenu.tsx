@@ -8,6 +8,7 @@ import { CuponsView } from './CuponsView';
 import { PedidosView } from './PedidosView';
 import { ContaView } from './ContaView';
 import { CheckoutModal } from '../components/CheckoutModal';
+import { LojaFechadaModal } from '../components/LojaFechadaModal';
 import { useCart } from '../contexts/CartContext';
 
 const PublicMenu = () => {
@@ -16,6 +17,7 @@ const PublicMenu = () => {
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string>('Todos');
   const [activeTab, setActiveTab] = useState<TabType>('cardapio');
+  const [showLojaFechada, setShowLojaFechada] = useState(false);
   
   // Modals state
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
@@ -27,7 +29,7 @@ const PublicMenu = () => {
     if (e) e.stopPropagation();
     
     if (config && !config.loja_aberta) {
-      alert("Desculpe, a loja está fechada no momento.");
+      setShowLojaFechada(true);
       return;
     }
 
@@ -465,6 +467,7 @@ const PublicMenu = () => {
           produto={selectedProduct} 
           onClose={() => setSelectedProduct(null)} 
           lojaAberta={config?.loja_aberta}
+          onLojaFechada={() => { setSelectedProduct(null); setShowLojaFechada(true); }}
         />
       )}
       
@@ -477,6 +480,13 @@ const PublicMenu = () => {
         <CheckoutModal 
           onClose={() => setIsCheckoutOpen(false)} 
           lojaAberta={config?.loja_aberta}
+        />
+      )}
+
+      {showLojaFechada && (
+        <LojaFechadaModal
+          onClose={() => setShowLojaFechada(false)}
+          tempoMedio={config?.tempo_medio_preparo}
         />
       )}
     </div>
