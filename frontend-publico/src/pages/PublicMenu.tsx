@@ -431,9 +431,6 @@ const PublicMenu = () => {
       {/* RODAPÉ */}
       <footer className="mt-12 border-t border-zinc-200 bg-white py-12">
         <div className="max-w-4xl mx-auto px-6 flex flex-col items-center text-center">
-          <div className="w-16 h-16 bg-white rounded-full p-1 border border-zinc-200 mb-4 opacity-70 grayscale">
-            <img src={config?.logo || "/logo.jpg"} alt="Logo" className="w-full h-full object-cover rounded-full" />
-          </div>
           <h4 className="font-heading text-xl text-zinc-500 mb-2">{config?.nome_empresa || 'Burger Hause'}</h4>
           {config?.endereco && (
             <p className="text-zinc-600 text-sm max-w-sm flex items-center justify-center gap-1.5">
