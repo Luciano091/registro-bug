@@ -7,6 +7,20 @@ def get_now():
 
 from database import Base
 
+class Cliente(Base):
+    __tablename__ = "clientes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    google_id = Column(String, unique=True, index=True)
+    nome = Column(String)
+    email = Column(String, unique=True, index=True)
+    foto_url = Column(String, nullable=True)
+    telefone = Column(String, nullable=True)
+    endereco = Column(String, nullable=True)
+    data_cadastro = Column(DateTime, default=get_now)
+    
+    pedidos = relationship("Pedido", back_populates="cliente_obj")
+
 class Produto(Base):
     __tablename__ = "produtos"
 
@@ -35,6 +49,7 @@ class Pedido(Base):
     telefone = Column(String, nullable=True)
     endereco = Column(String, nullable=True)
     tipo_entrega = Column(String) # "Delivery" ou "Retirada"
+    cliente_id = Column(Integer, ForeignKey("clientes.id"), nullable=True)
     forma_pagamento = Column(String) # "Pix", "Cartão", "Dinheiro"
     status = Column(String, default="Recebido")
     subtotal = Column(Float, default=0.0)
@@ -44,6 +59,7 @@ class Pedido(Base):
     data = Column(DateTime, default=get_now)
 
     itens = relationship("ItemPedido", back_populates="pedido")
+    cliente_obj = relationship("Cliente", back_populates="pedidos")
 
 class ItemPedido(Base):
     __tablename__ = "itens_pedido"

@@ -63,3 +63,15 @@ def get_current_admin(token: str = Depends(oauth2_scheme), db: Session = Depends
         raise credentials_exception
         
     return True
+
+def get_current_cliente_optional(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    if not token:
+        return None
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        role: str = payload.get("role")
+        if role == "cliente":
+            return payload.get("sub") # cliente_id
+    except jwt.PyJWTError:
+        pass
+    return None

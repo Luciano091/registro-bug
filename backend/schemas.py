@@ -2,6 +2,28 @@ from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 
+class ClienteBase(BaseModel):
+    nome: str
+    email: str
+    telefone: Optional[str] = None
+    endereco: Optional[str] = None
+    foto_url: Optional[str] = None
+
+class ClienteCreate(ClienteBase):
+    google_id: str
+
+class ClienteUpdate(BaseModel):
+    telefone: Optional[str] = None
+    endereco: Optional[str] = None
+
+class Cliente(ClienteBase):
+    id: int
+    data_cadastro: datetime
+
+    class Config:
+        from_attributes = True
+
+
 # --- Produto ---
 class ProdutoBase(BaseModel):
     nome: str
@@ -47,6 +69,7 @@ class ItemPedido(ItemPedidoBase):
 # --- Pedido ---
 class PedidoBase(BaseModel):
     uuid: Optional[str] = None
+    cliente_id: Optional[int] = None
     cliente: str
     telefone: str
     endereco: Optional[str] = None
