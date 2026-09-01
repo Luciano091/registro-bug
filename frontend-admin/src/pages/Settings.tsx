@@ -93,7 +93,7 @@ const Settings = () => {
             
             <div>
               <label className="flex items-center gap-2 text-sm font-medium text-zinc-300 mb-2">
-                <Clock className="text-brand-400" size={18} /> Tempo Médio de Preparo (min)
+                <Clock className="text-brand-400" size={18} /> 
               </label>
               <input 
                 type="number" name="tempo_medio_preparo"
