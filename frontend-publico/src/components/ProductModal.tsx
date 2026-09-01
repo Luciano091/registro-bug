@@ -20,6 +20,8 @@ export const ProductModal = ({ produto, onClose, lojaAberta = true, onLojaFechad
   // vamos simplificar. Se houver `produto.adicionais`, listamos.
   const [selectedAdicionais, setSelectedAdicionais] = useState<any[]>([]);
 
+  const precoVenda = produto.is_promocao && produto.preco_promocao ? produto.preco_promocao : produto.preco;
+
   const handleAdd = () => {
     if (!lojaAberta) {
       if (onLojaFechada) onLojaFechada();
@@ -29,7 +31,7 @@ export const ProductModal = ({ produto, onClose, lojaAberta = true, onLojaFechad
       id: crypto.randomUUID(),
       produtoId: produto.id,
       nome: produto.nome,
-      precoBase: produto.preco,
+      precoBase: precoVenda,
       quantidade,
       adicionais: selectedAdicionais,
       observacao
@@ -46,7 +48,7 @@ export const ProductModal = ({ produto, onClose, lojaAberta = true, onLojaFechad
     }
   };
 
-  const basePrice = produto.preco * quantidade;
+  const basePrice = precoVenda * quantidade;
   const adicionaisPrice = selectedAdicionais.reduce((sum, add) => sum + add.preco, 0) * quantidade;
   const totalPrice = basePrice + adicionaisPrice;
 
@@ -85,8 +87,21 @@ export const ProductModal = ({ produto, onClose, lojaAberta = true, onLojaFechad
                 </p>
               )}
             </div>
-            <div className="font-price font-bold text-lg md:text-xl text-brand-400 shrink-0 mt-0.5">
-              {produto.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            <div className="shrink-0 mt-0.5 text-right flex flex-col items-end">
+              {produto.is_promocao && produto.preco_promocao ? (
+                <>
+                  <span className="font-price text-sm text-zinc-400 line-through leading-none mb-1">
+                    {produto.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </span>
+                  <span className="font-price font-bold text-lg md:text-xl text-brand-400 leading-none">
+                    {precoVenda.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </span>
+                </>
+              ) : (
+                <span className="font-price font-bold text-lg md:text-xl text-brand-400 leading-none">
+                  {precoVenda.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </span>
+              )}
             </div>
           </div>
 

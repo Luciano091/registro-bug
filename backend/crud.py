@@ -84,14 +84,15 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate):
     for item in pedido.itens:
         produto = db.query(models.Produto).filter(models.Produto.id == item.produto_id).first()
         if produto:
-            item_subtotal = produto.preco * item.quantidade
+            preco_venda = produto.preco_promocao if (produto.is_promocao and produto.preco_promocao) else produto.preco
+            item_subtotal = preco_venda * item.quantidade
             subtotal += item_subtotal
             db_itens.append(
                 models.ItemPedido(
                     produto_id=item.produto_id,
                     quantidade=item.quantidade,
                     custo_unitario=produto.preco_compra or 0.0,
-                    valor_unitario=produto.preco,
+                    valor_unitario=preco_venda,
                     subtotal=item_subtotal
                 )
             )
