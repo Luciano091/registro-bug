@@ -48,7 +48,20 @@ export function NetworkProvider({ children }: { children: React.ReactNode }) {
       for (const order of pending) {
         try {
           // Re-enviar para a API. O UUID já vai no payload.
-          await api.post('/pedidos', order.payload);
+          const response = await api.post('/pedidos', order.payload);
+          if (response.data && response.data.id) {
+            let saved = [];
+            try {
+              saved = JSON.parse(localStorage.getItem('meus_pedidos') || '[]');
+              if (!Array.isArray(saved)) saved = [];
+            } catch (e) {
+              saved = [];
+            }
+            if (!saved.includes(response.data.id)) {
+              saved.push(response.data.id);
+              localStorage.setItem('meus_pedidos', JSON.stringify(saved));
+            }
+          }
           await deleteOfflineOrder(order.uuid);
           console.log(`[Offline Sync] Pedido ${order.uuid} sincronizado com sucesso.`);
         } catch (error: any) {

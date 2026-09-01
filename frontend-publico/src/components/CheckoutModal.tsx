@@ -51,8 +51,16 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
         try {
           const response = await api.post('/pedidos', pedidoData);
           if (response.data && response.data.id) {
-            const saved = JSON.parse(localStorage.getItem('meus_pedidos') || '[]');
-            saved.push(response.data.id);
+            let saved = [];
+            try {
+              saved = JSON.parse(localStorage.getItem('meus_pedidos') || '[]');
+              if (!Array.isArray(saved)) saved = [];
+            } catch (e) {
+              saved = [];
+            }
+            if (!saved.includes(response.data.id)) {
+              saved.push(response.data.id);
+            }
             localStorage.setItem('meus_pedidos', JSON.stringify(saved));
           }
         } catch (error: any) {
