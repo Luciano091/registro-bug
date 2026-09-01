@@ -84,7 +84,8 @@ export const ContaView = () => {
         </div>
         
         {isLoggedIn && (
-          <button onClick={handleLogout} className="p-2 text-zinc-400 hover:text-red-500 transition-colors">
+          <button onClick={handleLogout} className="flex items-center gap-2 p-2 text-zinc-400 hover:text-red-500 transition-colors">
+            <span className="text-sm font-bold">Sair</span>
             <LogOut size={20} />
           </button>
         )}
