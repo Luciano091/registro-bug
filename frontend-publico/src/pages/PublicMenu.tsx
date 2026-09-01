@@ -3,7 +3,10 @@ import { MapPin, Clock, Utensils, Plus, Flame, Check } from 'lucide-react';
 import api from '../services/api';
 import { ProductModal } from '../components/ProductModal';
 import { FloatingCart } from '../components/FloatingCart';
-import { BottomNav } from '../components/BottomNav';
+import { BottomNav, type TabType } from '../components/BottomNav';
+import { CuponsView } from './CuponsView';
+import { PedidosView } from './PedidosView';
+import { ContaView } from './ContaView';
 import { CheckoutModal } from '../components/CheckoutModal';
 import { useCart } from '../contexts/CartContext';
 
@@ -12,6 +15,7 @@ const PublicMenu = () => {
   const [produtos, setProdutos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string>('Todos');
+  const [activeTab, setActiveTab] = useState<TabType>('cardapio');
   
   // Modals state
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
@@ -466,7 +470,7 @@ const PublicMenu = () => {
       <div className="hidden md:block">
         <FloatingCart onOpen={() => setIsCheckoutOpen(true)} />
       </div>
-      <BottomNav onOpenCart={() => setIsCheckoutOpen(true)} />
+      <BottomNav onOpenCart={() => setIsCheckoutOpen(true)} activeTab={activeTab} onChangeTab={setActiveTab} />
       
       {isCheckoutOpen && (
         <CheckoutModal 

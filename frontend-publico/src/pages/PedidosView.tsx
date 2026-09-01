@@ -28,7 +28,7 @@ export const PedidosView = () => {
         // Filtrar nulos e ordenar do mais novo para o mais antigo
         const pedidosValidos = resultados
           .filter(r => r && r.data)
-          .map(r => r.data)
+          .map(r => r!.data)
           .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
           
         setPedidos(pedidosValidos);
