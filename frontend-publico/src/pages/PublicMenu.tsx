@@ -150,7 +150,7 @@ const PublicMenu = () => {
           <div className="w-28 h-28 md:w-32 md:h-32 bg-white rounded-full p-1 border-2 border-zinc-200 shadow-2xl mb-4 shrink-0">
             <img src={config?.logo || "/logo.jpg"} alt={config?.nome_empresa || "Logo"} className="w-full h-full object-cover rounded-full" />
           </div>
-          <h1 className="text-3xl md:text-4xl font-heading font-bold text-zinc-900 tracking-wide text-center">
+          <h1 className="text-3xl md:text-4xl font-heading font-bold text-white tracking-wide text-center drop-shadow-md">
             {config?.nome_empresa || 'Burger Hause'}
           </h1>
           <p className="text-brand-400 font-bold tracking-widest text-sm uppercase mt-1 mb-4 text-center">O Lanche</p>
