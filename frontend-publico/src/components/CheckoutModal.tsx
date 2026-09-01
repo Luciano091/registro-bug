@@ -16,10 +16,10 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState<1 | 2 | 3>(1);
   
-  const [nome, setNome] = useState('');
-  const [telefone, setTelefone] = useState('');
+  const [nome, setNome] = useState(localStorage.getItem('user_nome') || '');
+  const [telefone, setTelefone] = useState(localStorage.getItem('user_telefone') || '');
   const [tipoPedido, setTipoPedido] = useState<'entrega' | 'retirada'>('entrega');
-  const [endereco, setEndereco] = useState('');
+  const [endereco, setEndereco] = useState(localStorage.getItem('user_endereco') || '');
   const [pagamento, setPagamento] = useState('');
   const [showObsFor, setShowObsFor] = useState<string | null>(null);
 
@@ -41,11 +41,20 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
         }))
       };
 
+            localStorage.setItem('user_nome', nome);
+      localStorage.setItem('user_telefone', telefone);
+      if (tipoPedido === 'entrega') localStorage.setItem('user_endereco', endereco);
+
       if (!isOnline) {
         await saveOfflineOrder(orderUuid, pedidoData);
       } else {
         try {
-          await api.post('/pedidos', pedidoData);
+          const response = await api.post('/pedidos', pedidoData);
+          if (response.data && response.data.id) {
+            const saved = JSON.parse(localStorage.getItem('meus_pedidos') || '[]');
+            saved.push(response.data.id);
+            localStorage.setItem('meus_pedidos', JSON.stringify(saved));
+          }
         } catch (error: any) {
           console.error("Erro ao salvar pedido na API:", error);
           const detail = error.response?.data?.detail;

@@ -136,7 +136,11 @@ const PublicMenu = () => {
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans pb-32 md:pb-24 selection:bg-brand-500/30 selection:text-zinc-900">
       
-      {/* HEADER / HERO */}
+      {/* DYNAMIC VIEWS */}
+      {activeTab === 'cardapio' && (
+        <div className="animate-in fade-in duration-300">
+          {/* HEADER / HERO */}
+
       <div className="w-full relative flex flex-col items-center justify-end min-h-[260px] md:min-h-[300px] pt-12 pb-6">
         <div className="absolute inset-0 bg-gradient-to-t from-[#0D0D0D] via-[#0D0D0D]/80 to-[#0D0D0D]/40 z-10 pointer-events-none"></div>
         <img 
@@ -441,7 +445,16 @@ const PublicMenu = () => {
         </div>
       </footer>
 
+      
+        </div>
+      )}
+
+      {activeTab === 'cupons' && <CuponsView />}
+      {activeTab === 'pedidos' && <PedidosView />}
+      {activeTab === 'conta' && <ContaView />}
+
       {/* MODALS & FLOATING CART */}
+
       {selectedProduct && (
         <ProductModal 
           produto={selectedProduct} 
