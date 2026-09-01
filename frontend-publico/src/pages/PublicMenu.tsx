@@ -149,25 +149,25 @@ const PublicMenu = () => {
 
       <div className="w-full bg-white border-b border-zinc-200 pt-6 pb-4 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 md:px-6">
-          <div className="flex items-center gap-4">
-            <div className="w-20 h-20 md:w-24 md:h-24 bg-white rounded-full p-0.5 border border-zinc-200 shrink-0 overflow-hidden shadow-sm">
+          <div className="flex items-center gap-5">
+            <div className="w-28 h-28 md:w-32 md:h-32 bg-white rounded-full p-0.5 border-2 border-zinc-200 shrink-0 overflow-hidden shadow-md">
               <img src={config?.logo || "/logo.jpg"} alt={config?.nome_empresa || "Logo"} className="w-full h-full object-cover rounded-full" />
             </div>
             
             <div className="flex-1">
-              <h1 className="text-xl md:text-2xl font-heading font-black text-zinc-900 uppercase tracking-tight flex items-center justify-between">
+              <h1 className="text-2xl md:text-3xl font-heading font-black text-zinc-900 uppercase tracking-tight leading-tight">
                 {config?.nome_empresa || 'Burger Hause'}
               </h1>
               
-              <div className="flex items-center gap-2 mt-1">
+              <div className="flex items-center gap-2 mt-1.5">
                 {config?.loja_aberta ? (
                   <>
-                    <div className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse"></div>
+                    <div className="w-2.5 h-2.5 rounded-full bg-[#22C55E] animate-pulse"></div>
                     <span className="text-sm font-bold text-[#22C55E]">Aberto</span>
                   </>
                 ) : (
                   <>
-                    <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                    <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
                     <span className="text-sm font-bold text-red-500">Fechado</span>
                   </>
                 )}
