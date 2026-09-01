@@ -348,57 +348,57 @@ const PublicMenu = () => {
                 </h2>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-4">
                 {items.map((produto: any) => (
                   <div 
                     key={produto.id} 
-                    className="group bg-white rounded-2xl p-3 flex gap-4 transition-all hover:bg-zinc-50 cursor-pointer shadow-lg shadow-zinc-200/50 border border-zinc-200"
+                    className="group bg-white flex gap-4 transition-all cursor-pointer border-b border-zinc-100 py-4 last:border-b-0"
                     onClick={() => setSelectedProduct(produto)}
                   >
-                    <div className="w-[80px] md:w-[100px] h-[80px] md:h-[100px] bg-white rounded-xl overflow-hidden shrink-0 relative flex items-center justify-center border border-zinc-200">
+                    <div className="w-[100px] h-[100px] bg-zinc-100 rounded-xl overflow-hidden shrink-0 relative flex items-center justify-center">
                        {produto.imagem_url ? (
                          <img 
                            src={produto.imagem_url} 
                            alt={produto.nome} 
-                           className="w-full h-full object-contain p-1.5 transition-transform duration-500 group-hover:scale-110 drop-shadow-md" 
+                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
                            referrerPolicy="no-referrer" 
                          />
                        ) : (
-                         <Utensils size={24} strokeWidth={1.5} className="text-zinc-700" />
+                         <Utensils size={28} strokeWidth={1.5} className="text-zinc-400" />
                        )}
                     </div>
 
-                    <div className="flex-1 min-w-0 flex flex-col justify-center py-1 pr-1">
+                    <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
                       <div>
-                        <h3 className="font-sans font-semibold text-zinc-900 text-[15px] md:text-[16px] tracking-tight leading-tight line-clamp-1">
+                        <h3 className="font-sans font-bold text-zinc-900 text-[15px] tracking-tight leading-tight">
                           {produto.nome}
                         </h3>
-                        <p className="text-zinc-500 text-[11px] md:text-xs mt-1 leading-snug font-medium">
-                          {produto.descricao || categoria}
+                        <p className="text-zinc-400 text-[12px] mt-1 leading-snug line-clamp-2">
+                          {produto.descricao || ''}
                         </p>
                       </div>
-                      <div className="flex items-center justify-between mt-3">
+                      <div className="flex items-center justify-between mt-2">
                         <div className="flex flex-col">
                           {produto.is_promocao && produto.preco_promocao ? (
                             <>
-                              <span className="font-price text-[11px] text-zinc-500 line-through leading-none mb-0.5">
+                              <span className="font-price text-[11px] text-zinc-400 line-through leading-none mb-0.5">
                                 {produto.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                               </span>
-                              <span className="font-price font-bold text-[15px] md:text-[16px] text-brand-400 tracking-wide leading-none">
+                              <span className="font-price font-bold text-[16px] text-brand-400 tracking-wide leading-none">
                                 {produto.preco_promocao.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                               </span>
                             </>
                           ) : (
-                            <span className="font-price font-bold text-[15px] md:text-[16px] text-brand-400 tracking-wide">
+                            <span className="font-price font-bold text-[16px] text-zinc-800 tracking-wide">
                               {produto.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                             </span>
                           )}
                         </div>
                         <button 
                           onClick={(e) => quickAdd(produto, e)}
-                          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 ${addedProductId === produto.id ? 'bg-emerald-500 text-white scale-110' : 'bg-zinc-100 text-zinc-500 hover:bg-brand-500 hover:text-zinc-900 active:scale-90'}`}
+                          className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 ${addedProductId === produto.id ? 'bg-emerald-500 text-white scale-110' : 'bg-brand-500 text-white hover:bg-brand-400 active:scale-90'}`}
                         >
-                          {addedProductId === produto.id ? <Check size={16} /> : <Plus size={16} />}
+                          {addedProductId === produto.id ? <Check size={18} /> : <Plus size={18} />}
                         </button>
                       </div>
                     </div>
