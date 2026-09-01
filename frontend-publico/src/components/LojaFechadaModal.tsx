@@ -53,10 +53,6 @@ export const LojaFechadaModal = ({ onClose, tempoMedio = 30 }: LojaFechadaModalP
             Volte mais tarde e faremos com prazer o seu lanche! 🍔
           </p>
 
-          <div className="mt-5 flex items-center gap-2 bg-zinc-100 rounded-full px-4 py-2 text-xs font-bold text-zinc-500">
-            <Clock size={14} className="text-brand-500" />
-            Tempo médio de preparo: ~{tempoMedio} min
-          </div>
 
           <button
             onClick={onClose}
