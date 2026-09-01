@@ -3,6 +3,7 @@ import { MapPin, Clock, Utensils, Plus, Flame, Check } from 'lucide-react';
 import api from '../services/api';
 import { ProductModal } from '../components/ProductModal';
 import { FloatingCart } from '../components/FloatingCart';
+import { BottomNav } from '../components/BottomNav';
 import { CheckoutModal } from '../components/CheckoutModal';
 import { useCart } from '../contexts/CartContext';
 
@@ -133,7 +134,7 @@ const PublicMenu = () => {
   }, {});
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans pb-24 selection:bg-brand-500/30 selection:text-zinc-900">
+    <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans pb-32 md:pb-24 selection:bg-brand-500/30 selection:text-zinc-900">
       
       {/* HEADER / HERO */}
       <div className="w-full relative flex flex-col items-center justify-end min-h-[260px] md:min-h-[300px] pt-12 pb-6">
@@ -452,7 +453,10 @@ const PublicMenu = () => {
         />
       )}
       
-      <FloatingCart onOpen={() => setIsCheckoutOpen(true)} />
+      <div className="hidden md:block">
+        <FloatingCart onOpen={() => setIsCheckoutOpen(true)} />
+      </div>
+      <BottomNav onOpenCart={() => setIsCheckoutOpen(true)} />
       
       {isCheckoutOpen && (
         <CheckoutModal 
