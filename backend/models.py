@@ -22,6 +22,8 @@ class Produto(Base):
     estoque = Column(Integer, default=0)
     is_promocao = Column(Boolean, default=False)
     preco_promocao = Column(Float, nullable=True)
+    
+    fichas_tecnicas = relationship("ProdutoInsumo", back_populates="produto")
 
 class Pedido(Base):
     __tablename__ = "pedidos"
@@ -140,5 +142,5 @@ class ProdutoInsumo(Base):
     insumo_id = Column(Integer, ForeignKey("insumos.id", ondelete="CASCADE"))
     quantidade = Column(Float, default=1.0) # Quantity of the insumo used in the product
     
-    produto = relationship("Produto")
+    produto = relationship("Produto", back_populates="fichas_tecnicas")
     insumo = relationship("Insumo", back_populates="fichas_tecnicas")
