@@ -140,11 +140,11 @@ const PublicMenu = () => {
   }, {});
 
   return (
-    <div className={`min-h-screen flex flex-col bg-zinc-50 text-zinc-900 font-sans ${cartCount > 0 ? "pb-36" : "pb-20"} md:pb-12 selection:bg-brand-500/30 selection:text-zinc-900`}>
+    <div className={`min-h-screen bg-zinc-50 text-zinc-900 font-sans ${cartCount > 0 ? "pb-36" : "pb-20"} md:pb-12 selection:bg-brand-500/30 selection:text-zinc-900`}>
       
       {/* DYNAMIC VIEWS */}
       {activeTab === 'cardapio' && (
-        <div className="animate-in fade-in duration-300 flex flex-col flex-1">
+        <div className="animate-in fade-in duration-300">
           {/* HEADER / HERO */}
 
       <div className="w-full bg-white border-b border-zinc-200 pt-6 pb-4 shadow-sm">
@@ -188,7 +188,7 @@ const PublicMenu = () => {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 md:px-6 relative z-20 mt-4">
+      <div className="max-w-4xl mx-auto px-4 md:px-6 relative z-20 mt-4 min-h-[55vh]">
         {/* NAVEGAÇÃO DE CATEGORIAS */}
         <div className="sticky top-0 z-40 bg-zinc-50/95 backdrop-blur-md pt-2 pb-2 -mx-4 px-4 border-b border-zinc-200 mb-8">
           <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2 md:flex-wrap md:justify-center">
@@ -424,7 +424,6 @@ const PublicMenu = () => {
         </div>
       </div>
 
-      <div className="mt-auto">
       {/* AVISO IMPORTANTE */}
       <div className="max-w-4xl mx-auto px-4 md:px-6 mt-8">
         <div className="bg-white border border-zinc-200 rounded-2xl p-5 text-center flex flex-col items-center shadow-sm">
@@ -452,7 +451,6 @@ const PublicMenu = () => {
           )}
         </div>
       </footer>
-      </div>
 
       
         </div>
