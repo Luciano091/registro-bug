@@ -425,27 +425,27 @@ const PublicMenu = () => {
       </div>
 
       {/* AVISO IMPORTANTE */}
-      <div className="max-w-4xl mx-auto px-6 mt-16">
-        <div className="bg-white border border-zinc-200 rounded-2xl p-6 text-center flex flex-col items-center">
-          <span className="bg-brand-500/20 text-brand-400 text-xs font-bold px-3 py-1 rounded-full mb-3 uppercase tracking-wider">
+      <div className="max-w-4xl mx-auto px-4 md:px-6 mt-8">
+        <div className="bg-white border border-zinc-200 rounded-2xl p-5 text-center flex flex-col items-center shadow-sm">
+          <span className="bg-amber-100 text-amber-700 text-[10px] font-bold px-2.5 py-1 rounded-full mb-3 uppercase tracking-widest">
             Aviso Importante
           </span>
-          <p className="text-zinc-500 text-sm max-w-lg leading-relaxed">
+          <p className="text-zinc-500 text-xs md:text-sm max-w-lg leading-relaxed">
             Trabalhamos com duas linhas de hambúrgueres para melhor te atender: 
-            nossa tradicional linha de <strong className="text-zinc-900">Hambúrgueres Artesanais</strong> (100% Carne Bovina fresca) 
-            e nossa linha econômica com <strong className="text-zinc-900">Hambúrgueres Tradicionais</strong> (Processados). 
+            nossa tradicional linha de <strong className="text-zinc-800">Artesanais</strong> (100% Carne Bovina fresca) 
+            e nossa linha econômica de <strong className="text-zinc-800">Tradicionais</strong> (Processados). 
             Verifique a descrição de cada produto!
           </p>
         </div>
       </div>
 
       {/* RODAPÉ */}
-      <footer className="mt-12 border-t border-zinc-200 bg-white py-12">
-        <div className="max-w-4xl mx-auto px-6 flex flex-col items-center text-center">
-          <h4 className="font-heading text-xl text-zinc-500 mb-2">{config?.nome_empresa || 'Burger Hause'}</h4>
+      <footer className="mt-8 pb-6">
+        <div className="max-w-4xl mx-auto px-6 flex flex-col items-center text-center opacity-70">
+          <h4 className="font-heading text-lg font-bold text-zinc-400 uppercase tracking-widest mb-1.5">{config?.nome_empresa || 'Burger Hause'}</h4>
           {config?.endereco && (
-            <p className="text-zinc-600 text-sm max-w-sm flex items-center justify-center gap-1.5">
-              <MapPin size={14} />
+            <p className="text-zinc-400 text-xs flex items-center justify-center gap-1.5 font-medium">
+              <MapPin size={12} />
               {config.endereco}
             </p>
           )}
