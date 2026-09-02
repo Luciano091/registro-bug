@@ -22,7 +22,7 @@ const PublicMenu = () => {
   // Modals state
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  const { addItem } = useCart();
+  const { addItem, cartCount } = useCart();
   const [addedProductId, setAddedProductId] = useState<number | null>(null);
 
   const quickAdd = useCallback((produto: any, e?: React.MouseEvent) => {
@@ -140,11 +140,11 @@ const PublicMenu = () => {
   }, {});
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans pb-32 md:pb-24 selection:bg-brand-500/30 selection:text-zinc-900">
+    <div className={`min-h-screen flex flex-col bg-zinc-50 text-zinc-900 font-sans ${cartCount > 0 ? "pb-36" : "pb-20"} md:pb-12 selection:bg-brand-500/30 selection:text-zinc-900`}>
       
       {/* DYNAMIC VIEWS */}
       {activeTab === 'cardapio' && (
-        <div className="animate-in fade-in duration-300">
+        <div className="animate-in fade-in duration-300 flex flex-col flex-1">
           {/* HEADER / HERO */}
 
       <div className="w-full bg-white border-b border-zinc-200 pt-6 pb-4 shadow-sm">
@@ -424,6 +424,7 @@ const PublicMenu = () => {
         </div>
       </div>
 
+      <div className="mt-auto">
       {/* AVISO IMPORTANTE */}
       <div className="max-w-4xl mx-auto px-4 md:px-6 mt-8">
         <div className="bg-white border border-zinc-200 rounded-2xl p-5 text-center flex flex-col items-center shadow-sm">
@@ -451,6 +452,7 @@ const PublicMenu = () => {
           )}
         </div>
       </footer>
+      </div>
 
       
         </div>
