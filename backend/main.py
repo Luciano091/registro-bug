@@ -65,7 +65,7 @@ cloudinary.config(
     api_secret=os.getenv("CLOUDINARY_API_SECRET")
 )
 
-app = FastAPI(title="Burger Hause API")
+app = FastAPI(title="BisBurger API")
 
 app.add_middleware(
     CORSMiddleware,

@@ -23,7 +23,7 @@ def simulate_message():
     msg = WhatsAppMensagem(
         contato_id=chat.id,
         meta_message_id=f"wamid.test_{int(time.time())}",
-        texto="Olá! Estou testando o atalho e a notificação global do sistema Burger Hause!",
+        texto="Olá! Estou testando o atalho e a notificação global do sistema BisBurger!",
         direcao="in"
     )
     db.add(msg)

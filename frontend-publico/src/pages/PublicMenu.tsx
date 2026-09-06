@@ -151,12 +151,12 @@ const PublicMenu = () => {
         <div className="max-w-4xl mx-auto px-4 md:px-6">
           <div className="flex items-center gap-5">
             <div className="w-28 h-28 md:w-32 md:h-32 bg-white rounded-full p-0.5 border-2 border-zinc-200 shrink-0 overflow-hidden shadow-md">
-              <img src={config?.logo || "/logo.jpg"} alt={config?.nome_empresa || "Logo"} className="w-full h-full object-cover rounded-full" />
+              <img src={config?.logo || "/logo.png"} alt={config?.nome_empresa || "Logo"} className="w-full h-full object-cover rounded-full" />
             </div>
             
             <div className="flex-1">
               <h1 className="text-2xl md:text-3xl font-heading font-black text-zinc-900 uppercase tracking-tight leading-tight">
-                {config?.nome_empresa || 'Burger Hause'}
+                {config?.nome_empresa || 'BisBurger'}
               </h1>
               
               <div className="flex items-center gap-2 mt-1.5">
@@ -442,7 +442,7 @@ const PublicMenu = () => {
       {/* RODAPÉ */}
       <footer className="mt-8 pb-6">
         <div className="max-w-4xl mx-auto px-6 flex flex-col items-center text-center opacity-70">
-          <h4 className="font-heading text-lg font-bold text-zinc-400 uppercase tracking-widest mb-1.5">{config?.nome_empresa || 'Burger Hause'}</h4>
+          <h4 className="font-heading text-lg font-bold text-zinc-400 uppercase tracking-widest mb-1.5">{config?.nome_empresa || 'BisBurger'}</h4>
           {config?.endereco && (
             <p className="text-zinc-400 text-xs flex items-center justify-center gap-1.5 font-medium">
               <MapPin size={12} />

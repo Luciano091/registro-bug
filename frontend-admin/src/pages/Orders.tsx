@@ -53,7 +53,7 @@ const Orders = () => {
 
     const orderNumber = passedOrder.numero.split('-')[1] || passedOrder.numero;
     
-    let text = `Olá ${passedOrder.cliente}! Aqui é do *Burger Hause*. 🍔\n\n`;
+    let text = `Olá ${passedOrder.cliente}! Aqui é do *BisBurger*. 🍔\n\n`;
     text += `Recebemos o seu Pedido #${orderNumber}.\n\n`;
     
     text += `*Resumo do Pedido:*\n`;

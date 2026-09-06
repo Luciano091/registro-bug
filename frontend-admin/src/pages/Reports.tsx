@@ -411,7 +411,7 @@ const Reports = () => {
       {/* Cabeçalho */}
       <div className="border-b-2 border-black pb-4 mb-8 flex justify-between items-end">
         <div>
-          <h1 className="text-3xl font-bold uppercase tracking-tight">Burger Hause</h1>
+          <h1 className="text-3xl font-bold uppercase tracking-tight">BisBurger</h1>
           <h2 className="text-xl text-zinc-700 mt-1 font-medium">Relatório Oficial de Desempenho</h2>
         </div>
         <div className="text-right text-sm text-zinc-600">
@@ -549,7 +549,7 @@ const Reports = () => {
       </div>
 
       <div className="mt-12 pt-4 border-t border-zinc-200 text-center text-[10px] text-zinc-300">
-        Gerado pelo sistema Burger Hause. Documento de uso interno, confidencial.
+        Gerado pelo sistema BisBurger. Documento de uso interno, confidencial.
       </div>
     </div>
     </>

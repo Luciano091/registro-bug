@@ -1,21 +1,18 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from models import Configuracao, WhatsAppMensagem, WhatsAppContato
+import os
+from sqlalchemy import create_engine, text
 
-DEFAULT_DB_URL = "postgresql://neondb_owner:npg_PJaA6coCD2QY@ep-little-tree-ac1havuv-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require"
-engine = create_engine(DEFAULT_DB_URL)
-SessionLocal = sessionmaker(bind=engine)
-db = SessionLocal()
+db_url = "postgresql://neondb_owner:npg_PJaA6coCD2QY@ep-little-tree-ac1havuv-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require"
+engine = create_engine(db_url)
 
-config = db.query(Configuracao).first()
-print(f"Auto Reply Enabled: {config.whatsapp_auto_reply_enabled}")
-print(f"Auto Reply Text: {config.whatsapp_auto_reply_text}")
-
-contato = db.query(WhatsAppContato).filter(WhatsAppContato.telefone == "5511999999999").first()
-if contato:
-    print(f"Contato {contato.telefone} ultima_interacao: {contato.ultima_interacao}")
-    mensagens = db.query(WhatsAppMensagem).filter(WhatsAppMensagem.contato_id == contato.id).order_by(WhatsAppMensagem.id.desc()).limit(3).all()
-    for m in mensagens:
-        print(f"Msg: {m.direcao} - {m.texto} - {m.data}")
-
-db.close()
+with engine.connect() as conn:
+    try:
+        res = conn.execute(text("SELECT COUNT(*) FROM produtos"))
+        print("Produtos count:", res.scalar())
+        
+        res = conn.execute(text("SELECT COUNT(*) FROM categorias"))
+        print("Categorias count:", res.scalar())
+        
+        res = conn.execute(text("SELECT * FROM configuracoes"))
+        print("Configuracoes:", res.fetchall())
+    except Exception as e:
+        print("Error:", e)

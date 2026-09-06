@@ -88,7 +88,7 @@ function AppContent() {
         {/* Global Background Image */}
         <div 
           className="absolute inset-0 z-0 opacity-15 pointer-events-none bg-no-repeat bg-center bg-cover"
-          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=2000&q=80')" }}
+          style={{ backgroundImage: "url('/logo.png" }}
         ></div>
         {/* Soft Vignette */}
         <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.75)_100%)] pointer-events-none"></div>
@@ -103,10 +103,10 @@ function AppContent() {
           <div className={`pt-6 px-4 pb-2 h-24 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
             {!isCollapsed && (
               <div className="flex items-center gap-2 overflow-hidden">
-                <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=100&q=80" alt="Logo Burger Hause" className="w-8 h-8 rounded-full object-cover shadow-lg border border-brand-500/50" />
+                <img src="/logo.png" alt="Logo BisBurger" className="w-8 h-8 rounded-full object-cover shadow-lg border border-brand-500/50" />
                 <div className="flex flex-col items-center w-full">
                   <h1 className="text-lg font-bold gradient-text drop-shadow-sm whitespace-nowrap leading-tight">
-                    Burger Hause
+                    BisBurger
                   </h1>
                   <span className="text-[10px] text-white font-bold tracking-[0.2em] uppercase drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]">O Lanche</span>
                 </div>
