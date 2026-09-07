@@ -164,8 +164,15 @@ function AppContent() {
         {/* Main Content */}
         <main className="admin-main min-w-0 flex-1 overflow-y-auto relative pb-20 md:pb-0 z-10">
           <div className="mobile-brand md:hidden">
-            <div className="brand-mark"><img src="/brand/ritmesa-mark.png" alt="" /></div>
-            <div><strong>Ritmesa</strong><span>{estabelecimento.nome_empresa || 'Meu estabelecimento'}</span></div>
+            {estabelecimento.logo ? (
+              <img src={estabelecimento.logo} alt={`Logo de ${estabelecimento.nome_empresa || 'estabelecimento'}`} className="mobile-tenant-logo" />
+            ) : (
+              <div className="mobile-tenant-logo mobile-tenant-placeholder"><Store size={20} /></div>
+            )}
+            <div className="min-w-0">
+              <strong className="truncate">{estabelecimento.nome_empresa || 'Meu estabelecimento'}</strong>
+              <span className="flex items-center gap-1.5"><img src="/brand/ritmesa-mark.png" alt="" /> Gestão por Ritmesa</span>
+            </div>
           </div>
           <Routes>
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
@@ -214,16 +221,16 @@ function AppContent() {
         )}
 
         {/* Mobile Bottom Nav */}
-        <nav className="mobile-bottom-nav md:hidden fixed bottom-0 w-full flex justify-between px-4 py-2 z-50 print:hidden pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-          <Link to="/" className="p-2 flex flex-col items-center text-zinc-300 hover:text-brand-400 transition-colors"><Home size={22} /><span className="text-[10px] mt-1 font-medium">Início</span></Link>
-          <Link to="/pedidos" className="p-2 flex flex-col items-center text-zinc-300 hover:text-brand-400 transition-colors"><ListOrdered size={22} /><span className="text-[10px] mt-1 font-medium">Pedidos</span></Link>
+        <nav className="mobile-bottom-nav fixed bottom-0 z-50 flex w-full justify-between px-2 py-1.5 md:hidden print:hidden pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+          <Link to="/" aria-current={location.pathname === '/' ? 'page' : undefined} className={`mobile-nav-item ${location.pathname === '/' ? 'is-active' : ''}`}><Home size={22} /><span>Início</span></Link>
+          <Link to="/pedidos" aria-current={location.pathname === '/pedidos' ? 'page' : undefined} className={`mobile-nav-item ${location.pathname === '/pedidos' ? 'is-active' : ''}`}><ListOrdered size={22} /><span>Pedidos</span></Link>
           
           <Link to="/novo-pedido" aria-label="Novo pedido" className="relative -top-6 p-4 premium-btn rounded-full shadow-xl shadow-brand-500/20 border-4 border-white">
             <PlusCircle size={28} />
           </Link>
           
-          <Link to="/cardapio" className="p-2 flex flex-col items-center text-zinc-300 hover:text-brand-400 transition-colors"><Utensils size={22} /><span className="text-[10px] mt-1 font-medium">Cardápio</span></Link>
-          <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 flex flex-col items-center text-zinc-300 hover:text-brand-400 transition-colors"><MenuIcon size={22} /><span className="text-[10px] mt-1 font-medium">Mais</span></button>
+          <Link to="/cardapio" aria-current={location.pathname === '/cardapio' ? 'page' : undefined} className={`mobile-nav-item ${location.pathname === '/cardapio' ? 'is-active' : ''}`}><Utensils size={22} /><span>Cardápio</span></Link>
+          <button onClick={() => setIsMobileMenuOpen(true)} className={`mobile-nav-item ${isMobileMenuOpen ? 'is-active' : ''}`}><MenuIcon size={22} /><span>Mais</span></button>
         </nav>
       </div>
   );

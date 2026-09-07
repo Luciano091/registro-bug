@@ -68,12 +68,20 @@
   .sidebar-link[aria-current="page"] > div:first-child { background: rgba(249,115,22,.13); border-color: rgba(251,146,60,.18); box-shadow: none; }
   .sidebar-link[aria-current="page"] > div:last-child { box-shadow: none; height: 20px; }
   .tenant-card { display: flex; align-items: center; gap: 10px; padding: 10px; background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.07); border-radius: 11px; }
-  .mobile-brand { height: 64px; padding: 0 20px; align-items: center; gap: 10px; background: #111827; color: white; }
-  .mobile-brand .brand-mark { width: 34px; height: 34px; }
+  .mobile-brand { display: flex; height: 72px; padding: 0 20px; align-items: center; gap: 12px; background: #111827; color: white; }
+  .mobile-tenant-logo { width: 46px; height: 46px; flex: 0 0 auto; border-radius: 12px; border: 1px solid rgba(255,255,255,.22); object-fit: cover; background: #ffffff; box-shadow: 0 5px 18px rgba(0,0,0,.24); }
+  .mobile-tenant-placeholder { display: grid; place-items: center; color: #64748b; }
   .mobile-brand strong, .mobile-brand span { display: block; }
-  .mobile-brand strong { font-size: 14px; }
-  .mobile-brand span { color: #94a3b8; font-size: 11px; }
+  .mobile-brand strong { color: #ffffff; font-size: 16px; line-height: 1.25; font-weight: 700; }
+  .mobile-brand span { margin-top: 3px; color: #94a3b8; font-size: 10px; line-height: 1.2; font-weight: 500; }
+  .mobile-brand span img { width: 13px; height: 13px; object-fit: contain; }
   .mobile-bottom-nav { background: rgba(255,255,255,.96); color: #475569; border-top: 1px solid #e2e8f0; box-shadow: 0 -8px 28px rgba(15,23,42,.08); backdrop-filter: blur(18px); }
+  .mobile-nav-item { display: flex; min-height: 52px; width: 19%; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border-radius: 11px; color: #64748b; transition: color 150ms ease, background-color 150ms ease; }
+  .mobile-nav-item svg { stroke-width: 2.2; }
+  .mobile-nav-item span { font-size: 11px; line-height: 1; font-weight: 600; }
+  .mobile-nav-item:hover { color: #334155; background: #f8fafc; }
+  .mobile-nav-item.is-active { color: #ea580c; background: #fff7ed; }
+  .mobile-nav-item.is-active svg { stroke-width: 2.6; }
   .admin-main { background: #f5f7fa; color: #172033; }
   .admin-main header { padding-bottom: 24px; border-bottom: 1px solid #e5eaf0; }
   .admin-main header h2 { font-size: clamp(1.6rem, 2.5vw, 2rem); letter-spacing: -0.035em; }
