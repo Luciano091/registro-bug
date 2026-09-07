@@ -157,10 +157,10 @@ const PublicMenu = () => {
         <div className="animate-in fade-in duration-300">
           {/* HEADER / HERO */}
 
-      <div className="store-hero w-full border-b border-zinc-200 py-5 sm:py-7">
+      <div className="store-hero w-full border-b border-zinc-200 py-5 md:py-6">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-4 sm:gap-5">
-            <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-0.5 shadow-sm sm:h-24 sm:w-24">
+            <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-0.5 shadow-sm md:h-20 md:w-20">
               <img src={config?.logo || "/logo.png"} alt={config?.nome_empresa || "Logo"} className="h-full w-full rounded-[14px] object-cover" />
             </div>
             
@@ -182,25 +182,25 @@ const PublicMenu = () => {
                   </>
                 )}
               </div>
+
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <div className="flex min-h-9 items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-3 text-xs font-semibold text-emerald-700">
+                  <MapPin size={14} />
+                  {config?.taxa_entrega === 0 || !config?.taxa_entrega ? 'Entrega grátis' : `Taxa ${Number(config.taxa_entrega).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`}
+                </div>
+                <div className="flex min-h-9 items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-600">
+                  <Clock size={14} />
+                  {config?.tempo_medio_preparo || 30} min
+                </div>
+              </div>
             </div>
-          </div>
-          
-          <div className="mt-4 flex flex-wrap items-center gap-2 sm:ml-[116px] sm:-mt-8">
-             <div className="flex min-h-9 items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-3 text-xs font-semibold text-emerald-700">
-                <MapPin size={14} />
-                {config?.taxa_entrega === 0 || !config?.taxa_entrega ? 'Entrega grátis' : `Taxa ${Number(config.taxa_entrega).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`}
-             </div>
-             <div className="flex min-h-9 items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-600">
-                <Clock size={14} />
-                {config?.tempo_medio_preparo || 30} min
-             </div>
           </div>
         </div>
       </div>
 
       <main className="relative z-20 mx-auto mt-3 min-h-[55vh] max-w-6xl px-4 sm:px-6 lg:px-8">
         {/* NAVEGAÇÃO DE CATEGORIAS */}
-        <div className="sticky top-0 z-40 -mx-4 mb-7 border-b border-zinc-200/80 bg-[#f7f7f8]/95 px-4 pb-2 pt-2 backdrop-blur-xl md:top-16 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+        <div className="sticky top-0 z-40 -mx-4 mb-6 border-b border-zinc-200/80 bg-[#f7f7f8]/95 px-4 pb-2 pt-2 backdrop-blur-xl md:top-16 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
           <div className="hide-scrollbar flex gap-2 overflow-x-auto pb-1 md:flex-wrap">
             {categories.map((cat, i) => (
               <button
@@ -228,14 +228,14 @@ const PublicMenu = () => {
                   <Flame size={20} className="text-brand-500" /> Promoções para você
                 </h2>
               </div>
-              <div className={`grid gap-4 ${promocoesAtivas.length > 1 ? 'sm:grid-cols-2' : ''}`}>
+              <div className={`grid gap-4 ${promocoesAtivas.length > 1 ? 'sm:grid-cols-2' : 'lg:max-w-4xl'}`}>
                 {promocoesAtivas.map(promocao => (
                   <div 
                     key={promocao.id}
-                    className="group relative flex min-w-0 cursor-pointer flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-lg sm:flex-row sm:items-stretch"
+                    className="group relative flex min-w-0 cursor-pointer flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-lg sm:min-h-56 sm:flex-row sm:items-stretch"
                     onClick={() => setSelectedProduct(promocao)}
                   >
-                    <div className="relative flex h-48 w-full items-center justify-center overflow-hidden bg-orange-50 sm:h-auto sm:min-h-56 sm:w-[44%] sm:order-2">
+                    <div className="relative flex h-48 w-full items-center justify-center overflow-hidden bg-orange-50 sm:h-56 sm:min-h-0 sm:w-[42%] sm:order-2">
                       {promocao.imagem_url ? (
                         <img 
                           src={promocao.imagem_url} 
@@ -291,10 +291,10 @@ const PublicMenu = () => {
               </div>
               
               <div 
-                className="group relative mt-4 flex w-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-lg sm:flex-row sm:items-stretch"
+                className="group relative mt-4 flex w-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-lg sm:min-h-56 sm:flex-row sm:items-stretch lg:max-w-4xl"
                 onClick={() => setSelectedProduct(destaqueDoDia)}
               >
-                <div className="relative flex h-52 w-full items-center justify-center overflow-hidden bg-orange-50 sm:h-auto sm:min-h-64 sm:w-[45%] sm:order-2">
+                <div className="relative flex h-52 w-full items-center justify-center overflow-hidden bg-orange-50 sm:h-56 sm:min-h-0 sm:w-[42%] sm:order-2">
                   {destaqueDoDia.imagem_url ? (
                     <img 
                       src={destaqueDoDia.imagem_url} 
