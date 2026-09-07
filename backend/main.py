@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, Query, BackgroundTasks, Request
+from fastapi import FastAPI, Depends, HTTPException, Query, BackgroundTasks, Request, Header
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any, Optional
@@ -15,6 +15,25 @@ from google.auth.transport import requests as google_requests
 from database import engine, get_db, SessionLocal
 
 models.Base.metadata.create_all(bind=engine)
+
+# Migração incremental para transformar a base existente em multiestabelecimento.
+from sqlalchemy import inspect, text
+for table_name in ("clientes", "produtos", "pedidos", "configuracoes", "caixas", "whatsapp_contatos", "insumos"):
+    existing_columns = {column["name"] for column in inspect(engine).get_columns(table_name)}
+    if "estabelecimento_id" not in existing_columns:
+        with engine.begin() as conn:
+            conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN estabelecimento_id INTEGER"))
+
+config_columns = {column["name"] for column in inspect(engine).get_columns("configuracoes")}
+if "whatsapp_phone_number_id" not in config_columns:
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE configuracoes ADD COLUMN whatsapp_phone_number_id VARCHAR"))
+if engine.dialect.name == "postgresql":
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE whatsapp_contatos DROP CONSTRAINT IF EXISTS whatsapp_contatos_telefone_key"))
+
+with SessionLocal() as migration_db:
+    crud.ensure_initial_establishment(migration_db)
 
 # Auto-migrate uuid column for offline mode
 try:
@@ -69,8 +88,8 @@ app = FastAPI(title="Ritmesa API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # For production, can change to Vercel URL
-    allow_credentials=True,
+    allow_origins=[origin.strip() for origin in os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:5174").split(",") if origin.strip()],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -92,36 +111,47 @@ def upload_image(
         raise HTTPException(status_code=500, detail=f"Cloudinary error: {str(e)}")
 
 # --- Produtos ---
+def require_public_establishment(slug: str, db: Session):
+    estabelecimento = crud.get_estabelecimento_by_slug(db, slug)
+    if not estabelecimento:
+        raise HTTPException(status_code=404, detail="Estabelecimento indisponível.")
+    return estabelecimento
+
+@app.get("/public/{slug}/produtos", response_model=List[schemas.Produto])
+def public_products(slug: str, skip: int = 0, limit: int = 500, db: Session = Depends(get_db)):
+    estabelecimento = require_public_establishment(slug, db)
+    return crud.get_produtos(db, estabelecimento.id, skip=skip, limit=limit)
+
 @app.get("/produtos", response_model=List[schemas.Produto])
-def read_produtos(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return crud.get_produtos(db, skip=skip, limit=limit)
+def read_produtos(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+    return crud.get_produtos(db, estabelecimento_id, skip=skip, limit=limit)
 
 @app.post("/produtos", response_model=schemas.Produto)
-def create_produto(produto: schemas.ProdutoCreate, db: Session = Depends(get_db)):
-    return crud.create_produto(db=db, produto=produto)
+def create_produto(produto: schemas.ProdutoCreate, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+    return crud.create_produto(db=db, produto=produto, estabelecimento_id=estabelecimento_id)
 
 @app.put("/produtos/{produto_id}", response_model=schemas.Produto)
-def update_produto(produto_id: int, produto: schemas.ProdutoCreate, db: Session = Depends(get_db)):
-    db_produto = crud.update_produto(db, produto_id, produto)
+def update_produto(produto_id: int, produto: schemas.ProdutoCreate, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+    db_produto = crud.update_produto(db, produto_id, produto, estabelecimento_id)
     if db_produto is None:
         raise HTTPException(status_code=404, detail="Produto não encontrado")
     return db_produto
 
 @app.delete("/produtos/{produto_id}", response_model=schemas.Produto)
-def delete_produto(produto_id: int, db: Session = Depends(get_db)):
-    db_produto = crud.delete_produto(db, produto_id)
+def delete_produto(produto_id: int, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+    db_produto = crud.delete_produto(db, produto_id, estabelecimento_id)
     if db_produto is None:
         raise HTTPException(status_code=404, detail="Produto não encontrado")
     return db_produto
 
 # --- Pedidos ---
 @app.get("/pedidos", response_model=List[schemas.Pedido])
-def read_pedidos(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return crud.get_pedidos(db, skip=skip, limit=limit)
+def read_pedidos(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+    return crud.get_pedidos(db, estabelecimento_id, skip=skip, limit=limit)
 
 @app.get("/pedidos/{pedido_id}", response_model=schemas.Pedido)
-def read_pedido(pedido_id: int, db: Session = Depends(get_db)):
-    db_pedido = crud.get_pedido(db, pedido_id=pedido_id)
+def read_pedido(pedido_id: int, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+    db_pedido = crud.get_pedido(db, pedido_id=pedido_id, estabelecimento_id=estabelecimento_id)
     if db_pedido is None:
         raise HTTPException(status_code=404, detail="Pedido não encontrado")
     return db_pedido
@@ -191,7 +221,7 @@ def auth_google(token_data: dict, db: Session = Depends(get_db)):
 last_google_auth_error = "Nenhum erro ainda"
 
 @app.get("/auth/google/debug")
-def debug_google_auth():
+def debug_google_auth(_: dict = Depends(auth.get_current_platform_admin)):
     return {"error": last_google_auth_error}
 
 # --- Administração da plataforma Ritmesa ---
@@ -261,17 +291,18 @@ def platform_update_lead(lead_id: int, payload: schemas.LeadComercialUpdate, db:
         raise HTTPException(status_code=404, detail="Contato não encontrado.")
     return lead
 
-@app.post("/pedidos", response_model=schemas.Pedido)
-def create_pedido(pedido: schemas.PedidoCreate, db: Session = Depends(get_db), cliente_id: Optional[str] = Depends(auth.get_current_cliente_optional)):
+@app.post("/public/{slug}/pedidos", response_model=schemas.Pedido)
+def create_pedido(slug: str, pedido: schemas.PedidoCreate, db: Session = Depends(get_db), cliente_id: Optional[str] = Depends(auth.get_current_cliente_optional)):
+    estabelecimento = require_public_establishment(slug, db)
     if cliente_id:
         pedido.cliente_id = int(cliente_id)
 
-    caixa_aberto = crud.get_caixa_aberto(db)
+    caixa_aberto = crud.get_caixa_aberto(db, estabelecimento.id)
     if not caixa_aberto:
         raise HTTPException(status_code=400, detail="Não é possível registrar pedido: o Caixa está fechado.")
         
     try:
-        db_pedido = crud.create_pedido(db=db, pedido=pedido)
+        db_pedido = crud.create_pedido(db=db, pedido=pedido, estabelecimento_id=estabelecimento.id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     
@@ -286,16 +317,42 @@ def create_pedido(pedido: schemas.PedidoCreate, db: Session = Depends(get_db), c
     
     return db_pedido
 
-async def send_status_whatsapp(telefone: str, message: str):
+@app.post("/pedidos", response_model=schemas.Pedido)
+def create_admin_order(pedido: schemas.PedidoCreate, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+    caixa_aberto = crud.get_caixa_aberto(db, estabelecimento_id)
+    if not caixa_aberto:
+        raise HTTPException(status_code=400, detail="Não é possível registrar pedido: o Caixa está fechado.")
+    try:
+        db_pedido = crud.create_pedido(db, pedido, estabelecimento_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    movimento = schemas.MovimentacaoCaixaCreate(
+        tipo="venda",
+        valor=db_pedido.total,
+        forma_pagamento=db_pedido.forma_pagamento,
+        descricao=f"Pedido #{db_pedido.numero}",
+    )
+    crud.add_movimentacao(db, caixa_aberto.id, movimento)
+    return db_pedido
+
+@app.get("/public/{slug}/pedidos/{pedido_id}", response_model=schemas.Pedido)
+def public_order(slug: str, pedido_id: int, db: Session = Depends(get_db)):
+    estabelecimento = require_public_establishment(slug, db)
+    pedido = crud.get_pedido(db, pedido_id, estabelecimento.id)
+    if not pedido:
+        raise HTTPException(status_code=404, detail="Pedido não encontrado.")
+    return pedido
+
+async def send_status_whatsapp(telefone: str, message: str, estabelecimento_id: int):
     db = SessionLocal()
     try:
-        await whatsapp_api.send_whatsapp_message(telefone, message, db)
+        await whatsapp_api.send_whatsapp_message(telefone, message, db, estabelecimento_id)
     finally:
         db.close()
 
 @app.put("/pedidos/{pedido_id}/status", response_model=schemas.Pedido)
-def update_pedido_status(pedido_id: int, status: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
-    db_pedido = crud.update_pedido_status(db, pedido_id=pedido_id, status=status)
+def update_pedido_status(pedido_id: int, status: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+    db_pedido = crud.update_pedido_status(db, pedido_id=pedido_id, status=status, estabelecimento_id=estabelecimento_id)
     if db_pedido is None:
         raise HTTPException(status_code=404, detail="Pedido não encontrado")
         
@@ -308,15 +365,19 @@ def update_pedido_status(pedido_id: int, status: str, background_tasks: Backgrou
         elif db_pedido.status == 'Saiu entrega': statusText = "acabou de *Sair para Entrega* e já está a caminho!"
         elif db_pedido.status == 'Finalizado': statusText = "foi *Finalizado*. Esperamos que tenha gostado!"
         
-        message = f"Olá {db_pedido.cliente}!\n\nSeu pedido #{db_pedido.numero.split('-')[1] if '-' in db_pedido.numero else db_pedido.numero} no valor de *{formattedTotal}* {statusText}\n\nAgradecemos a preferência!"
-        background_tasks.add_task(send_status_whatsapp, db_pedido.telefone, message)
+        numero_exibicao = db_pedido.numero.split('-')[-1]
+        message = f"Olá {db_pedido.cliente}!\n\nSeu pedido #{numero_exibicao} no valor de *{formattedTotal}* {statusText}\n\nAgradecemos a preferência!"
+        background_tasks.add_task(send_status_whatsapp, db_pedido.telefone, message, estabelecimento_id)
 
     return db_pedido
 
 # --- Autenticação ---
 @app.post("/auth/login")
 def login(login_req: schemas.LoginRequest, db: Session = Depends(get_db)):
-    config = crud.get_configuracao(db)
+    estabelecimento = crud.get_estabelecimento_by_slug(db, login_req.estabelecimento)
+    if not estabelecimento:
+        raise HTTPException(status_code=404, detail="Estabelecimento indisponível.")
+    config = crud.get_configuracao(db, estabelecimento.id)
     
     is_valid = False
     needs_rehash = False
@@ -347,35 +408,44 @@ def login(login_req: schemas.LoginRequest, db: Session = Depends(get_db)):
             db.commit()
             
         access_token = auth.create_access_token(
-            data={"role": "admin"},
+            data={"role": "admin", "estabelecimento_id": estabelecimento.id, "estabelecimento": estabelecimento.slug},
             expires_delta=timedelta(days=7)
         )
-        return {"token": access_token}
+        return {"token": access_token, "estabelecimento": {"id": estabelecimento.id, "nome": estabelecimento.nome, "slug": estabelecimento.slug}}
 
     raise HTTPException(status_code=401, detail="Senha incorreta")
 
 # --- Configuracoes ---
+@app.get("/public/{slug}/configuracao", response_model=schemas.ConfiguracaoPublica)
+def public_configuracao(slug: str, db: Session = Depends(get_db)):
+    estabelecimento = require_public_establishment(slug, db)
+    config = crud.get_configuracao(db, estabelecimento.id)
+    caixa_aberto = crud.get_caixa_aberto(db, estabelecimento.id)
+    config_dict = {c.name: getattr(config, c.name) for c in config.__table__.columns}
+    config_dict["loja_aberta"] = caixa_aberto is not None
+    return config_dict
+
 @app.get("/configuracao", response_model=schemas.Configuracao)
-def read_configuracao(db: Session = Depends(get_db)):
-    config = crud.get_configuracao(db)
-    caixa_aberto = crud.get_caixa_aberto(db)
+def read_configuracao(db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+    config = crud.get_configuracao(db, estabelecimento_id)
+    caixa_aberto = crud.get_caixa_aberto(db, estabelecimento_id)
     
     config_dict = {c.name: getattr(config, c.name) for c in config.__table__.columns}
     config_dict["loja_aberta"] = caixa_aberto is not None
     return config_dict
 
 @app.put("/configuracao", response_model=schemas.Configuracao)
-def update_configuracao(config: schemas.ConfiguracaoCreate, db: Session = Depends(get_db)):
-    return crud.update_configuracao(db=db, config=config)
+def update_configuracao(config: schemas.ConfiguracaoCreate, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+    return crud.update_configuracao(db=db, config=config, estabelecimento_id=estabelecimento_id)
 
 # --- Dashboard & Relatorios ---
 @app.get("/dashboard/resumo")
-def get_dashboard_resumo(db: Session = Depends(get_db), admin: bool = Depends(auth.get_current_admin)):
+def get_dashboard_resumo(db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
     hoje = (datetime.datetime.utcnow() - datetime.timedelta(hours=3)).date()
     inicio_dia = datetime.datetime.combine(hoje, datetime.time.min)
     fim_dia = datetime.datetime.combine(hoje, datetime.time.max)
     
-    pedidos_hoje = crud.get_pedidos_by_date_range(db, inicio_dia, fim_dia)
+    pedidos_hoje = crud.get_pedidos_by_date_range(db, inicio_dia, fim_dia, estabelecimento_id)
     
     total_pedidos = len(pedidos_hoje)
     faturamento_hoje = sum(p.total for p in pedidos_hoje)
@@ -396,10 +466,11 @@ def get_dashboard_resumo(db: Session = Depends(get_db), admin: bool = Depends(au
                 vendas_produtos[item.produto.nome] = vendas_produtos.get(item.produto.nome, 0) + item.quantidade
                 
     mais_vendido = max(vendas_produtos.items(), key=lambda x: x[1]) if vendas_produtos else ("Nenhum", 0)
-    ultimos_pedidos = crud.get_pedidos(db, limit=5)
+    ultimos_pedidos = crud.get_pedidos(db, estabelecimento_id, limit=5)
     
     # Alertas de Estoque
     produtos_estoque = db.query(models.Produto).filter(
+        models.Produto.estabelecimento_id == estabelecimento_id,
         models.Produto.controlar_estoque == True,
         models.Produto.estoque <= 3,
         models.Produto.ativo == True
@@ -417,7 +488,7 @@ def get_dashboard_resumo(db: Session = Depends(get_db), admin: bool = Depends(au
     }
 
 @app.get("/dashboard/relatorios")
-def get_dashboard_relatorios(periodo: str = "mes", start: str = None, end: str = None, db: Session = Depends(get_db)):
+def get_dashboard_relatorios(periodo: str = "mes", start: str = None, end: str = None, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
     from datetime import timedelta
     import datetime
     hoje = (datetime.datetime.utcnow() - datetime.timedelta(hours=3)).date()
@@ -453,8 +524,8 @@ def get_dashboard_relatorios(periodo: str = "mes", start: str = None, end: str =
         fim_ant = datetime.datetime.combine(inicio_ant.date().replace(day=last_day), datetime.time.max)
 
         
-    pedidos_periodo = crud.get_pedidos_by_date_range(db, inicio, fim)
-    pedidos_anteriores = crud.get_pedidos_by_date_range(db, inicio_ant, fim_ant)
+    pedidos_periodo = crud.get_pedidos_by_date_range(db, inicio, fim, estabelecimento_id)
+    pedidos_anteriores = crud.get_pedidos_by_date_range(db, inicio_ant, fim_ant, estabelecimento_id)
     
     # Resumo atual
     faturamento_total = sum(p.total for p in pedidos_periodo)
@@ -594,38 +665,38 @@ def get_dashboard_relatorios(periodo: str = "mes", start: str = None, end: str =
     }
 
 @app.get("/debug/relatorios")
-def debug_relatorios(db: Session = Depends(get_db), admin: bool = Depends(auth.get_current_admin)):
+def debug_relatorios(db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
     import traceback
     try:
-        return get_dashboard_relatorios(periodo="mes", start=None, end=None, db=db)
+        return get_dashboard_relatorios(periodo="mes", start=None, end=None, db=db, estabelecimento_id=estabelecimento_id)
     except Exception as e:
         return {"error": str(e), "traceback": traceback.format_exc()}
 
 # --- Caixa ---
 @app.get("/caixa/status", response_model=schemas.Caixa)
-def get_caixa_status(db: Session = Depends(get_db), admin: bool = Depends(auth.get_current_admin)):
-    caixa = crud.get_caixa_aberto(db)
+def get_caixa_status(db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+    caixa = crud.get_caixa_aberto(db, estabelecimento_id)
     if not caixa:
         raise HTTPException(status_code=404, detail="Nenhum caixa aberto no momento.")
     return caixa
 
 @app.post("/caixa/abrir", response_model=schemas.Caixa)
-def abrir_caixa(caixa: schemas.CaixaCreate, db: Session = Depends(get_db)):
-    caixa_aberto = crud.get_caixa_aberto(db)
+def abrir_caixa(caixa: schemas.CaixaCreate, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+    caixa_aberto = crud.get_caixa_aberto(db, estabelecimento_id)
     if caixa_aberto:
         raise HTTPException(status_code=400, detail="Já existe um caixa aberto.")
-    return crud.abrir_caixa(db=db, caixa=caixa)
+    return crud.abrir_caixa(db=db, caixa=caixa, estabelecimento_id=estabelecimento_id)
 
 @app.post("/caixa/{caixa_id}/fechar", response_model=schemas.Caixa)
-def fechar_caixa(caixa_id: int, db: Session = Depends(get_db)):
-    caixa = crud.fechar_caixa(db=db, caixa_id=caixa_id)
+def fechar_caixa(caixa_id: int, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+    caixa = crud.fechar_caixa(db=db, caixa_id=caixa_id, estabelecimento_id=estabelecimento_id)
     if not caixa:
         raise HTTPException(status_code=404, detail="Caixa não encontrado.")
     return caixa
 
 @app.post("/caixa/{caixa_id}/movimento", response_model=schemas.MovimentacaoCaixa)
-def add_movimento_caixa(caixa_id: int, movimento: schemas.MovimentacaoCaixaCreate, db: Session = Depends(get_db)):
-    caixa = crud.get_caixa_aberto(db)
+def add_movimento_caixa(caixa_id: int, movimento: schemas.MovimentacaoCaixaCreate, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+    caixa = crud.get_caixa_aberto(db, estabelecimento_id)
     if not caixa or caixa.id != caixa_id:
         raise HTTPException(status_code=400, detail="Caixa não está aberto ou ID inválido.")
     return crud.add_movimentacao(db=db, caixa_id=caixa_id, movimentacao=movimento)
@@ -656,17 +727,17 @@ async def receive_webhook(request: Request, background_tasks: BackgroundTasks):
     return {"status": "ok"}
 
 @app.get("/whatsapp/chats", response_model=List[schemas.WhatsAppContato])
-def get_whatsapp_chats(db: Session = Depends(get_db), admin: bool = Depends(auth.get_current_admin)):
+def get_whatsapp_chats(db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
     # Returns contacts with their latest messages, ordered by recent interaction
-    contatos = db.query(models.WhatsAppContato).order_by(models.WhatsAppContato.ultima_interacao.desc()).all()
+    contatos = db.query(models.WhatsAppContato).filter(models.WhatsAppContato.estabelecimento_id == estabelecimento_id).order_by(models.WhatsAppContato.ultima_interacao.desc()).all()
     return contatos
 
 @app.post("/whatsapp/send")
-async def send_manual_message(telefone: str, texto: str, background_tasks: BackgroundTasks):
+async def send_manual_message(telefone: str, texto: str, background_tasks: BackgroundTasks, estabelecimento_id: int = Depends(auth.get_current_admin)):
     async def send_msg_task():
         db = SessionLocal()
         try:
-            await whatsapp_api.send_whatsapp_message(telefone, texto, db)
+            await whatsapp_api.send_whatsapp_message(telefone, texto, db, estabelecimento_id)
         finally:
             db.close()
             
@@ -675,32 +746,32 @@ async def send_manual_message(telefone: str, texto: str, background_tasks: Backg
 
 # --- Insumos ---
 @app.get("/insumos", response_model=List[schemas.Insumo])
-def get_insumos(db: Session = Depends(get_db)):
-    return crud.get_insumos(db)
+def get_insumos(db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+    return crud.get_insumos(db, estabelecimento_id)
 
 @app.post("/insumos", response_model=schemas.Insumo)
-def create_insumo(insumo: schemas.InsumoCreate, db: Session = Depends(get_db), admin: bool = Depends(auth.get_current_admin)):
-    return crud.create_insumo(db=db, insumo=insumo)
+def create_insumo(insumo: schemas.InsumoCreate, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+    return crud.create_insumo(db=db, insumo=insumo, estabelecimento_id=estabelecimento_id)
 
 @app.put("/insumos/{insumo_id}", response_model=schemas.Insumo)
-def update_insumo(insumo_id: int, insumo: schemas.InsumoCreate, db: Session = Depends(get_db), admin: bool = Depends(auth.get_current_admin)):
-    db_insumo = crud.update_insumo(db, insumo_id, insumo)
+def update_insumo(insumo_id: int, insumo: schemas.InsumoCreate, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+    db_insumo = crud.update_insumo(db, insumo_id, insumo, estabelecimento_id)
     if not db_insumo:
         raise HTTPException(status_code=404, detail="Insumo não encontrado")
     return db_insumo
 
 @app.delete("/insumos/{insumo_id}")
-def delete_insumo(insumo_id: int, db: Session = Depends(get_db), admin: bool = Depends(auth.get_current_admin)):
-    db_insumo = crud.delete_insumo(db, insumo_id)
+def delete_insumo(insumo_id: int, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+    db_insumo = crud.delete_insumo(db, insumo_id, estabelecimento_id)
     if not db_insumo:
         raise HTTPException(status_code=404, detail="Insumo não encontrado")
     return {"status": "ok"}
 
 # --- Ficha Tecnica ---
 @app.get("/produtos/{produto_id}/ficha-tecnica", response_model=List[schemas.ProdutoInsumo])
-def get_ficha_tecnica(produto_id: int, db: Session = Depends(get_db), admin: bool = Depends(auth.get_current_admin)):
-    return crud.get_ficha_tecnica(db, produto_id)
+def get_ficha_tecnica(produto_id: int, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+    return crud.get_ficha_tecnica(db, produto_id, estabelecimento_id)
 
 @app.put("/produtos/{produto_id}/ficha-tecnica", response_model=List[schemas.ProdutoInsumo])
-def update_ficha_tecnica(produto_id: int, itens: List[schemas.ProdutoInsumoCreate], db: Session = Depends(get_db), admin: bool = Depends(auth.get_current_admin)):
-    return crud.update_ficha_tecnica(db, produto_id, itens)
+def update_ficha_tecnica(produto_id: int, itens: List[schemas.ProdutoInsumoCreate], db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+    return crud.update_ficha_tecnica(db, produto_id, itens, estabelecimento_id)

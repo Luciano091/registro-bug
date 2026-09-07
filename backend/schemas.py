@@ -103,6 +103,7 @@ class ConfiguracaoBase(BaseModel):
     tempo_medio_preparo: int
     whatsapp_auto_reply_enabled: bool = False
     whatsapp_auto_reply_text: Optional[str] = None
+    whatsapp_phone_number_id: Optional[str] = None
     senha_admin: Optional[str] = None
 
 class ConfiguracaoCreate(ConfiguracaoBase):
@@ -110,6 +111,7 @@ class ConfiguracaoCreate(ConfiguracaoBase):
 
 class LoginRequest(BaseModel):
     senha: str
+    estabelecimento: str = "bisburger"
 
 class PlatformLoginRequest(BaseModel):
     email: str
@@ -127,7 +129,7 @@ class EstabelecimentoBase(BaseModel):
     trial_ate: Optional[datetime] = None
 
 class EstabelecimentoCreate(EstabelecimentoBase):
-    pass
+    senha_inicial: str
 
 class EstabelecimentoUpdate(BaseModel):
     nome: Optional[str] = None
@@ -167,6 +169,17 @@ class LeadComercial(LeadComercialCreate):
 
 class Configuracao(ConfiguracaoBase):
     id: int
+    loja_aberta: Optional[bool] = False
+    class Config:
+        from_attributes = True
+
+class ConfiguracaoPublica(BaseModel):
+    nome_empresa: str
+    telefone: Optional[str] = None
+    endereco: Optional[str] = None
+    logo: Optional[str] = None
+    taxa_entrega: float
+    tempo_medio_preparo: int
     loja_aberta: Optional[bool] = False
     class Config:
         from_attributes = True

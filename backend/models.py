@@ -40,6 +40,7 @@ class Cliente(Base):
     __tablename__ = "clientes"
 
     id = Column(Integer, primary_key=True, index=True)
+    estabelecimento_id = Column(Integer, ForeignKey("estabelecimentos.id"), nullable=True, index=True)
     google_id = Column(String, unique=True, index=True)
     nome = Column(String)
     email = Column(String, unique=True, index=True)
@@ -54,6 +55,7 @@ class Produto(Base):
     __tablename__ = "produtos"
 
     id = Column(Integer, primary_key=True, index=True)
+    estabelecimento_id = Column(Integer, ForeignKey("estabelecimentos.id"), nullable=True, index=True)
     nome = Column(String, index=True)
     categoria = Column(String, index=True)
     descricao = Column(String, nullable=True)
@@ -72,6 +74,7 @@ class Pedido(Base):
     __tablename__ = "pedidos"
 
     id = Column(Integer, primary_key=True, index=True)
+    estabelecimento_id = Column(Integer, ForeignKey("estabelecimentos.id"), nullable=True, index=True)
     uuid = Column(String, unique=True, index=True, nullable=True)
     numero = Column(String, unique=True, index=True)
     cliente = Column(String, index=True)
@@ -108,6 +111,7 @@ class Configuracao(Base):
     __tablename__ = "configuracoes"
 
     id = Column(Integer, primary_key=True, index=True)
+    estabelecimento_id = Column(Integer, ForeignKey("estabelecimentos.id"), nullable=True, unique=True, index=True)
     nome_empresa = Column(String, default="BisBurger")
     telefone = Column(String, nullable=True)
     endereco = Column(String, nullable=True)
@@ -116,12 +120,14 @@ class Configuracao(Base):
     tempo_medio_preparo = Column(Integer, default=30)
     whatsapp_auto_reply_enabled = Column(Boolean, default=False)
     whatsapp_auto_reply_text = Column(String, nullable=True)
+    whatsapp_phone_number_id = Column(String, nullable=True, index=True)
     senha_admin = Column(String, default="burger123")
 
 class Caixa(Base):
     __tablename__ = "caixas"
 
     id = Column(Integer, primary_key=True, index=True)
+    estabelecimento_id = Column(Integer, ForeignKey("estabelecimentos.id"), nullable=True, index=True)
     operador = Column(String)
     data_abertura = Column(DateTime, default=get_now)
     data_fechamento = Column(DateTime, nullable=True)
@@ -148,7 +154,8 @@ class WhatsAppContato(Base):
     __tablename__ = "whatsapp_contatos"
 
     id = Column(Integer, primary_key=True, index=True)
-    telefone = Column(String, unique=True, index=True) # Ex: "5511999999999"
+    estabelecimento_id = Column(Integer, ForeignKey("estabelecimentos.id"), nullable=True, index=True)
+    telefone = Column(String, index=True) # Ex: "5511999999999"
     nome = Column(String, nullable=True)
     ultima_interacao = Column(DateTime, default=get_now)
     
@@ -171,6 +178,7 @@ class Insumo(Base):
     __tablename__ = "insumos"
 
     id = Column(Integer, primary_key=True, index=True)
+    estabelecimento_id = Column(Integer, ForeignKey("estabelecimentos.id"), nullable=True, index=True)
     nome = Column(String, index=True)
     unidade_medida = Column(String) # "UN", "KG", "G", "L", "ML"
     custo_unitario = Column(Float, default=0.0)

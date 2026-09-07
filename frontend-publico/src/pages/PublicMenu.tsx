@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { MapPin, Clock, Utensils, Plus, Flame, Check, Ticket, Receipt, User } from 'lucide-react';
 import api from '../services/api';
+import { getEstablishmentSlug } from '../services/api';
 import { ProductModal } from '../components/ProductModal';
 import { FloatingCart } from '../components/FloatingCart';
 import { BottomNav, type TabType } from '../components/BottomNav';
@@ -50,8 +51,8 @@ const PublicMenu = () => {
     const fetchData = async () => {
       try {
         const [configRes, prodRes] = await Promise.all([
-          api.get('/configuracao'),
-          api.get('/produtos')
+          api.get(`/public/${getEstablishmentSlug()}/configuracao`),
+          api.get(`/public/${getEstablishmentSlug()}/produtos`)
         ]);
         const conf = configRes.data;
         setConfig(conf);

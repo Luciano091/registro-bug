@@ -16,4 +16,16 @@ api.interceptors.request.use((config) => {
   return Promise.reject(error);
 });
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 && window.location.pathname !== '/login') {
+      localStorage.removeItem('adminToken');
+      const slug = localStorage.getItem('estabelecimentoSlug') || 'bisburger';
+      window.location.href = `/login?estabelecimento=${encodeURIComponent(slug)}`;
+    }
+    return Promise.reject(error);
+  },
+);
+
 export default api;

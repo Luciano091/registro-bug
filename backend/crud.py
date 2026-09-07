@@ -4,18 +4,18 @@ import models, schemas
 import datetime
 
 # --- Produtos ---
-def get_produtos(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Produto).offset(skip).limit(limit).all()
+def get_produtos(db: Session, estabelecimento_id: int, skip: int = 0, limit: int = 100):
+    return db.query(models.Produto).filter(models.Produto.estabelecimento_id == estabelecimento_id).offset(skip).limit(limit).all()
 
-def create_produto(db: Session, produto: schemas.ProdutoCreate):
-    db_produto = models.Produto(**produto.model_dump())
+def create_produto(db: Session, produto: schemas.ProdutoCreate, estabelecimento_id: int):
+    db_produto = models.Produto(**produto.model_dump(), estabelecimento_id=estabelecimento_id)
     db.add(db_produto)
     db.commit()
     db.refresh(db_produto)
     return db_produto
 
-def update_produto(db: Session, produto_id: int, produto: schemas.ProdutoCreate):
-    db_produto = db.query(models.Produto).filter(models.Produto.id == produto_id).first()
+def update_produto(db: Session, produto_id: int, produto: schemas.ProdutoCreate, estabelecimento_id: int):
+    db_produto = db.query(models.Produto).filter(models.Produto.id == produto_id, models.Produto.estabelecimento_id == estabelecimento_id).first()
     if db_produto:
         for key, value in produto.model_dump().items():
             setattr(db_produto, key, value)
@@ -23,8 +23,8 @@ def update_produto(db: Session, produto_id: int, produto: schemas.ProdutoCreate)
         db.refresh(db_produto)
     return db_produto
 
-def delete_produto(db: Session, produto_id: int):
-    db_produto = db.query(models.Produto).filter(models.Produto.id == produto_id).first()
+def delete_produto(db: Session, produto_id: int, estabelecimento_id: int):
+    db_produto = db.query(models.Produto).filter(models.Produto.id == produto_id, models.Produto.estabelecimento_id == estabelecimento_id).first()
     if db_produto:
         db.delete(db_produto)
         db.commit()
@@ -62,18 +62,18 @@ def update_cliente(db: Session, cliente_id: int, updates: schemas.ClienteUpdate)
 
 # --- Pedidos ---
 
-def get_pedidos(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Pedido).order_by(models.Pedido.id.desc()).offset(skip).limit(limit).all()
+def get_pedidos(db: Session, estabelecimento_id: int, skip: int = 0, limit: int = 100):
+    return db.query(models.Pedido).filter(models.Pedido.estabelecimento_id == estabelecimento_id).order_by(models.Pedido.id.desc()).offset(skip).limit(limit).all()
 
-def get_pedido(db: Session, pedido_id: int):
-    return db.query(models.Pedido).filter(models.Pedido.id == pedido_id).first()
+def get_pedido(db: Session, pedido_id: int, estabelecimento_id: int):
+    return db.query(models.Pedido).filter(models.Pedido.id == pedido_id, models.Pedido.estabelecimento_id == estabelecimento_id).first()
 
-def get_pedidos_by_date_range(db: Session, start_date: datetime.datetime, end_date: datetime.datetime):
-    return db.query(models.Pedido).filter(models.Pedido.data >= start_date, models.Pedido.data <= end_date).all()
+def get_pedidos_by_date_range(db: Session, start_date: datetime.datetime, end_date: datetime.datetime, estabelecimento_id: int):
+    return db.query(models.Pedido).filter(models.Pedido.estabelecimento_id == estabelecimento_id, models.Pedido.data >= start_date, models.Pedido.data <= end_date).all()
 
-def create_pedido(db: Session, pedido: schemas.PedidoCreate):
+def create_pedido(db: Session, pedido: schemas.PedidoCreate, estabelecimento_id: int):
     if pedido.uuid:
-        existing = db.query(models.Pedido).filter(models.Pedido.uuid == pedido.uuid).first()
+        existing = db.query(models.Pedido).filter(models.Pedido.uuid == pedido.uuid, models.Pedido.estabelecimento_id == estabelecimento_id).first()
         if existing:
             return existing
 
@@ -82,7 +82,7 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate):
     db_itens = []
     
     for item in pedido.itens:
-        produto = db.query(models.Produto).filter(models.Produto.id == item.produto_id).first()
+        produto = db.query(models.Produto).filter(models.Produto.id == item.produto_id, models.Produto.estabelecimento_id == estabelecimento_id).first()
         if produto:
             preco_venda = produto.preco_promocao if (produto.is_promocao and produto.preco_promocao) else produto.preco
             item_subtotal = preco_venda * item.quantidade
@@ -115,10 +115,11 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate):
     
     # Gerar numero do pedido baseado na data e id (simplificado: YYYYMMDD-COUNT)
     hoje = (datetime.datetime.utcnow() - datetime.timedelta(hours=3)).date()
-    count_hoje = db.query(models.Pedido).filter(func.date(models.Pedido.data) == hoje).count() + 1
-    numero_pedido = f"{hoje.strftime('%Y%m%d')}-{count_hoje:03d}"
+    count_hoje = db.query(models.Pedido).filter(models.Pedido.estabelecimento_id == estabelecimento_id, func.date(models.Pedido.data) == hoje).count() + 1
+    numero_pedido = f"{estabelecimento_id}-{hoje.strftime('%Y%m%d')}-{count_hoje:03d}"
 
     db_pedido = models.Pedido(
+        estabelecimento_id=estabelecimento_id,
         uuid=pedido.uuid,
         numero=numero_pedido,
         cliente=pedido.cliente,
@@ -146,8 +147,8 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate):
     db.refresh(db_pedido)
     return db_pedido
 
-def update_pedido_status(db: Session, pedido_id: int, status: str):
-    db_pedido = db.query(models.Pedido).filter(models.Pedido.id == pedido_id).first()
+def update_pedido_status(db: Session, pedido_id: int, status: str, estabelecimento_id: int):
+    db_pedido = db.query(models.Pedido).filter(models.Pedido.id == pedido_id, models.Pedido.estabelecimento_id == estabelecimento_id).first()
     if db_pedido:
         db_pedido.status = status
         db.commit()
@@ -157,17 +158,18 @@ def update_pedido_status(db: Session, pedido_id: int, status: str):
 # --- Configuracoes ---
 import auth
 
-def get_configuracao(db: Session):
-    config = db.query(models.Configuracao).first()
+def get_configuracao(db: Session, estabelecimento_id: int = None):
+    query = db.query(models.Configuracao)
+    config = query.filter(models.Configuracao.estabelecimento_id == estabelecimento_id).first() if estabelecimento_id else query.first()
     if not config:
-        config = models.Configuracao(senha_admin=auth.get_password_hash("burger123"))
+        config = models.Configuracao(estabelecimento_id=estabelecimento_id, senha_admin=auth.get_password_hash("burger123"))
         db.add(config)
         db.commit()
         db.refresh(config)
     return config
 
-def update_configuracao(db: Session, config: schemas.ConfiguracaoCreate):
-    db_config = db.query(models.Configuracao).first()
+def update_configuracao(db: Session, config: schemas.ConfiguracaoCreate, estabelecimento_id: int):
+    db_config = db.query(models.Configuracao).filter(models.Configuracao.estabelecimento_id == estabelecimento_id).first()
     config_data = config.model_dump()
     
     # Hash password if provided
@@ -177,7 +179,7 @@ def update_configuracao(db: Session, config: schemas.ConfiguracaoCreate):
     if not db_config:
         if "senha_admin" not in config_data or not config_data["senha_admin"]:
             config_data["senha_admin"] = auth.get_password_hash("burger123")
-        db_config = models.Configuracao(**config_data)
+        db_config = models.Configuracao(**config_data, estabelecimento_id=estabelecimento_id)
         db.add(db_config)
     else:
         for key, value in config_data.items():
@@ -189,21 +191,28 @@ def update_configuracao(db: Session, config: schemas.ConfiguracaoCreate):
                 setattr(db_config, key, value)
     db.commit()
     db.refresh(db_config)
+    estabelecimento = db.query(models.Estabelecimento).filter(models.Estabelecimento.id == estabelecimento_id).first()
+    if estabelecimento:
+        estabelecimento.nome = db_config.nome_empresa
+        estabelecimento.telefone = db_config.telefone
+        estabelecimento.logo = db_config.logo
+        estabelecimento.configuracao_id = db_config.id
+        db.commit()
     return db_config
 
 # --- Caixa ---
-def get_caixa_aberto(db: Session):
-    return db.query(models.Caixa).filter(models.Caixa.status == "aberto").first()
+def get_caixa_aberto(db: Session, estabelecimento_id: int):
+    return db.query(models.Caixa).filter(models.Caixa.estabelecimento_id == estabelecimento_id, models.Caixa.status == "aberto").first()
 
-def abrir_caixa(db: Session, caixa: schemas.CaixaCreate):
-    db_caixa = models.Caixa(**caixa.model_dump())
+def abrir_caixa(db: Session, caixa: schemas.CaixaCreate, estabelecimento_id: int):
+    db_caixa = models.Caixa(**caixa.model_dump(), estabelecimento_id=estabelecimento_id)
     db.add(db_caixa)
     db.commit()
     db.refresh(db_caixa)
     return db_caixa
 
-def fechar_caixa(db: Session, caixa_id: int):
-    db_caixa = db.query(models.Caixa).filter(models.Caixa.id == caixa_id).first()
+def fechar_caixa(db: Session, caixa_id: int, estabelecimento_id: int):
+    db_caixa = db.query(models.Caixa).filter(models.Caixa.id == caixa_id, models.Caixa.estabelecimento_id == estabelecimento_id).first()
     if db_caixa:
         db_caixa.status = "fechado"
         db_caixa.data_fechamento = datetime.datetime.utcnow() - datetime.timedelta(hours=3)
@@ -225,18 +234,18 @@ def add_movimentacao(db: Session, caixa_id: int, movimentacao: schemas.Movimenta
     return db_mov
 
 # --- Insumos ---
-def get_insumos(db: Session, skip: int = 0, limit: int = 500):
-    return db.query(models.Insumo).offset(skip).limit(limit).all()
+def get_insumos(db: Session, estabelecimento_id: int, skip: int = 0, limit: int = 500):
+    return db.query(models.Insumo).filter(models.Insumo.estabelecimento_id == estabelecimento_id).offset(skip).limit(limit).all()
 
-def create_insumo(db: Session, insumo: schemas.InsumoCreate):
-    db_insumo = models.Insumo(**insumo.model_dump())
+def create_insumo(db: Session, insumo: schemas.InsumoCreate, estabelecimento_id: int):
+    db_insumo = models.Insumo(**insumo.model_dump(), estabelecimento_id=estabelecimento_id)
     db.add(db_insumo)
     db.commit()
     db.refresh(db_insumo)
     return db_insumo
 
-def update_insumo(db: Session, insumo_id: int, insumo: schemas.InsumoCreate):
-    db_insumo = db.query(models.Insumo).filter(models.Insumo.id == insumo_id).first()
+def update_insumo(db: Session, insumo_id: int, insumo: schemas.InsumoCreate, estabelecimento_id: int):
+    db_insumo = db.query(models.Insumo).filter(models.Insumo.id == insumo_id, models.Insumo.estabelecimento_id == estabelecimento_id).first()
     if db_insumo:
         for key, value in insumo.model_dump().items():
             setattr(db_insumo, key, value)
@@ -244,18 +253,22 @@ def update_insumo(db: Session, insumo_id: int, insumo: schemas.InsumoCreate):
         db.refresh(db_insumo)
     return db_insumo
 
-def delete_insumo(db: Session, insumo_id: int):
-    db_insumo = db.query(models.Insumo).filter(models.Insumo.id == insumo_id).first()
+def delete_insumo(db: Session, insumo_id: int, estabelecimento_id: int):
+    db_insumo = db.query(models.Insumo).filter(models.Insumo.id == insumo_id, models.Insumo.estabelecimento_id == estabelecimento_id).first()
     if db_insumo:
         db.delete(db_insumo)
         db.commit()
     return db_insumo
 
 # --- Ficha Tecnica ---
-def get_ficha_tecnica(db: Session, produto_id: int):
-    return db.query(models.ProdutoInsumo).filter(models.ProdutoInsumo.produto_id == produto_id).all()
+def get_ficha_tecnica(db: Session, produto_id: int, estabelecimento_id: int):
+    produto = db.query(models.Produto).filter(models.Produto.id == produto_id, models.Produto.estabelecimento_id == estabelecimento_id).first()
+    return db.query(models.ProdutoInsumo).filter(models.ProdutoInsumo.produto_id == produto_id).all() if produto else []
 
-def update_ficha_tecnica(db: Session, produto_id: int, itens: list[schemas.ProdutoInsumoCreate]):
+def update_ficha_tecnica(db: Session, produto_id: int, itens: list[schemas.ProdutoInsumoCreate], estabelecimento_id: int):
+    produto = db.query(models.Produto).filter(models.Produto.id == produto_id, models.Produto.estabelecimento_id == estabelecimento_id).first()
+    if not produto:
+        return []
     # Limpa ficha anterior
     db.query(models.ProdutoInsumo).filter(models.ProdutoInsumo.produto_id == produto_id).delete()
     
@@ -265,22 +278,25 @@ def update_ficha_tecnica(db: Session, produto_id: int, itens: list[schemas.Produ
         db.add(db_item)
         
         # Calculate cost
-        insumo = db.query(models.Insumo).filter(models.Insumo.id == item.insumo_id).first()
+        insumo = db.query(models.Insumo).filter(models.Insumo.id == item.insumo_id, models.Insumo.estabelecimento_id == estabelecimento_id).first()
         if insumo:
             total_cost += insumo.custo_unitario * item.quantidade
 
     # Atualiza preco de compra do produto
-    produto = db.query(models.Produto).filter(models.Produto.id == produto_id).first()
-    if produto:
-        produto.preco_compra = total_cost
+    produto.preco_compra = total_cost
         
     db.commit()
-    return get_ficha_tecnica(db, produto_id)
+    return get_ficha_tecnica(db, produto_id, estabelecimento_id)
 
 # --- Administração da plataforma Ritmesa ---
 def ensure_initial_establishment(db: Session):
-    if db.query(models.Estabelecimento).count() > 0:
-        return
+    existente = db.query(models.Estabelecimento).filter(models.Estabelecimento.slug == "bisburger").first()
+    if existente:
+        config = db.query(models.Configuracao).filter(models.Configuracao.id == existente.configuracao_id).first()
+        if config and not config.estabelecimento_id:
+            config.estabelecimento_id = existente.id
+            db.commit()
+        return existente
     config = get_configuracao(db)
     estabelecimento = models.Estabelecimento(
         nome=config.nome_empresa or "BisBurger",
@@ -292,7 +308,20 @@ def ensure_initial_establishment(db: Session):
         configuracao_id=config.id,
     )
     db.add(estabelecimento)
+    db.flush()
+    config.estabelecimento_id = estabelecimento.id
+    estabelecimento.configuracao_id = config.id
+    for model in (models.Produto, models.Pedido, models.Caixa, models.Insumo, models.Cliente, models.WhatsAppContato):
+        db.query(model).filter(model.estabelecimento_id == None).update({"estabelecimento_id": estabelecimento.id})
     db.commit()
+    return estabelecimento
+
+def get_estabelecimento_by_slug(db: Session, slug: str, include_inactive: bool = False):
+    ensure_initial_establishment(db)
+    query = db.query(models.Estabelecimento).filter(models.Estabelecimento.slug == slug.strip().lower())
+    if not include_inactive:
+        query = query.filter(models.Estabelecimento.status.in_(("ativo", "trial")))
+    return query.first()
 
 def get_estabelecimentos(db: Session):
     ensure_initial_establishment(db)
@@ -302,8 +331,22 @@ def create_estabelecimento(db: Session, payload: schemas.EstabelecimentoCreate):
     existente = db.query(models.Estabelecimento).filter(models.Estabelecimento.slug == payload.slug).first()
     if existente:
         raise ValueError("Este endereço de cardápio já está em uso.")
-    estabelecimento = models.Estabelecimento(**payload.model_dump())
+    data = payload.model_dump(exclude={"senha_inicial"})
+    estabelecimento = models.Estabelecimento(**data)
     db.add(estabelecimento)
+    db.flush()
+    config = models.Configuracao(
+        estabelecimento_id=estabelecimento.id,
+        nome_empresa=estabelecimento.nome,
+        telefone=estabelecimento.telefone,
+        logo=estabelecimento.logo,
+        taxa_entrega=0,
+        tempo_medio_preparo=30,
+        senha_admin=auth.get_password_hash(payload.senha_inicial),
+    )
+    db.add(config)
+    db.flush()
+    estabelecimento.configuracao_id = config.id
     db.commit()
     db.refresh(estabelecimento)
     return estabelecimento

@@ -9,16 +9,19 @@ META_PHONE_NUMBER_ID = os.getenv("META_PHONE_NUMBER_ID", "TEST_PHONE_ID")
 META_VERIFY_TOKEN = os.getenv("META_VERIFY_TOKEN", "burger_hause_secret_token")
 META_API_URL = "https://graph.facebook.com/v19.0"
 
-def get_or_create_contact(db: Session, telefone: str, nome: str = None):
-    contato = db.query(models.WhatsAppContato).filter(models.WhatsAppContato.telefone == telefone).first()
+def get_or_create_contact(db: Session, telefone: str, nome: str = None, estabelecimento_id: int = None):
+    contato = db.query(models.WhatsAppContato).filter(
+        models.WhatsAppContato.telefone == telefone,
+        models.WhatsAppContato.estabelecimento_id == estabelecimento_id,
+    ).first()
     if not contato:
-        contato = models.WhatsAppContato(telefone=telefone, nome=nome)
+        contato = models.WhatsAppContato(telefone=telefone, nome=nome, estabelecimento_id=estabelecimento_id)
         db.add(contato)
         db.commit()
         db.refresh(contato)
     return contato
 
-async def send_whatsapp_message(telefone: str, texto: str, db: Session = None):
+async def send_whatsapp_message(telefone: str, texto: str, db: Session = None, estabelecimento_id: int = None):
     # Format phone number for WhatsApp API (needs to include country code, e.g. 55)
     phone = "".join(filter(str.isdigit, telefone))
     if not phone.startswith("55"):
@@ -27,7 +30,7 @@ async def send_whatsapp_message(telefone: str, texto: str, db: Session = None):
     if META_ACCESS_TOKEN == "TEST_TOKEN":
         print(f"[TEST MODE] Simulating sending WhatsApp to {phone}: {texto}")
         if db:
-            contato = get_or_create_contact(db, phone)
+            contato = get_or_create_contact(db, phone, estabelecimento_id=estabelecimento_id)
             msg = models.WhatsAppMensagem(
                 contato_id=contato.id,
                 direcao="out",
@@ -58,7 +61,7 @@ async def send_whatsapp_message(telefone: str, texto: str, db: Session = None):
             data = response.json()
             message_id = data.get("messages", [{}])[0].get("id")
             if db:
-                contato = get_or_create_contact(db, phone)
+                contato = get_or_create_contact(db, phone, estabelecimento_id=estabelecimento_id)
                 msg = models.WhatsAppMensagem(
                     contato_id=contato.id,
                     direcao="out",
@@ -81,6 +84,11 @@ async def process_webhook(payload: dict, db: Session):
             changes = entry.get("changes", [])
             for change in changes:
                 value = change.get("value", {})
+                phone_number_id = value.get("metadata", {}).get("phone_number_id")
+                config = db.query(models.Configuracao).filter(models.Configuracao.whatsapp_phone_number_id == phone_number_id).first()
+                if not config:
+                    config = db.query(models.Configuracao).filter(models.Configuracao.whatsapp_phone_number_id == None).first()
+                estabelecimento_id = config.estabelecimento_id if config else None
                 
                 # Check if it's a message
                 if "messages" in value:
@@ -94,7 +102,7 @@ async def process_webhook(payload: dict, db: Session):
                             text = msg.get("text", {}).get("body")
                             
                             # Save in DB
-                            contato = get_or_create_contact(db, phone, name)
+                            contato = get_or_create_contact(db, phone, name, estabelecimento_id)
                             
                             # Check if message already exists (webhooks can be duplicated)
                             existing = db.query(models.WhatsAppMensagem).filter(models.WhatsAppMensagem.meta_message_id == meta_msg_id).first()
@@ -115,11 +123,7 @@ async def process_webhook(payload: dict, db: Session):
                                 db.commit()
                                 
                                 import datetime
-                                from crud import get_configuracao
-                                
-                                config = get_configuracao(db)
-                                
-                                if config.whatsapp_auto_reply_enabled and config.whatsapp_auto_reply_text:
+                                if config and config.whatsapp_auto_reply_enabled and config.whatsapp_auto_reply_text:
                                     # Check if it's a new contact or if the last interaction was more than 2 hours ago
                                     should_reply = False
                                     if not old_interacao:
@@ -133,7 +137,8 @@ async def process_webhook(payload: dict, db: Session):
                                         await send_whatsapp_message(
                                             phone,
                                             config.whatsapp_auto_reply_text,
-                                            db
+                                            db,
+                                            estabelecimento_id,
                                         )
                                 
                 # Check for status updates (sent, delivered, read)

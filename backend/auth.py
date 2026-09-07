@@ -58,12 +58,20 @@ def get_current_admin(token: str = Depends(oauth2_scheme), db: Session = Depends
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         role: str = payload.get("role")
-        if role != "admin":
+        estabelecimento_id = payload.get("estabelecimento_id")
+        if role != "admin" or not estabelecimento_id:
+            raise credentials_exception
+        import models
+        estabelecimento = db.query(models.Estabelecimento).filter(
+            models.Estabelecimento.id == int(estabelecimento_id),
+            models.Estabelecimento.status.in_(("ativo", "trial")),
+        ).first()
+        if not estabelecimento:
             raise credentials_exception
     except jwt.PyJWTError:
         raise credentials_exception
         
-    return True
+    return int(estabelecimento_id)
 
 def authenticate_platform_admin(email: str, password: str) -> bool:
     is_production = os.getenv("ENVIRONMENT", "development").lower() == "production"

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Receipt, Clock, CheckCircle2, ChefHat, Bike } from 'lucide-react';
 import api from '../services/api';
+import { getEstablishmentSlug } from '../services/api';
 
 export const PedidosView = () => {
   const [pedidos, setPedidos] = useState<any[]>([]);
@@ -22,7 +23,7 @@ export const PedidosView = () => {
         }
 
         // Buscar todos os pedidos
-        const promessas = ids.map((id: number) => api.get(`/pedidos/${id}`).catch(() => null));
+        const promessas = ids.map((id: number) => api.get(`/public/${getEstablishmentSlug()}/pedidos/${id}`).catch(() => null));
         const resultados = await Promise.all(promessas);
         
         // Filtrar nulos e ordenar do mais novo para o mais antigo

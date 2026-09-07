@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getPendingOrders, deleteOfflineOrder } from '../services/db';
 import api from '../services/api';
+import { getEstablishmentSlug } from '../services/api';
 
 interface NetworkContextType {
   isOnline: boolean;
@@ -48,7 +49,7 @@ export function NetworkProvider({ children }: { children: React.ReactNode }) {
       for (const order of pending) {
         try {
           // Re-enviar para a API. O UUID já vai no payload.
-          const response = await api.post('/pedidos', order.payload);
+          const response = await api.post(`/public/${getEstablishmentSlug()}/pedidos`, order.payload);
           if (response.data && response.data.id) {
             let saved = [];
             try {

@@ -4,6 +4,7 @@ import { useCart } from '../contexts/CartContext';
 import { useNetwork } from '../contexts/NetworkContext';
 import { saveOfflineOrder } from '../services/db';
 import api from '../services/api';
+import { getEstablishmentSlug } from '../services/api';
 
 interface CheckoutModalProps {
   onClose: () => void;
@@ -49,7 +50,7 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
         await saveOfflineOrder(orderUuid, pedidoData);
       } else {
         try {
-          const response = await api.post('/pedidos', pedidoData);
+          const response = await api.post(`/public/${getEstablishmentSlug()}/pedidos`, pedidoData);
           if (response.data && response.data.id) {
             let saved = [];
             try {

@@ -9,6 +9,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const estabelecimento = new URLSearchParams(window.location.search).get('estabelecimento') || localStorage.getItem('estabelecimentoSlug') || 'bisburger';
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -16,9 +17,10 @@ const Login = () => {
     setErro('');
 
     try {
-      const response = await api.post('/auth/login', { senha });
+      const response = await api.post('/auth/login', { senha, estabelecimento });
       if (response.data.token) {
         localStorage.setItem('adminToken', response.data.token);
+        localStorage.setItem('estabelecimentoSlug', response.data.estabelecimento.slug);
         navigate('/'); // Vai para o Dashboard
       }
     } catch (error: any) {
