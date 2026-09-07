@@ -36,7 +36,7 @@ const Dashboard = () => {
 
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="dashboard-stats grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {/* Card 1 */}
         <div className="glass-card p-5 rounded-2xl group flex flex-col justify-between">
           <div className="flex justify-between items-start mb-2">
@@ -45,7 +45,7 @@ const Dashboard = () => {
               <Package size={20} />
             </div>
           </div>
-          <h3 className="text-4xl mt-2 font-bold text-white group-hover:text-brand-400 transition-colors truncate font-heading">{resumo.pedidos_hoje}</h3>
+          <h3 className="text-3xl mt-2 font-bold text-white group-hover:text-brand-400 transition-colors truncate font-heading">{resumo.pedidos_hoje}</h3>
         </div>
 
         {/* Card 2 */}
@@ -57,7 +57,7 @@ const Dashboard = () => {
               <DollarSign size={20} />
             </div>
           </div>
-          <h3 className="text-4xl mt-2 font-bold text-white group-hover:text-emerald-400 transition-colors truncate font-heading relative z-10">
+          <h3 className="text-3xl mt-2 font-bold text-white group-hover:text-emerald-400 transition-colors truncate font-heading relative z-10">
             {resumo.faturamento_hoje.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
           </h3>
         </div>
@@ -71,7 +71,7 @@ const Dashboard = () => {
               <Receipt size={20} />
             </div>
           </div>
-          <h3 className="text-4xl mt-2 font-bold text-white group-hover:text-blue-400 transition-colors truncate font-heading relative z-10">
+          <h3 className="text-3xl mt-2 font-bold text-white group-hover:text-blue-400 transition-colors truncate font-heading relative z-10">
             {resumo.ticket_medio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
           </h3>
         </div>
@@ -85,7 +85,7 @@ const Dashboard = () => {
               <TrendingUp size={20} />
             </div>
           </div>
-          <h3 className="text-4xl mt-2 font-bold text-white group-hover:text-violet-400 transition-colors truncate font-heading relative z-10">
+          <h3 className="text-3xl mt-2 font-bold text-white group-hover:text-violet-400 transition-colors truncate font-heading relative z-10">
             {resumo.lucro_hoje?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) || 'R$ 0,00'}
           </h3>
         </div>
@@ -122,7 +122,7 @@ const Dashboard = () => {
           <h3 className="text-xl font-bold mb-6 font-heading">Últimos Pedidos</h3>
           <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
             {resumo.ultimos_pedidos.length === 0 ? (
-              <p className="text-zinc-400 text-sm">Nenhum pedido hoje.</p>
+              <p className="dashboard-empty text-zinc-400 text-sm"><Receipt size={28} strokeWidth={1.5} className="text-zinc-500 mb-3" />Nenhum pedido hoje.</p>
             ) : (
               resumo.ultimos_pedidos.map((pedido: any) => (
                 <div key={pedido.id} className="flex justify-between items-center p-4 bg-dark-900/50 rounded-xl border border-white/5 hover:border-white/10 hover:bg-dark-900/80 transition-all cursor-default">

@@ -43,7 +43,8 @@ const NavLink = ({ to, icon: Icon, children, isCollapsed, hasBadge }: { to: stri
     <Link 
       to={to} 
       title={isCollapsed ? children as string : undefined}
-      className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 px-4'} py-3 rounded-xl transition-all duration-300 font-medium relative group ${isActive ? 'text-white' : 'text-zinc-300 hover:text-white'}`}
+      aria-current={isActive ? "page" : undefined}
+      className={`sidebar-link flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 px-4'} py-3 rounded-xl transition-all duration-300 font-medium relative group ${isActive ? 'text-white' : 'text-zinc-300 hover:text-white'}`}
     >
       {isActive && (
         <div className="absolute inset-0 bg-gradient-to-r from-brand-500/20 to-transparent rounded-xl border border-brand-500/30 shadow-[inset_0px_1px_1px_rgba(255,255,255,0.1)]"></div>
@@ -83,23 +84,10 @@ function AppContent() {
   }
 
   return (
-    <div className="flex h-screen bg-[#0a0a0a] text-zinc-50 overflow-hidden font-sans relative">
+    <div className="admin-shell flex h-screen bg-[#0a0a0a] text-zinc-50 overflow-hidden font-sans relative">
           <NetworkBanner />
-        {/* Global Background Image */}
-        <div 
-          className="absolute inset-0 z-0 opacity-15 pointer-events-none bg-no-repeat bg-center bg-cover"
-          style={{ backgroundImage: "url('/logo.png" }}
-        ></div>
-        {/* Soft Vignette */}
-        <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.75)_100%)] pointer-events-none"></div>
-        <div className="absolute inset-0 z-0 bg-black/30 pointer-events-none"></div>
-
-        {/* Ambient Background Glows */}
-        <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-brand-500/15 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0"></div>
-        <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-amber-500/10 rounded-full blur-[150px] translate-x-1/3 translate-y-1/3 pointer-events-none z-0"></div>
-
         {/* Sidebar */}
-        <aside className={`${isCollapsed ? 'w-24' : 'w-64'} transition-all duration-300 ease-in-out glass border-r border-white/5 flex flex-col hidden md:flex z-10 relative print:hidden`}>
+        <aside className={`admin-sidebar ${isCollapsed ? 'w-24' : 'w-64'} transition-all duration-300 ease-in-out glass border-r border-white/5 flex flex-col hidden md:flex z-10 relative print:hidden`}>
           <div className={`pt-6 px-4 pb-2 h-24 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
             {!isCollapsed && (
               <div className="flex items-center gap-2 overflow-hidden">
@@ -108,7 +96,7 @@ function AppContent() {
                   <h1 className="text-lg font-bold gradient-text drop-shadow-sm whitespace-nowrap leading-tight">
                     BisBurger
                   </h1>
-                  <span className="text-[10px] text-white font-bold tracking-[0.2em] uppercase drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]">O Lanche</span>
+                  <span className="text-[10px] text-zinc-400 font-medium tracking-[0.2em] uppercase">O Lanche</span>
                 </div>
               </div>
             )}
@@ -150,7 +138,7 @@ function AppContent() {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto relative pb-20 md:pb-0 z-10">
+        <main className="admin-main min-w-0 flex-1 overflow-y-auto relative pb-20 md:pb-0 z-10">
           <Routes>
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/novo-pedido" element={<ProtectedRoute><NewOrder /></ProtectedRoute>} />

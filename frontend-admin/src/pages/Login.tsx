@@ -34,8 +34,8 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-dark-950 flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-sm animate-in zoom-in-95 duration-500">
+    <div className="login-screen min-h-screen bg-dark-950 flex flex-col items-center justify-center p-4">
+      <div className="login-panel w-full max-w-sm animate-in zoom-in-95 duration-500">
         
         <div className="flex flex-col items-center mb-8">
           <div className="w-20 h-20 bg-dark-900 rounded-3xl border border-white/5 flex items-center justify-center mb-6 shadow-2xl relative overflow-hidden group">
@@ -48,7 +48,7 @@ const Login = () => {
           </p>
         </div>
 
-        <div className="bg-dark-900 border border-white/5 p-6 rounded-3xl shadow-2xl">
+        <div className="login-form bg-dark-900 border border-white/5 p-6 rounded-3xl shadow-2xl">
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
               <div className="relative">

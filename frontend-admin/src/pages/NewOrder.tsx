@@ -276,10 +276,10 @@ const NewOrder = () => {
         </div>
       )}
 
-      <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-10rem)]">
-        <div className="flex-1 flex flex-col gap-4">
-          <div className="flex flex-col md:flex-row gap-4 mb-2 justify-between">
-            <div className="flex gap-2 p-1 bg-dark-800/50 backdrop-blur-md border border-white/5 rounded-xl overflow-x-auto shadow-lg">
+      <div className="order-workspace flex flex-col lg:flex-row gap-6 lg:h-[calc(100vh-10rem)]">
+        <div className="min-w-0 flex-1 flex flex-col gap-4">
+          <div className="flex flex-col xl:flex-row gap-4 mb-2 justify-between">
+            <div className="min-w-0 flex gap-2 p-1 bg-dark-800/50 backdrop-blur-md border border-white/5 rounded-xl overflow-x-auto shadow-lg">
               {categorias.map(cat => (
                 <button key={cat as string} onClick={() => setActiveCategory(cat as string)} className={`px-3 py-1.5 rounded-lg text-xs transition-all whitespace-nowrap ${activeCategory === cat ? 'bg-white/10 text-white font-medium shadow-sm' : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'}`}>
                   {cat as string}
@@ -297,7 +297,7 @@ const NewOrder = () => {
               {filtered.map(produto => {
                 const count = itens.find(i => i.produto.id === produto.id)?.quantidade || 0;
                 return (
-                  <div key={produto.id} className="glass-card p-3 rounded-xl flex flex-col justify-between group">
+                  <div key={produto.id} className="product-tile glass-card p-4 rounded-xl flex flex-col justify-between group">
                     <div>
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-brand-500/10 text-brand-400 border border-brand-500/20 mb-1.5">
                         {produto.categoria}

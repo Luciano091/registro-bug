@@ -33,17 +33,67 @@
 /* Utilities for glassmorphism */
 @layer utilities {
   .glass {
-    @apply bg-black/40 backdrop-blur-[32px] border border-white/5 shadow-[20px_0_40px_rgba(0,0,0,0.5)];
+    @apply bg-dark-800/95 backdrop-blur-xl border border-white/10 shadow-xl;
   }
   .glass-card {
-    @apply bg-[rgba(15,10,5,0.3)] backdrop-blur-[24px] border border-white/[0.05] shadow-2xl hover:bg-[rgba(15,10,5,0.4)] transition-all duration-300;
+    @apply bg-dark-800 border border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.12)] transition-colors duration-200;
   }
   .gradient-text {
-    @apply bg-gradient-to-r from-orange-400 to-rose-500 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-orange-300 to-orange-500 bg-clip-text text-transparent;
   }
   .premium-btn {
-    @apply bg-gradient-to-r from-brand-500 to-rose-600 hover:from-brand-400 hover:to-rose-500 text-white shadow-lg shadow-brand-500/25 transition-all duration-300 border border-white/10 active:scale-95;
+    @apply bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-400 hover:to-brand-500 text-white shadow-lg shadow-brand-500/25 transition-all duration-300 border border-white/10 active:scale-95;
   }
+}
+
+/* Shared presentation for administrative screens. */
+@layer base {
+  :root { color-scheme: dark; }
+  body { margin: 0; }
+  :is(button, a, input, select, textarea):focus-visible { outline: 2px solid #fb923c; outline-offset: 3px; }
+  input::placeholder, textarea::placeholder { color: #858b98; opacity: 1; }
+  select option { background: #171a20; color: #f4f4f5; }
+  button:disabled { cursor: not-allowed; }
+}
+@media screen {
+  .admin-shell { height: 100dvh; background: radial-gradient(ellipse at 100% 0%, #f9731608, transparent 45%), #101216; }
+  .admin-sidebar { background: #13161b; box-shadow: none; }
+  .admin-sidebar > div:first-child { border-bottom: 1px solid #ffffff0d; }
+  .sidebar-link { font-size: 0.875rem; min-height: 46px; }
+  .sidebar-link[aria-current="page"] { color: #fed7aa; }
+  .sidebar-link[aria-current="page"] > div:first-child { background: #f9731614; border-color: #f9731626; box-shadow: none; }
+  .sidebar-link[aria-current="page"] > div:last-child { box-shadow: none; height: 20px; }
+  .admin-main header { padding-bottom: 24px; border-bottom: 1px solid #ffffff0d; }
+  .admin-main header h2 { font-size: clamp(1.6rem, 2.5vw, 2rem); letter-spacing: -0.035em; }
+  .admin-main header p { color: #a1a1aa; font-size: 0.875rem; }
+  .admin-main :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea), .login-form input { background-color: #101216; border-color: #ffffff1f; box-shadow: inset 0 1px 2px #00000014; }
+  .admin-main :is(input, select, textarea):focus, .login-form input:focus { border-color: #fb923c; }
+  .admin-main table { font-size: 0.875rem; }
+  .admin-main th { background: #ffffff03; color: #a1a1aa; font-size: 0.75rem; letter-spacing: 0.035em; }
+  .admin-main td { font-variant-numeric: tabular-nums; }
+  .admin-main tbody tr { transition: background-color 150ms ease; }
+  .admin-main tbody tr:hover { background-color: #ffffff03; }
+  .dashboard-stats > div { padding: 24px; min-height: 156px; }
+  .dashboard-stats h3 { font-variant-numeric: tabular-nums; letter-spacing: -0.04em; }
+  .dashboard-stats > div:first-child { background: linear-gradient(135deg, #38241b, #1c1b1d); border-color: #f973162e; }
+  .dashboard-empty { min-height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px dashed #ffffff14; border-radius: 12px; }
+  .product-tile { min-height: 132px; }
+  .product-tile:hover { background-color: #1c2027; border-color: #f9731640; }
+  .order-workspace > .glass-card { border-top: 2px solid #f9731670; }
+  .login-screen { background: radial-gradient(ellipse at 50% 10%, #f9731612, transparent 55%), #0c0e12; }
+  .login-panel { max-width: 420px; }
+  .login-form { padding: 32px; background: #171a20; border-color: #ffffff14; box-shadow: 0 24px 80px #00000030; }
+  .login-form input { font-size: 1rem; font-weight: 500; letter-spacing: 0.1em; }
+  .login-form input::placeholder { letter-spacing: normal; }
+  @media (max-width: 767px) {
+    .admin-main > div { padding-left: 20px; padding-right: 20px; }
+    .admin-main header { padding-bottom: 20px; }
+    .dashboard-stats > div { min-height: 136px; padding: 20px; }
+    .login-form { padding: 24px; }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
 
 /* Print Styles */
