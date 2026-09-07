@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Lock, ArrowRight, Eye, EyeOff, Utensils } from 'lucide-react';
 import api from '../services/api';
 
 const Login = () => {
@@ -38,13 +38,16 @@ const Login = () => {
       <div className="login-panel w-full max-w-sm animate-in zoom-in-95 duration-500">
         
         <div className="flex flex-col items-center mb-8">
-          <div className="w-20 h-20 bg-dark-900 rounded-3xl border border-white/5 flex items-center justify-center mb-6 shadow-2xl relative overflow-hidden group">
-            <div className="absolute inset-0 bg-gradient-to-br from-brand-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <Lock size={32} className="text-brand-500" />
+          <div className="login-brand mb-8">
+            <div className="brand-mark"><Utensils size={19} /></div>
+            <div><strong>Gestão Food</strong><span>Operação inteligente</span></div>
           </div>
-          <h1 className="text-3xl font-bold font-heading text-white mb-2">Área Restrita</h1>
+          <div className="w-14 h-14 bg-orange-50 rounded-2xl border border-orange-100 flex items-center justify-center mb-5">
+            <Lock size={24} className="text-brand-600" />
+          </div>
+          <h1 className="text-3xl font-bold font-heading text-slate-900 mb-2">Acesse sua operação</h1>
           <p className="text-zinc-400 text-center">
-            Digite a senha administrativa para acessar o painel de controle.
+            Entre para acompanhar pedidos, caixa e cardápio.
           </p>
         </div>
 
@@ -56,7 +59,7 @@ const Login = () => {
                   type={showPassword ? "text" : "password"}
                   value={senha}
                   onChange={(e) => setSenha(e.target.value)}
-                  placeholder="Senha de Acesso"
+                  placeholder="Senha de acesso"
                   className="w-full bg-dark-950 border border-white/10 rounded-2xl pl-5 pr-12 py-4 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all text-white placeholder-zinc-600 text-center text-lg tracking-widest font-bold"
                   autoFocus
                 />
@@ -82,17 +85,15 @@ const Login = () => {
                 <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
               ) : (
                 <>
-                  Entrar no Painel <ArrowRight size={20} />
+                  Entrar no painel <ArrowRight size={20} />
                 </>
               )}
             </button>
           </form>
         </div>
         
-        <div className="mt-8 text-center">
-           <a href="https://menu-burgerhouse.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-zinc-400 hover:text-brand-400 transition-colors text-sm font-semibold">
-              Ver Cardápio Público
-           </a>
+        <div className="mt-8 text-center text-sm text-slate-500">
+          Gestão Food <span className="mx-2 text-slate-300">•</span> Plataforma para food service
         </div>
 
       </div>

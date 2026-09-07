@@ -52,7 +52,7 @@ const Settings = () => {
       <header className="mb-8 flex flex-col md:flex-row justify-between md:items-end gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-white font-heading drop-shadow-sm">Configurações</h2>
-          <p className="text-zinc-300 mt-1">Gerencie as informações da sua hamburgueria.</p>
+          <p className="text-zinc-300 mt-1">Gerencie as informações do seu estabelecimento.</p>
         </div>
         <button 
           onClick={handleSave}

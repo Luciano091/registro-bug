@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Home, PlusCircle, ListOrdered, Utensils, BarChart3, Settings as SettingsIcon, ChevronLeft, ChevronRight, Wallet, LogOut, Menu as MenuIcon, X, Package } from 'lucide-react';
+import { Home, PlusCircle, ListOrdered, Utensils, BarChart3, Settings as SettingsIcon, ChevronLeft, ChevronRight, Wallet, LogOut, Menu as MenuIcon, X, Package, Store } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import NewOrder from './pages/NewOrder';
 import Orders from './pages/Orders';
@@ -15,6 +15,7 @@ import { Navigate } from 'react-router-dom';
 import { NetworkProvider, useNetwork } from './contexts/NetworkContext';
 import { AppDataProvider } from './contexts/AppDataContext';
 import { WifiOff, RefreshCcw } from 'lucide-react';
+import api from './services/api';
 
 const NetworkBanner = () => {
   const { isOnline, isSyncing } = useNetwork();
@@ -72,8 +73,16 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 function AppContent() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [estabelecimento, setEstabelecimento] = useState<{ nome_empresa?: string; logo?: string }>({});
   const location = useLocation();
   const isLoginRoute = location.pathname === '/login';
+
+  useEffect(() => {
+    if (isLoginRoute || !localStorage.getItem('adminToken')) return;
+    api.get('/configuracao')
+      .then(({ data }) => setEstabelecimento(data || {}))
+      .catch(() => setEstabelecimento({}));
+  }, [isLoginRoute]);
   
   if (isLoginRoute) {
     return (
@@ -84,51 +93,66 @@ function AppContent() {
   }
 
   return (
-    <div className="admin-shell flex h-screen bg-[#0a0a0a] text-zinc-50 overflow-hidden font-sans relative">
+    <div className="admin-shell flex h-screen text-zinc-900 overflow-hidden font-sans relative">
           <NetworkBanner />
         {/* Sidebar */}
-        <aside className={`admin-sidebar ${isCollapsed ? 'w-24' : 'w-64'} transition-all duration-300 ease-in-out glass border-r border-white/5 flex flex-col hidden md:flex z-10 relative print:hidden`}>
-          <div className={`pt-6 px-4 pb-2 h-24 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
+        <aside className={`admin-sidebar ${isCollapsed ? 'w-20' : 'w-[268px]'} transition-all duration-300 ease-in-out flex flex-col hidden md:flex z-10 relative print:hidden`}>
+          <div className={`px-4 h-20 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
             {!isCollapsed && (
-              <div className="flex items-center gap-2 overflow-hidden">
-                <img src="/logo.png" alt="Logo BisBurger" className="w-8 h-8 rounded-full object-cover shadow-lg border border-brand-500/50" />
-                <div className="flex flex-col items-center w-full">
-                  <h1 className="text-lg font-bold gradient-text drop-shadow-sm whitespace-nowrap leading-tight">
-                    BisBurger
+              <div className="flex items-center gap-3 overflow-hidden">
+                <div className="brand-mark"><Utensils size={19} /></div>
+                <div className="min-w-0">
+                  <h1 className="text-[17px] font-bold text-white whitespace-nowrap leading-tight">
+                    Gestão Food
                   </h1>
-                  <span className="text-[10px] text-zinc-400 font-medium tracking-[0.2em] uppercase">O Lanche</span>
+                  <span className="text-[11px] text-slate-400 font-medium tracking-wide">Operação inteligente</span>
                 </div>
               </div>
             )}
             
             <button 
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-zinc-300 hover:text-white transition-colors flex-shrink-0"
+              className="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors flex-shrink-0"
               title={isCollapsed ? "Expandir" : "Recolher"}
             >
               {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
             </button>
           </div>
           
-          <nav className="flex-1 px-4 py-6 flex flex-col gap-2 overflow-x-hidden overflow-y-auto custom-scrollbar">
+          <nav className="flex-1 px-3 py-5 flex flex-col gap-1 overflow-x-hidden overflow-y-auto custom-scrollbar">
+            {!isCollapsed && <span className="nav-section-label">Operação</span>}
             <NavLink to="/" icon={Home} isCollapsed={isCollapsed}>Dashboard</NavLink>
             <NavLink to="/novo-pedido" icon={PlusCircle} isCollapsed={isCollapsed}>Novo Pedido</NavLink>
             <NavLink to="/pedidos" icon={ListOrdered} isCollapsed={isCollapsed}>Pedidos</NavLink>
-
             <NavLink to="/caixa" icon={Wallet} isCollapsed={isCollapsed}>Caixa</NavLink>
+
+            {!isCollapsed && <span className="nav-section-label mt-5">Gestão</span>}
             <NavLink to="/cardapio" icon={Utensils} isCollapsed={isCollapsed}>Cardápio</NavLink>
             <NavLink to="/insumos" icon={Package} isCollapsed={isCollapsed}>Insumos</NavLink>
             <NavLink to="/relatorios" icon={BarChart3} isCollapsed={isCollapsed}>Relatórios</NavLink>
             <NavLink to="/configuracoes" icon={SettingsIcon} isCollapsed={isCollapsed}>Configurações</NavLink>
           </nav>
           
-          <div className="p-4 border-t border-white/5 mt-auto">
+          <div className="p-3 border-t border-white/5 mt-auto space-y-1">
+            {!isCollapsed && (
+              <div className="tenant-card mb-3">
+                {estabelecimento.logo ? (
+                  <img src={estabelecimento.logo} alt="Identidade do estabelecimento" className="w-9 h-9 rounded-lg object-cover" />
+                ) : (
+                  <div className="w-9 h-9 rounded-lg bg-white/10 text-slate-300 grid place-items-center"><Store size={17} /></div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <strong className="block text-sm text-white truncate">{estabelecimento.nome_empresa || 'Meu estabelecimento'}</strong>
+                  <span className="text-[11px] text-slate-400">Unidade atual</span>
+                </div>
+              </div>
+            )}
             <button 
               onClick={() => {
                 localStorage.removeItem('adminToken');
                 window.location.href = '/login';
               }}
-              className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 px-4'} py-3 rounded-xl transition-all duration-300 font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10`}
+              className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 px-4'} py-2.5 rounded-lg transition-all duration-200 font-medium text-slate-400 hover:text-white hover:bg-white/5`}
               title={isCollapsed ? "Sair do Sistema" : undefined}
             >
               <LogOut size={20} className="flex-shrink-0" />
@@ -139,6 +163,10 @@ function AppContent() {
 
         {/* Main Content */}
         <main className="admin-main min-w-0 flex-1 overflow-y-auto relative pb-20 md:pb-0 z-10">
+          <div className="mobile-brand md:hidden">
+            <div className="brand-mark"><Store size={17} /></div>
+            <div><strong>Gestão Food</strong><span>{estabelecimento.nome_empresa || 'Meu estabelecimento'}</span></div>
+          </div>
           <Routes>
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/novo-pedido" element={<ProtectedRoute><NewOrder /></ProtectedRoute>} />
@@ -154,7 +182,7 @@ function AppContent() {
 
         {/* Mobile Menu Overlay */}
         {isMobileMenuOpen && (
-          <div className="md:hidden fixed inset-0 z-[60] bg-[#0a0a0a]/95 backdrop-blur-xl flex flex-col p-6 animate-in fade-in duration-200">
+          <div className="md:hidden fixed inset-0 z-[60] bg-slate-950/95 backdrop-blur-xl flex flex-col p-6 animate-in fade-in duration-200">
             <div className="flex justify-between items-center mb-8 mt-4">
               <h2 className="text-2xl font-heading font-bold text-white">Menu</h2>
               <button 
@@ -186,11 +214,11 @@ function AppContent() {
         )}
 
         {/* Mobile Bottom Nav */}
-        <nav className="md:hidden fixed bottom-0 w-full glass border-t border-white/10 flex justify-between px-4 py-2 z-50 print:hidden pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+        <nav className="mobile-bottom-nav md:hidden fixed bottom-0 w-full flex justify-between px-4 py-2 z-50 print:hidden pb-[max(0.5rem,env(safe-area-inset-bottom))]">
           <Link to="/" className="p-2 flex flex-col items-center text-zinc-300 hover:text-brand-400 transition-colors"><Home size={22} /><span className="text-[10px] mt-1 font-medium">Início</span></Link>
           <Link to="/pedidos" className="p-2 flex flex-col items-center text-zinc-300 hover:text-brand-400 transition-colors"><ListOrdered size={22} /><span className="text-[10px] mt-1 font-medium">Pedidos</span></Link>
           
-          <Link to="/novo-pedido" className="relative -top-6 p-4 premium-btn rounded-full shadow-xl shadow-brand-500/30 border-4 border-[#0a0a0a]">
+          <Link to="/novo-pedido" aria-label="Novo pedido" className="relative -top-6 p-4 premium-btn rounded-full shadow-xl shadow-brand-500/20 border-4 border-white">
             <PlusCircle size={28} />
           </Link>
           

@@ -156,7 +156,7 @@ const PublicMenu = () => {
             
             <div className="flex-1">
               <h1 className="text-2xl md:text-3xl font-heading font-black text-zinc-900 uppercase tracking-tight leading-tight">
-                {config?.nome_empresa || 'BisBurger'}
+                {config?.nome_empresa || 'Seu Restaurante'}
               </h1>
               
               <div className="flex items-center gap-2 mt-1.5">
@@ -431,10 +431,7 @@ const PublicMenu = () => {
             Aviso Importante
           </span>
           <p className="text-zinc-500 text-xs md:text-sm max-w-lg leading-relaxed">
-            Trabalhamos com duas linhas de hambúrgueres para melhor te atender: 
-            nossa tradicional linha de <strong className="text-zinc-800">Artesanais</strong> (100% Carne Bovina fresca) 
-            e nossa linha econômica de <strong className="text-zinc-800">Tradicionais</strong> (Processados). 
-            Verifique a descrição de cada produto!
+            Consulte a descrição dos produtos, ingredientes e adicionais antes de finalizar seu pedido.
           </p>
         </div>
       </div>
@@ -442,7 +439,7 @@ const PublicMenu = () => {
       {/* RODAPÉ */}
       <footer className="mt-8 pb-6">
         <div className="max-w-4xl mx-auto px-6 flex flex-col items-center text-center opacity-70">
-          <h4 className="font-heading text-lg font-bold text-zinc-400 uppercase tracking-widest mb-1.5">{config?.nome_empresa || 'BisBurger'}</h4>
+          <h4 className="font-heading text-lg font-bold text-zinc-400 uppercase tracking-widest mb-1.5">{config?.nome_empresa || 'Seu Restaurante'}</h4>
           {config?.endereco && (
             <p className="text-zinc-400 text-xs flex items-center justify-center gap-1.5 font-medium">
               <MapPin size={12} />

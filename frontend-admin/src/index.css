@@ -4,14 +4,14 @@
 
 @layer base {
   body {
-    @apply bg-dark-900 text-zinc-50 font-sans antialiased selection:bg-brand-500/30;
+    @apply bg-slate-50 text-slate-900 font-sans antialiased selection:bg-brand-500/20;
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading tracking-tight;
   }
 }
 
-/* Scrollbar styles - Ultra minimal */
+/* Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -22,21 +22,21 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #27272a; /* zinc-800 */
+  background: #cbd5e1;
   border-radius: 8px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #52525b; /* zinc-600 */
+  background: #94a3b8;
 }
 
-/* Utilities for glassmorphism */
+/* Shared surfaces */
 @layer utilities {
   .glass {
-    @apply bg-dark-800/95 backdrop-blur-xl border border-white/10 shadow-xl;
+    @apply bg-white border border-slate-200 shadow-xl;
   }
   .glass-card {
-    @apply bg-dark-800 border border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.12)] transition-colors duration-200;
+    @apply bg-white border border-slate-200 shadow-[0_1px_3px_rgba(15,23,42,0.05)] transition-colors duration-200;
   }
   .gradient-text {
     @apply bg-gradient-to-r from-orange-300 to-orange-500 bg-clip-text text-transparent;
@@ -48,41 +48,68 @@
 
 /* Shared presentation for administrative screens. */
 @layer base {
-  :root { color-scheme: dark; }
+  :root { color-scheme: light; }
   body { margin: 0; }
   :is(button, a, input, select, textarea):focus-visible { outline: 2px solid #fb923c; outline-offset: 3px; }
   input::placeholder, textarea::placeholder { color: #858b98; opacity: 1; }
-  select option { background: #171a20; color: #f4f4f5; }
+  select option { background: #ffffff; color: #172033; }
   button:disabled { cursor: not-allowed; }
 }
 @media screen {
-  .admin-shell { height: 100dvh; background: radial-gradient(ellipse at 100% 0%, #f9731608, transparent 45%), #101216; }
-  .admin-sidebar { background: #13161b; box-shadow: none; }
-  .admin-sidebar > div:first-child { border-bottom: 1px solid #ffffff0d; }
-  .sidebar-link { font-size: 0.875rem; min-height: 46px; }
-  .sidebar-link[aria-current="page"] { color: #fed7aa; }
-  .sidebar-link[aria-current="page"] > div:first-child { background: #f9731614; border-color: #f9731626; box-shadow: none; }
+  .admin-shell { height: 100dvh; background: #f5f7fa; }
+  .admin-sidebar { background: #111827; border-right: 1px solid #1e293b; box-shadow: 8px 0 30px rgba(15,23,42,.06); }
+  .admin-sidebar > div:first-child { border-bottom: 1px solid rgba(255,255,255,.07); }
+  .brand-mark { width: 38px; height: 38px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 11px; color: white; background: linear-gradient(135deg,#fb923c,#ea580c); box-shadow: 0 6px 16px rgba(249,115,22,.22); }
+  .nav-section-label { padding: 0 16px 7px; color: #64748b; font-size: 10px; line-height: 1; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; }
+  .sidebar-link { color: #94a3b8; font-size: 0.875rem; min-height: 44px; border-radius: 9px; }
+  .sidebar-link:hover { color: #f8fafc; }
+  .sidebar-link[aria-current="page"] { color: #ffffff; font-weight: 600; }
+  .sidebar-link[aria-current="page"] > div:first-child { background: rgba(249,115,22,.13); border-color: rgba(251,146,60,.18); box-shadow: none; }
   .sidebar-link[aria-current="page"] > div:last-child { box-shadow: none; height: 20px; }
-  .admin-main header { padding-bottom: 24px; border-bottom: 1px solid #ffffff0d; }
+  .tenant-card { display: flex; align-items: center; gap: 10px; padding: 10px; background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.07); border-radius: 11px; }
+  .mobile-brand { height: 64px; padding: 0 20px; align-items: center; gap: 10px; background: #111827; color: white; }
+  .mobile-brand .brand-mark { width: 34px; height: 34px; }
+  .mobile-brand strong, .mobile-brand span { display: block; }
+  .mobile-brand strong { font-size: 14px; }
+  .mobile-brand span { color: #94a3b8; font-size: 11px; }
+  .mobile-bottom-nav { background: rgba(255,255,255,.96); color: #475569; border-top: 1px solid #e2e8f0; box-shadow: 0 -8px 28px rgba(15,23,42,.08); backdrop-filter: blur(18px); }
+  .admin-main { background: #f5f7fa; color: #172033; }
+  .admin-main header { padding-bottom: 24px; border-bottom: 1px solid #e5eaf0; }
   .admin-main header h2 { font-size: clamp(1.6rem, 2.5vw, 2rem); letter-spacing: -0.035em; }
-  .admin-main header p { color: #a1a1aa; font-size: 0.875rem; }
-  .admin-main :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea), .login-form input { background-color: #101216; border-color: #ffffff1f; box-shadow: inset 0 1px 2px #00000014; }
+  .admin-main header p { color: #64748b; font-size: 0.875rem; }
+  .admin-main .text-white, .admin-main .text-zinc-50 { color: #172033; }
+  .admin-main .text-zinc-200, .admin-main .text-zinc-300 { color: #475569; }
+  .admin-main .text-zinc-400 { color: #64748b; }
+  .admin-main .text-zinc-500, .admin-main .text-zinc-600 { color: #94a3b8; }
+  .admin-main .bg-dark-900, .admin-main .bg-dark-800 { background-color: #ffffff; }
+  .admin-main .bg-dark-900\/50, .admin-main .bg-dark-800\/50, .admin-main .bg-black\/20, .admin-main .bg-white\/5 { background-color: #f8fafc; }
+  .admin-main [class~="bg-[#131313]"], .admin-main [class~="bg-[#18181A]"], .admin-main .bg-zinc-900 { background-color: #ffffff; }
+  .admin-main .border-white\/5, .admin-main .border-white\/10 { border-color: #e2e8f0; }
+  .admin-main .hover\:bg-white\/5:hover, .admin-main .hover\:bg-white\/10:hover { background-color: #f1f5f9; }
+  .admin-main :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea), .login-form input { background-color: #ffffff; border-color: #d7dee8; color: #172033; box-shadow: 0 1px 2px rgba(15,23,42,.03); }
   .admin-main :is(input, select, textarea):focus, .login-form input:focus { border-color: #fb923c; }
   .admin-main table { font-size: 0.875rem; }
-  .admin-main th { background: #ffffff03; color: #a1a1aa; font-size: 0.75rem; letter-spacing: 0.035em; }
+  .admin-main th { background: #f8fafc; color: #64748b; font-size: 0.75rem; letter-spacing: 0.035em; }
   .admin-main td { font-variant-numeric: tabular-nums; }
   .admin-main tbody tr { transition: background-color 150ms ease; }
-  .admin-main tbody tr:hover { background-color: #ffffff03; }
+  .admin-main tbody tr:hover { background-color: #f8fafc; }
   .dashboard-stats > div { padding: 24px; min-height: 156px; }
   .dashboard-stats h3 { font-variant-numeric: tabular-nums; letter-spacing: -0.04em; }
-  .dashboard-stats > div:first-child { background: linear-gradient(135deg, #38241b, #1c1b1d); border-color: #f973162e; }
-  .dashboard-empty { min-height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px dashed #ffffff14; border-radius: 12px; }
+  .dashboard-stats > div { position: relative; overflow: hidden; }
+  .dashboard-stats > div::after { content: ''; position: absolute; inset: auto 0 0; height: 3px; background: #e2e8f0; }
+  .dashboard-stats > div:first-child { background: linear-gradient(135deg, #fff7ed, #ffffff 58%); border-color: #fed7aa; }
+  .dashboard-stats > div:first-child::after { background: #f97316; }
+  .dashboard-empty { min-height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px dashed #d7dee8; background: #fbfcfd; border-radius: 12px; }
   .product-tile { min-height: 132px; }
-  .product-tile:hover { background-color: #1c2027; border-color: #f9731640; }
+  .product-tile:hover { background-color: #ffffff; border-color: #fdba74; box-shadow: 0 8px 24px rgba(15,23,42,.07); }
   .order-workspace > .glass-card { border-top: 2px solid #f9731670; }
-  .login-screen { background: radial-gradient(ellipse at 50% 10%, #f9731612, transparent 55%), #0c0e12; }
+  .login-screen { background: radial-gradient(circle at 80% 0%, rgba(249,115,22,.13), transparent 30%), linear-gradient(135deg,#f8fafc,#eef2f7); }
   .login-panel { max-width: 420px; }
-  .login-form { padding: 32px; background: #171a20; border-color: #ffffff14; box-shadow: 0 24px 80px #00000030; }
+  .login-brand { display: flex; align-items: center; gap: 11px; color: #172033; }
+  .login-brand strong, .login-brand span { display: block; }
+  .login-brand strong { font-size: 17px; }
+  .login-brand span { color: #64748b; font-size: 11px; }
+  .login-form { padding: 32px; background: #ffffff; border-color: #e2e8f0; box-shadow: 0 24px 70px rgba(15,23,42,.11); }
   .login-form input { font-size: 1rem; font-weight: 500; letter-spacing: 0.1em; }
   .login-form input::placeholder { letter-spacing: normal; }
   @media (max-width: 767px) {

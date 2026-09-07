@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Package, DollarSign, Receipt, TrendingUp } from 'lucide-react';
+import { Package, DollarSign, Receipt, TrendingUp, Store } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useAppData } from '../contexts/AppDataContext';
 
@@ -30,10 +30,17 @@ const Dashboard = () => {
       <div className="relative z-10 space-y-8">
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight text-white drop-shadow-sm">Dashboard</h2>
-            <p className="text-zinc-300 mt-1">Visão geral do desempenho de hoje.</p>
+            <p className="text-brand-600 text-xs font-bold uppercase tracking-widest mb-1">Visão geral</p>
+            <h2 className="text-3xl font-bold tracking-tight text-white drop-shadow-sm">Visão geral da operação</h2>
+            <p className="text-zinc-300 mt-1">Acompanhe os principais números da operação de hoje.</p>
           </div>
-
+          <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <div className="w-9 h-9 rounded-lg bg-orange-50 text-brand-600 grid place-items-center"><Store size={18} /></div>
+            <div>
+              <span className="block text-xs text-slate-500">Ambiente atual</span>
+              <strong className="text-sm text-slate-700">Painel administrativo</strong>
+            </div>
+          </div>
       </header>
 
       <div className="dashboard-stats grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -103,11 +110,11 @@ const Dashboard = () => {
                     <stop offset="95%" stopColor="#f97316" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-                <XAxis dataKey="name" stroke="#a1a1aa" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="#a1a1aa" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `R$${val}`} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                <XAxis dataKey="name" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `R$${val}`} />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#121214cc', backdropFilter: 'blur(10px)', borderColor: '#ffffff10', borderRadius: '12px', color: '#fff', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)' }}
+                  contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: '12px', color: '#172033', boxShadow: '0 10px 30px -8px rgba(15,23,42,0.18)' }}
                   itemStyle={{ color: '#f97316', fontWeight: 'bold' }}
                   // @ts-ignore
                   formatter={(value: number) => [value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 'Vendas']}
