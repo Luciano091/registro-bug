@@ -97,7 +97,7 @@ const PublicMenu = () => {
   // Promoções do Dia
   const promocoesAtivas = useMemo(() => {
     if (activeCategory !== 'Todos') return [];
-    return produtos.filter(p => p.is_promocao).slice(0, 2);
+    return produtos.filter(p => p.is_promocao);
   }, [produtos, activeCategory]);
 
   if (loading) {
@@ -223,16 +223,21 @@ const PublicMenu = () => {
           {/* 🔥 PROMOÇÕES DO DIA OU DESTAQUE */}
           {promocoesAtivas.length > 0 ? (
             <section className="mb-10">
-              <div className="flex items-center mb-4">
+              <div className="mb-4 flex items-end justify-between gap-4">
                 <h2 className="flex items-center gap-2 text-xl font-bold text-zinc-900">
                   <Flame size={20} className="text-brand-500" /> Promoções para você
                 </h2>
+                {promocoesAtivas.length > 1 && (
+                  <span className="shrink-0 text-xs font-medium text-zinc-500">Deslize →</span>
+                )}
               </div>
-              <div className={`grid gap-4 ${promocoesAtivas.length > 1 ? 'sm:grid-cols-2' : 'lg:max-w-4xl'}`}>
+              <div className={promocoesAtivas.length > 1
+                ? 'hide-scrollbar -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-3 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8'
+                : 'grid gap-4 lg:max-w-4xl'}>
                 {promocoesAtivas.map(promocao => (
                   <div 
                     key={promocao.id}
-                    className="group relative flex min-w-0 cursor-pointer flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-lg sm:min-h-56 sm:flex-row sm:items-stretch"
+                    className={`group relative flex min-w-0 cursor-pointer flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-lg sm:min-h-56 sm:flex-row sm:items-stretch ${promocoesAtivas.length > 1 ? 'w-[86vw] shrink-0 snap-start snap-always sm:w-[560px] lg:w-[620px]' : 'w-full'}`}
                     onClick={() => setSelectedProduct(promocao)}
                   >
                     <div className="relative flex h-48 w-full items-center justify-center overflow-hidden bg-orange-50 sm:h-56 sm:min-h-0 sm:w-[42%] sm:order-2">
