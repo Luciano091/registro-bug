@@ -13,37 +13,37 @@ export const BottomNav = ({ onOpenCart, activeTab, onChangeTab }: BottomNavProps
   const { cartCount, cartTotal } = useCart();
 
   const getTabClass = (tab: TabType) => {
-    return `flex flex-col items-center justify-center w-full h-full transition-colors ${
+    return `flex min-h-14 w-full flex-col items-center justify-center rounded-xl transition-colors ${
       activeTab === tab ? 'text-brand-500' : 'text-zinc-400 hover:text-zinc-600'
     }`;
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-200 z-40 md:hidden pb-safe">
-      <div className="flex items-center justify-around h-16 px-2">
-        <button onClick={() => onChangeTab('cardapio')} className={getTabClass('cardapio')}>
+    <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-zinc-200 bg-white/95 shadow-[0_-8px_30px_rgba(15,23,42,0.08)] backdrop-blur-xl md:hidden pb-safe">
+      <div className="flex min-h-[72px] items-center justify-around px-2 py-1">
+        <button onClick={() => onChangeTab('cardapio')} className={getTabClass('cardapio')} aria-current={activeTab === 'cardapio' ? 'page' : undefined}>
           <Utensils size={20} strokeWidth={activeTab === 'cardapio' ? 2.5 : 2} />
-          <span className="text-[10px] font-bold mt-1">Cardápio</span>
+          <span className="mt-1 text-[11px] font-semibold">Cardápio</span>
         </button>
         
-        <button onClick={() => onChangeTab('cupons')} className={getTabClass('cupons')}>
+        <button onClick={() => onChangeTab('cupons')} className={getTabClass('cupons')} aria-current={activeTab === 'cupons' ? 'page' : undefined}>
           <Ticket size={20} strokeWidth={activeTab === 'cupons' ? 2.5 : 2} />
-          <span className="text-[10px] font-medium mt-1">Cupons</span>
+          <span className="mt-1 text-[11px] font-semibold">Cupons</span>
         </button>
         
-        <button onClick={() => onChangeTab('pedidos')} className={getTabClass('pedidos')}>
+        <button onClick={() => onChangeTab('pedidos')} className={getTabClass('pedidos')} aria-current={activeTab === 'pedidos' ? 'page' : undefined}>
           <Receipt size={20} strokeWidth={activeTab === 'pedidos' ? 2.5 : 2} />
-          <span className="text-[10px] font-medium mt-1">Pedidos</span>
+          <span className="mt-1 text-[11px] font-semibold">Pedidos</span>
         </button>
         
-        <button onClick={() => onChangeTab('conta')} className={getTabClass('conta')}>
+        <button onClick={() => onChangeTab('conta')} className={getTabClass('conta')} aria-current={activeTab === 'conta' ? 'page' : undefined}>
           <User size={20} strokeWidth={activeTab === 'conta' ? 2.5 : 2} />
-          <span className="text-[10px] font-medium mt-1">Conta</span>
+          <span className="mt-1 text-[11px] font-semibold">Conta</span>
         </button>
       </div>
 
       {cartCount > 0 && activeTab === 'cardapio' && (
-        <div className="absolute bottom-[4.5rem] left-4 right-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
+        <div className="absolute bottom-[5rem] left-4 right-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
           <button 
             onClick={onOpenCart}
             className="w-full bg-brand-500 text-white p-3.5 rounded-2xl shadow-lg shadow-brand-500/25 flex items-center justify-between transition-all active:scale-[0.98]"

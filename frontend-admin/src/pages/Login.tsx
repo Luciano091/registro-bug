@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, ArrowRight, Eye, EyeOff, Utensils } from 'lucide-react';
+import { Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import api from '../services/api';
 
 const Login = () => {
@@ -39,8 +39,8 @@ const Login = () => {
         
         <div className="flex flex-col items-center mb-8">
           <div className="login-brand mb-8">
-            <div className="brand-mark"><Utensils size={19} /></div>
-            <div><strong>Gestão Food</strong><span>Operação inteligente</span></div>
+            <div className="brand-mark"><img src="/brand/ritmesa-mark.png" alt="" /></div>
+            <div><strong>Ritmesa</strong><span>Seu negócio no ritmo certo</span></div>
           </div>
           <div className="w-14 h-14 bg-orange-50 rounded-2xl border border-orange-100 flex items-center justify-center mb-5">
             <Lock size={24} className="text-brand-600" />
@@ -93,7 +93,7 @@ const Login = () => {
         </div>
         
         <div className="mt-8 text-center text-sm text-slate-500">
-          Gestão Food <span className="mx-2 text-slate-300">•</span> Plataforma para food service
+          Plataforma de gestão para food service
         </div>
 
       </div>

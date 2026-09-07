@@ -119,11 +119,11 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
               </div>
               <h3 className="text-2xl font-bold text-zinc-900 font-heading">Pedido Recebido!</h3>
               <p className="text-zinc-500 max-w-sm">
-                Seu pedido já está com a Burger-House. Em breve você receberá atualizações sobre ele no seu WhatsApp!
+                Seu pedido já foi enviado ao estabelecimento. Em breve você receberá atualizações pelo WhatsApp.
               </p>
               <button 
                 onClick={onClose}
-                className="mt-8 w-full max-w-xs bg-brand-500 hover:bg-brand-600 text-zinc-900 p-4 rounded-xl font-bold transition-colors shadow-lg shadow-brand-500/20 active:scale-[0.98]"
+                className="mt-8 w-full max-w-xs rounded-xl bg-brand-500 p-4 font-bold text-white shadow-lg shadow-brand-500/20 transition-colors hover:bg-brand-600 active:scale-[0.98]"
               >
                 Voltar ao Cardápio
               </button>
@@ -311,7 +311,7 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
                   setStep(2);
                 }}
                 disabled={!lojaAberta}
-                className={`w-full ${!lojaAberta ? 'bg-zinc-700 cursor-not-allowed' : 'bg-brand-500 hover:bg-brand-600 shadow-lg shadow-brand-500/20 active:scale-[0.98]'} text-zinc-900 p-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors`}
+                className={`flex min-h-12 w-full items-center justify-center gap-2 rounded-xl p-4 font-bold text-white transition-colors ${!lojaAberta ? 'cursor-not-allowed bg-zinc-500' : 'bg-brand-500 shadow-lg shadow-brand-500/20 hover:bg-brand-600 active:scale-[0.98]'}`}
               >
                 <span>{!lojaAberta ? 'Loja Fechada' : 'Confirmar Pedido'}</span>
                 {lojaAberta && <ChevronRight size={18} />}
@@ -327,7 +327,7 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
                 <button 
                   onClick={handleFinalizeOrder}
                   disabled={!isFormValid() || isSubmitting}
-                  className="flex-1 bg-brand-500 hover:bg-brand-600 disabled:bg-brand-500/50 disabled:cursor-not-allowed text-zinc-900 p-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors shadow-lg shadow-brand-500/20 active:scale-[0.98]"
+                  className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-brand-500 p-4 font-bold text-white shadow-lg shadow-brand-500/20 transition-colors hover:bg-brand-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-brand-500/50"
                 >
                   <span>{isSubmitting ? 'Enviando...' : 'Finalizar Pedido'}</span>
                 </button>

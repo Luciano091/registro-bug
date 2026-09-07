@@ -549,7 +549,7 @@ const Reports = () => {
       </div>
 
       <div className="mt-12 pt-4 border-t border-zinc-200 text-center text-[10px] text-zinc-300">
-        Gerado pelo Gestão Food. Documento de uso interno e confidencial.
+        Gerado pelo Ritmesa. Documento de uso interno e confidencial.
       </div>
     </div>
     </>

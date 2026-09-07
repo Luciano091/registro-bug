@@ -66,13 +66,13 @@ export const ProductModal = ({ produto, onClose, lojaAberta = true, onLojaFechad
               className="w-full h-full object-contain p-4" 
               referrerPolicy="no-referrer"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#141416] to-transparent"></div>
           </div>
         )}
         
         <button 
           onClick={onClose}
-          className="absolute top-4 right-4 bg-zinc-900/50 backdrop-blur-md text-zinc-900 p-2 rounded-full hover:bg-black/70 transition-colors z-10"
+          aria-label="Fechar"
+          className="absolute right-4 top-4 z-10 rounded-full bg-white/95 p-2.5 text-zinc-700 shadow-md ring-1 ring-zinc-200 transition-colors hover:text-zinc-950"
         >
           <X size={20} />
         </button>
@@ -173,7 +173,7 @@ export const ProductModal = ({ produto, onClose, lojaAberta = true, onLojaFechad
           <button 
             onClick={handleAdd}
             disabled={!lojaAberta}
-            className={`flex-1 ${!lojaAberta ? 'bg-zinc-700 cursor-not-allowed' : 'bg-brand-500 hover:bg-brand-600 shadow-lg shadow-brand-500/20 active:scale-[0.98]'} text-zinc-900 p-3.5 md:p-4 rounded-xl font-bold flex items-center justify-between transition-colors min-w-0`}
+            className={`flex min-h-12 min-w-0 flex-1 items-center justify-between rounded-xl p-3.5 font-bold text-white transition-colors md:p-4 ${!lojaAberta ? 'cursor-not-allowed bg-zinc-500' : 'bg-brand-500 shadow-lg shadow-brand-500/20 hover:bg-brand-600 active:scale-[0.98]'}`}
           >
             <span className="truncate mr-2">{!lojaAberta ? 'Loja Fechada' : 'Adicionar'}</span>
             <span className="font-price tracking-tight shrink-0">

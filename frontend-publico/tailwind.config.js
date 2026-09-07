@@ -8,7 +8,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Poppins', 'sans-serif'],
-        heading: ['Bebas Neue', 'sans-serif'],
+        heading: ['Poppins', 'sans-serif'],
         price: ['Montserrat', 'sans-serif'],
       },
       colors: {
@@ -18,8 +18,8 @@ export default {
           200: '#ffca99',
           300: '#ffaa66',
           400: '#ff8a33',
-          500: '#F58220', // Laranja principal
-          600: '#cc6111',
+          500: '#F97316', // Laranja Ritmesa
+          600: '#EA580C',
           700: '#99440a',
           800: '#662b05',
           900: '#331301',

@@ -100,12 +100,12 @@ function AppContent() {
           <div className={`px-4 h-20 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
             {!isCollapsed && (
               <div className="flex items-center gap-3 overflow-hidden">
-                <div className="brand-mark"><Utensils size={19} /></div>
+                <div className="brand-mark"><img src="/brand/ritmesa-mark.png" alt="" /></div>
                 <div className="min-w-0">
                   <h1 className="text-[17px] font-bold text-white whitespace-nowrap leading-tight">
-                    Gestão Food
+                    Ritmesa
                   </h1>
-                  <span className="text-[11px] text-slate-400 font-medium tracking-wide">Operação inteligente</span>
+                  <span className="text-[11px] text-slate-400 font-medium tracking-wide">Pedidos e gestão</span>
                 </div>
               </div>
             )}
@@ -164,8 +164,8 @@ function AppContent() {
         {/* Main Content */}
         <main className="admin-main min-w-0 flex-1 overflow-y-auto relative pb-20 md:pb-0 z-10">
           <div className="mobile-brand md:hidden">
-            <div className="brand-mark"><Store size={17} /></div>
-            <div><strong>Gestão Food</strong><span>{estabelecimento.nome_empresa || 'Meu estabelecimento'}</span></div>
+            <div className="brand-mark"><img src="/brand/ritmesa-mark.png" alt="" /></div>
+            <div><strong>Ritmesa</strong><span>{estabelecimento.nome_empresa || 'Meu estabelecimento'}</span></div>
           </div>
           <Routes>
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

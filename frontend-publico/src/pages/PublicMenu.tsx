@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { MapPin, Clock, Utensils, Plus, Flame, Check } from 'lucide-react';
+import { MapPin, Clock, Utensils, Plus, Flame, Check, Ticket, Receipt, User } from 'lucide-react';
 import api from '../services/api';
 import { ProductModal } from '../components/ProductModal';
 import { FloatingCart } from '../components/FloatingCart';
@@ -56,6 +56,7 @@ const PublicMenu = () => {
         const conf = configRes.data;
         setConfig(conf);
         setProdutos(prodRes.data.filter((p: any) => p.ativo));
+        document.title = `${conf.nome_empresa || 'Cardápio'} | Ritmesa`;
         
         // Atualizar o ícone (favicon) dinamicamente com a logo do restaurante
         if (conf.logo) {
@@ -81,16 +82,16 @@ const PublicMenu = () => {
   const destaqueDoDia = useMemo(() => {
     if (activeCategory !== 'Todos') return null;
     
-    // Filtra apenas hambúrgueres
-    const burgers = produtos.filter(p => p.categoria && p.categoria.toLowerCase().includes('hamburguer'));
-    if (burgers.length === 0) return null;
+    const produtosComImagem = produtos.filter(p => p.imagem_url);
+    const candidatos = produtosComImagem.length > 0 ? produtosComImagem : produtos;
+    if (candidatos.length === 0) return null;
     
     // Usa o dia do ano para fazer o rodízio (muda 1x por dia)
     const start = new Date(new Date().getFullYear(), 0, 0).getTime();
     const diff = new Date().getTime() - start;
     const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
     
-    return burgers[dayOfYear % burgers.length];
+    return candidatos[dayOfYear % candidatos.length];
   }, [produtos, activeCategory]);
 
   // Promoções do Dia
@@ -107,25 +108,7 @@ const PublicMenu = () => {
     );
   }
 
-  const preferredOrder = [
-    'Hamburguer artesanal',
-    'Hamburguer',
-    'Frituras',
-    'Combo',
-    'Bebidas'
-  ];
-
-  const uniqueCategories = Array.from(new Set(produtos.map(p => p.categoria.trim())));
-  
-  uniqueCategories.sort((a, b) => {
-    const indexA = preferredOrder.findIndex(cat => cat.toLowerCase() === a.toLowerCase());
-    const indexB = preferredOrder.findIndex(cat => cat.toLowerCase() === b.toLowerCase());
-    
-    if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-    if (indexA !== -1) return -1;
-    if (indexB !== -1) return 1;
-    return a.localeCompare(b);
-  });
+  const uniqueCategories = Array.from(new Set(produtos.map(p => p.categoria?.trim()).filter(Boolean))) as string[];
 
   const categories = ['Todos', ...uniqueCategories];
   const filteredProducts = activeCategory === 'Todos' 
@@ -140,30 +123,57 @@ const PublicMenu = () => {
   }, {});
 
   return (
-    <div className={`min-h-screen bg-zinc-50 text-zinc-900 font-sans ${cartCount > 0 ? "pb-36" : "pb-20"} md:pb-12 selection:bg-brand-500/30 selection:text-zinc-900`}>
+    <div className={`public-menu min-h-screen text-zinc-900 font-sans ${cartCount > 0 ? "pb-36" : "pb-24"} md:pb-12 selection:bg-brand-500/30 selection:text-zinc-900`}>
+      <header className="public-desktop-nav sticky top-0 z-50 hidden border-b border-zinc-200/80 bg-white/95 backdrop-blur-xl md:block">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6 lg:px-8">
+          <button onClick={() => setActiveTab('cardapio')} className="flex items-center gap-2.5" aria-label="Ir para o cardápio">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-50 ring-1 ring-zinc-200">
+              <img src="/brand/ritmesa-mark.png" alt="" className="h-7 w-7 object-contain" />
+            </span>
+            <span className="text-lg font-bold tracking-tight text-[#10233f]">Ritmesa</span>
+          </button>
+          <nav className="flex items-center gap-1 rounded-2xl bg-zinc-100 p-1" aria-label="Navegação principal">
+            {([
+              ['cardapio', 'Cardápio', Utensils],
+              ['cupons', 'Cupons', Ticket],
+              ['pedidos', 'Pedidos', Receipt],
+              ['conta', 'Conta', User],
+            ] as const).map(([tab, label, Icon]) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                aria-current={activeTab === tab ? 'page' : undefined}
+                className={`flex min-h-10 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold transition-colors ${activeTab === tab ? 'bg-white text-brand-600 shadow-sm' : 'text-zinc-500 hover:text-zinc-900'}`}
+              >
+                <Icon size={17} /> {label}
+              </button>
+            ))}
+          </nav>
+        </div>
+      </header>
       
       {/* DYNAMIC VIEWS */}
       {activeTab === 'cardapio' && (
         <div className="animate-in fade-in duration-300">
           {/* HEADER / HERO */}
 
-      <div className="w-full bg-white border-b border-zinc-200 pt-6 pb-4 shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 md:px-6">
-          <div className="flex items-center gap-5">
-            <div className="w-28 h-28 md:w-32 md:h-32 bg-white rounded-full p-0.5 border-2 border-zinc-200 shrink-0 overflow-hidden shadow-md">
-              <img src={config?.logo || "/logo.png"} alt={config?.nome_empresa || "Logo"} className="w-full h-full object-cover rounded-full" />
+      <div className="store-hero w-full border-b border-zinc-200 py-5 sm:py-7">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-4 sm:gap-5">
+            <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-0.5 shadow-sm sm:h-24 sm:w-24">
+              <img src={config?.logo || "/logo.png"} alt={config?.nome_empresa || "Logo"} className="h-full w-full rounded-[14px] object-cover" />
             </div>
             
             <div className="flex-1">
-              <h1 className="text-2xl md:text-3xl font-heading font-black text-zinc-900 uppercase tracking-tight leading-tight">
+              <h1 className="text-xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-2xl md:text-3xl">
                 {config?.nome_empresa || 'Seu Restaurante'}
               </h1>
               
-              <div className="flex items-center gap-2 mt-1.5">
+              <div className="mt-1.5 flex items-center gap-2">
                 {config?.loja_aberta ? (
                   <>
-                    <div className="w-2.5 h-2.5 rounded-full bg-[#22C55E] animate-pulse"></div>
-                    <span className="text-sm font-bold text-[#22C55E]">Aberto</span>
+                    <div className="h-2 w-2 rounded-full bg-emerald-500"></div>
+                    <span className="text-sm font-semibold text-emerald-600">Aberto agora</span>
                   </>
                 ) : (
                   <>
@@ -175,12 +185,12 @@ const PublicMenu = () => {
             </div>
           </div>
           
-          <div className="flex flex-wrap items-center gap-2 mt-4">
-             <div className="bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold border border-emerald-100">
+          <div className="mt-4 flex flex-wrap items-center gap-2 sm:ml-[116px] sm:-mt-8">
+             <div className="flex min-h-9 items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-3 text-xs font-semibold text-emerald-700">
                 <MapPin size={14} />
-                {config?.taxa_entrega === 0 || !config?.taxa_entrega ? 'Grátis' : `( Taxa ${Math.floor(config.taxa_entrega)} Real )`}
+                {config?.taxa_entrega === 0 || !config?.taxa_entrega ? 'Entrega grátis' : `Taxa ${Number(config.taxa_entrega).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`}
              </div>
-             <div className="bg-zinc-100 text-zinc-600 px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold border border-zinc-200">
+             <div className="flex min-h-9 items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-600">
                 <Clock size={14} />
                 {config?.tempo_medio_preparo || 30} min
              </div>
@@ -188,15 +198,15 @@ const PublicMenu = () => {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 md:px-6 relative z-20 mt-4 min-h-[55vh]">
+      <main className="relative z-20 mx-auto mt-3 min-h-[55vh] max-w-6xl px-4 sm:px-6 lg:px-8">
         {/* NAVEGAÇÃO DE CATEGORIAS */}
-        <div className="sticky top-0 z-40 bg-zinc-50/95 backdrop-blur-md pt-2 pb-2 -mx-4 px-4 border-b border-zinc-200 mb-8">
-          <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2 md:flex-wrap md:justify-center">
+        <div className="sticky top-0 z-40 -mx-4 mb-7 border-b border-zinc-200/80 bg-[#f7f7f8]/95 px-4 pb-2 pt-2 backdrop-blur-xl md:top-16 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+          <div className="hide-scrollbar flex gap-2 overflow-x-auto pb-1 md:flex-wrap">
             {categories.map((cat, i) => (
               <button
                 key={i}
                 onClick={() => setActiveCategory(cat)}
-                className={`whitespace-nowrap px-6 py-2.5 rounded-full font-bold text-sm transition-all duration-300 ${
+                className={`min-h-11 whitespace-nowrap rounded-full px-5 py-2.5 text-sm font-semibold transition-all ${
                   activeCategory === cat 
                     ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20' 
                     : 'bg-white border border-zinc-200 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100'
@@ -208,34 +218,29 @@ const PublicMenu = () => {
           </div>
         </div>
 
-        <div className="space-y-12">
+        <div className="space-y-10">
           
           {/* 🔥 PROMOÇÕES DO DIA OU DESTAQUE */}
           {promocoesAtivas.length > 0 ? (
-            <div className="mb-14">
+            <section className="mb-10">
               <div className="flex items-center mb-4">
-                <h2 className="text-xl font-heading font-bold text-zinc-900 flex items-center gap-2 uppercase tracking-wide">
-                  <Flame size={20} className="text-orange-500" /> Promoção do Dia
+                <h2 className="flex items-center gap-2 text-xl font-bold text-zinc-900">
+                  <Flame size={20} className="text-brand-500" /> Promoções para você
                 </h2>
               </div>
-              <div className={`flex ${promocoesAtivas.length > 1 ? 'overflow-x-auto snap-x snap-mandatory hide-scrollbar -mx-4 px-4 md:mx-0 md:px-0' : ''} gap-4 md:gap-6 pb-4`}>
+              <div className={`grid gap-4 ${promocoesAtivas.length > 1 ? 'sm:grid-cols-2' : ''}`}>
                 {promocoesAtivas.map(promocao => (
                   <div 
                     key={promocao.id}
-                    className={`group relative shrink-0 ${promocoesAtivas.length > 1 ? 'w-[85vw] md:w-[600px] snap-center' : 'w-full'} bg-white rounded-3xl overflow-hidden cursor-pointer shadow-2xl border border-orange-500/30 transition-all hover:border-orange-500/60 flex flex-col md:flex-row md:items-center`}
+                    className="group relative flex min-w-0 cursor-pointer flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-lg sm:flex-row sm:items-stretch"
                     onClick={() => setSelectedProduct(promocao)}
                   >
-                    {/* Glows */}
-                    <div className="absolute right-0 top-0 w-64 h-64 bg-orange-500/20 rounded-full blur-[80px] pointer-events-none translate-x-1/2 -translate-y-1/2"></div>
-                    <div className="absolute left-10 bottom-0 w-40 h-40 bg-red-600/10 rounded-full blur-[60px] pointer-events-none"></div>
-
-                    {/* Image - Top on mobile, Right on desktop */}
-                    <div className="relative w-full md:w-1/2 h-[260px] md:h-[300px] flex items-center justify-center md:order-2 overflow-hidden">
+                    <div className="relative flex h-48 w-full items-center justify-center overflow-hidden bg-orange-50 sm:h-auto sm:min-h-56 sm:w-[44%] sm:order-2">
                       {promocao.imagem_url ? (
                         <img 
                           src={promocao.imagem_url} 
                           alt={promocao.nome} 
-                          className="w-[290px] h-[290px] md:w-[280px] md:h-[280px] object-contain transition-transform duration-700 group-hover:scale-110 drop-shadow-[0_20px_40px_rgba(0,0,0,0.8)]" 
+                          className="h-full w-full object-contain p-3 transition-transform duration-500 group-hover:scale-105"
                           referrerPolicy="no-referrer" 
                         />
                       ) : (
@@ -243,17 +248,16 @@ const PublicMenu = () => {
                       )}
                     </div>
 
-                    {/* Content - Bottom on mobile, Left on desktop */}
-                    <div className="relative z-30 w-full md:w-1/2 p-5 md:p-8 flex flex-col md:order-1">
-                      <div className="inline-flex items-center gap-2 bg-orange-500 text-white text-xs md:text-sm font-black px-3.5 py-1.5 rounded-full uppercase tracking-widest mb-3 w-fit shadow-[0_0_20px_rgba(249,115,22,0.6)] animate-pulse border border-orange-400">
-                        <Flame size={16} fill="currentColor" /> OFERTA
+                    <div className="relative z-10 flex w-full flex-1 flex-col p-5 sm:order-1 sm:p-6">
+                      <div className="mb-3 inline-flex w-fit items-center gap-1.5 rounded-full bg-orange-100 px-3 py-1 text-xs font-bold text-orange-700">
+                        <Flame size={14} fill="currentColor" /> Oferta
                       </div>
                       
-                      <h3 className="font-heading font-bold text-zinc-900 text-2xl md:text-3xl lg:text-4xl uppercase tracking-wide mb-2 leading-none drop-shadow-lg">
+                      <h3 className="mb-2 text-xl font-bold leading-tight text-zinc-900 sm:text-2xl">
                         {promocao.nome}
                       </h3>
                       
-                      <p className="text-zinc-500 text-xs md:text-sm leading-snug mb-4 drop-shadow-md font-medium">
+                      <p className="mb-5 line-clamp-3 text-sm leading-relaxed text-zinc-500">
                         {promocao.descricao}
                       </p>
 
@@ -262,13 +266,13 @@ const PublicMenu = () => {
                           <span className="font-price font-bold text-sm text-zinc-500 line-through">
                             {promocao.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                           </span>
-                          <span className="font-price font-bold text-2xl md:text-3xl text-orange-400 drop-shadow-md">
+                          <span className="font-price text-xl font-bold text-brand-600 sm:text-2xl">
                             {promocao.preco_promocao?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                           </span>
                         </div>
                         <button 
                           onClick={(e) => quickAdd(promocao, e)}
-                          className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold shadow-lg transition-all active:scale-95 ${addedProductId === promocao.id ? 'bg-emerald-500 shadow-emerald-500/30 scale-105' : 'bg-orange-500 shadow-orange-500/30 group-hover:scale-105'}`}
+                          className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-all active:scale-95 ${addedProductId === promocao.id ? 'bg-emerald-500' : 'bg-brand-500 hover:bg-brand-600'}`}
                         >
                           {addedProductId === promocao.id ? <><Check size={16} /> Adicionado!</> : <><Plus size={16} /> Pedir</>}
                         </button>
@@ -277,30 +281,25 @@ const PublicMenu = () => {
                   </div>
                 ))}
               </div>
-            </div>
+            </section>
           ) : destaqueDoDia && (
-            <div className="mb-14">
+            <section className="mb-10">
               <div className="flex items-center mb-4">
-                <h2 className="text-xl font-heading font-bold text-zinc-900 flex items-center gap-2 uppercase tracking-wide">
-                  <Flame size={20} className="text-brand-500" /> Destaque do Dia
+                <h2 className="flex items-center gap-2 text-xl font-bold text-zinc-900">
+                  <Flame size={20} className="text-brand-500" /> Destaque do dia
                 </h2>
               </div>
               
               <div 
-                className="group relative w-full bg-white rounded-3xl overflow-hidden cursor-pointer shadow-2xl border border-brand-500/20 transition-all hover:border-brand-500/50 flex flex-col md:flex-row md:items-center mt-4"
+                className="group relative mt-4 flex w-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-lg sm:flex-row sm:items-stretch"
                 onClick={() => setSelectedProduct(destaqueDoDia)}
               >
-                {/* Glows */}
-                <div className="absolute right-0 top-0 w-64 h-64 bg-brand-500/20 rounded-full blur-[80px] pointer-events-none translate-x-1/2 -translate-y-1/2"></div>
-                <div className="absolute left-10 bottom-0 w-40 h-40 bg-orange-600/10 rounded-full blur-[60px] pointer-events-none"></div>
-
-                {/* Image - Top on mobile, Right on desktop */}
-                <div className="relative w-full md:w-1/2 h-[260px] md:h-[300px] flex items-center justify-center md:order-2 overflow-hidden">
+                <div className="relative flex h-52 w-full items-center justify-center overflow-hidden bg-orange-50 sm:h-auto sm:min-h-64 sm:w-[45%] sm:order-2">
                   {destaqueDoDia.imagem_url ? (
                     <img 
                       src={destaqueDoDia.imagem_url} 
                       alt={destaqueDoDia.nome} 
-                      className="w-[290px] h-[290px] md:w-[280px] md:h-[280px] object-contain transition-transform duration-700 group-hover:scale-110 drop-shadow-[0_20px_40px_rgba(0,0,0,0.8)]" 
+                      className="h-full w-full object-contain p-4 transition-transform duration-500 group-hover:scale-105"
                       referrerPolicy="no-referrer" 
                     />
                   ) : (
@@ -308,56 +307,55 @@ const PublicMenu = () => {
                   )}
                 </div>
 
-                {/* Content - Bottom on mobile, Left on desktop */}
-                <div className="relative z-30 w-full md:w-1/2 p-5 md:p-8 flex flex-col md:order-1">
-                  <div className="inline-flex items-center gap-1.5 bg-brand-500 text-white text-[10px] md:text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider mb-2 w-fit shadow-[0_0_15px_rgba(249,115,22,0.5)]">
-                    <Flame size={12} fill="currentColor" /> Especial
+                <div className="relative z-10 flex w-full flex-1 flex-col p-5 sm:order-1 sm:p-7">
+                  <div className="mb-3 inline-flex w-fit items-center gap-1.5 rounded-full bg-orange-100 px-3 py-1 text-xs font-bold text-orange-700">
+                    <Flame size={13} fill="currentColor" /> Especial
                   </div>
                   
-                  <h3 className="font-heading font-bold text-zinc-900 text-2xl md:text-5xl uppercase tracking-wide mb-2 leading-none drop-shadow-lg">
+                  <h3 className="mb-2 text-2xl font-bold leading-tight text-zinc-900 sm:text-3xl">
                     {destaqueDoDia.nome}
                   </h3>
                   
-                  <p className="text-zinc-500 text-xs md:text-sm leading-snug mb-4 drop-shadow-md font-medium">
-                    {destaqueDoDia.descricao || "Pão brioche, blend artesanal, cheddar, bacon crocante, alface, tomate e molho da casa."}
+                  <p className="mb-5 text-sm leading-relaxed text-zinc-500">
+                    {destaqueDoDia.descricao || "Uma escolha especial do cardápio para o seu pedido de hoje."}
                   </p>
 
                   <div className="flex items-center gap-4 mt-auto">
-                    <span className="font-price font-bold text-2xl md:text-3xl text-brand-400 drop-shadow-md">
+                    <span className="font-price text-xl font-bold text-brand-600 sm:text-2xl">
                       {destaqueDoDia.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </span>
                     <button 
                       onClick={(e) => quickAdd(destaqueDoDia, e)}
-                      className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold shadow-lg transition-all active:scale-95 ${addedProductId === destaqueDoDia.id ? 'bg-emerald-500 shadow-emerald-500/30 scale-105' : 'bg-brand-500 shadow-brand-500/30 group-hover:scale-105'}`}
+                      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-all active:scale-95 ${addedProductId === destaqueDoDia.id ? 'bg-emerald-500' : 'bg-brand-500 hover:bg-brand-600'}`}
                     >
                       {addedProductId === destaqueDoDia.id ? <><Check size={16} /> Adicionado!</> : <><Plus size={16} /> Pedir</>}
                     </button>
                   </div>
                 </div>
               </div>
-            </div>
+            </section>
           )}
 
           {/* LISTAGEM DE PRODUTOS POR CATEGORIA */}
           {Object.entries(groupedProducts).map(([categoria, items]: [string, any]) => (
-            <div key={categoria} className="pt-2">
+            <section key={categoria} className="pt-1">
               <div className="flex items-center mb-4">
-                <h2 className="text-lg md:text-xl font-heading font-bold text-zinc-900 uppercase tracking-wide flex items-center gap-2">
-                  <div className="text-brand-500 border border-brand-500/30 p-1.5 rounded-lg bg-brand-500/10">
+                <h2 className="flex items-center gap-2 text-xl font-bold text-zinc-900">
+                  <div className="rounded-lg bg-brand-50 p-1.5 text-brand-600 ring-1 ring-brand-100">
                     <Utensils size={18} />
                   </div>
                   {categoria}
                 </h2>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {items.map((produto: any) => (
                   <div 
                     key={produto.id} 
-                    className="group bg-white flex gap-4 transition-all cursor-pointer border-b border-zinc-100 py-4 last:border-b-0"
+                    className="group flex min-h-32 cursor-pointer gap-3 rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md sm:min-h-36"
                     onClick={() => setSelectedProduct(produto)}
                   >
-                    <div className="w-[100px] h-[100px] bg-zinc-100 rounded-xl overflow-hidden shrink-0 relative flex items-center justify-center">
+                    <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-zinc-100 sm:h-28 sm:w-24 lg:w-28">
                        {produto.imagem_url ? (
                          <img 
                            src={produto.imagem_url} 
@@ -372,10 +370,10 @@ const PublicMenu = () => {
 
                     <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
                       <div>
-                        <h3 className="font-sans font-bold text-zinc-900 text-[15px] tracking-tight leading-tight">
+                        <h3 className="font-sans text-[15px] font-bold leading-snug tracking-tight text-zinc-900">
                           {produto.nome}
                         </h3>
-                        <p className="text-zinc-400 text-[12px] mt-1 leading-snug line-clamp-2">
+                        <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-zinc-500">
                           {produto.descricao || ''}
                         </p>
                       </div>
@@ -386,7 +384,7 @@ const PublicMenu = () => {
                               <span className="font-price text-[11px] text-zinc-400 line-through leading-none mb-0.5">
                                 {produto.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                               </span>
-                              <span className="font-price font-bold text-[16px] text-brand-400 tracking-wide leading-none">
+                              <span className="font-price text-[16px] font-bold leading-none tracking-wide text-brand-600">
                                 {produto.preco_promocao.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                               </span>
                             </>
@@ -398,7 +396,8 @@ const PublicMenu = () => {
                         </div>
                         <button 
                           onClick={(e) => quickAdd(produto, e)}
-                          className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 ${addedProductId === produto.id ? 'bg-emerald-500 text-white scale-110' : 'bg-brand-500 text-white hover:bg-brand-400 active:scale-90'}`}
+                          aria-label={`Adicionar ${produto.nome} ao carrinho`}
+                          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-all duration-300 ${addedProductId === produto.id ? 'scale-105 bg-emerald-500 text-white' : 'bg-brand-500 text-white hover:bg-brand-600 active:scale-95'}`}
                         >
                           {addedProductId === produto.id ? <Check size={18} /> : <Plus size={18} />}
                         </button>
@@ -407,7 +406,7 @@ const PublicMenu = () => {
                   </div>
                 ))}
               </div>
-            </div>
+            </section>
           ))}
 
           {Object.keys(groupedProducts).length === 0 && (
@@ -422,10 +421,10 @@ const PublicMenu = () => {
             </div>
           )}
         </div>
-      </div>
+      </main>
 
       {/* AVISO IMPORTANTE */}
-      <div className="max-w-4xl mx-auto px-4 md:px-6 mt-8">
+      <div className="mx-auto mt-10 max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="bg-white border border-zinc-200 rounded-2xl p-5 text-center flex flex-col items-center shadow-sm">
           <span className="bg-amber-100 text-amber-700 text-[10px] font-bold px-2.5 py-1 rounded-full mb-3 uppercase tracking-widest">
             Aviso Importante
@@ -438,14 +437,18 @@ const PublicMenu = () => {
 
       {/* RODAPÉ */}
       <footer className="mt-8 pb-6">
-        <div className="max-w-4xl mx-auto px-6 flex flex-col items-center text-center opacity-70">
-          <h4 className="font-heading text-lg font-bold text-zinc-400 uppercase tracking-widest mb-1.5">{config?.nome_empresa || 'Seu Restaurante'}</h4>
+        <div className="mx-auto flex max-w-6xl flex-col items-center px-6 text-center opacity-80">
+          <h4 className="mb-1.5 text-base font-semibold text-zinc-500">{config?.nome_empresa || 'Seu Restaurante'}</h4>
           {config?.endereco && (
             <p className="text-zinc-400 text-xs flex items-center justify-center gap-1.5 font-medium">
               <MapPin size={12} />
               {config.endereco}
             </p>
           )}
+          <div className="mt-3 flex items-center gap-1.5 text-[11px] text-zinc-400">
+            <img src="/brand/ritmesa-mark.png" alt="" className="w-4 h-4 object-contain" />
+            Pedidos com tecnologia <strong className="text-zinc-500">Ritmesa</strong>
+          </div>
         </div>
       </footer>
 
@@ -453,9 +456,11 @@ const PublicMenu = () => {
         </div>
       )}
 
-      {activeTab === 'cupons' && <CuponsView />}
-      {activeTab === 'pedidos' && <PedidosView />}
-      {activeTab === 'conta' && <ContaView />}
+      <div className="mx-auto w-full max-w-6xl">
+        {activeTab === 'cupons' && <CuponsView />}
+        {activeTab === 'pedidos' && <PedidosView />}
+        {activeTab === 'conta' && <ContaView />}
+      </div>
 
       {/* MODALS & FLOATING CART */}
 
