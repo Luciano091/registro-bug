@@ -40,6 +40,12 @@ a {
     linear-gradient(135deg, #ffffff 0%, #fffaf5 100%);
 }
 
+.landing-hero {
+  background:
+    radial-gradient(circle at 80% 18%, rgba(249, 115, 22, 0.16), transparent 28%),
+    linear-gradient(135deg, #ffffff 0%, #fffaf5 100%);
+}
+
 /* Scrollbar styles - Ultra minimal */
 ::-webkit-scrollbar {
   width: 6px;

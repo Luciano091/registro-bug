@@ -65,7 +65,7 @@ cloudinary.config(
     api_secret=os.getenv("CLOUDINARY_API_SECRET")
 )
 
-app = FastAPI(title="BisBurger API")
+app = FastAPI(title="Ritmesa API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -193,6 +193,74 @@ last_google_auth_error = "Nenhum erro ainda"
 @app.get("/auth/google/debug")
 def debug_google_auth():
     return {"error": last_google_auth_error}
+
+# --- Administração da plataforma Ritmesa ---
+@app.post("/platform/auth/login")
+def platform_login(login_req: schemas.PlatformLoginRequest):
+    if not auth.authenticate_platform_admin(login_req.email, login_req.senha):
+        raise HTTPException(status_code=401, detail="E-mail ou senha inválidos.")
+    token = auth.create_access_token(
+        data={"sub": login_req.email.strip().lower(), "role": "platform_admin"},
+        expires_delta=timedelta(hours=12),
+    )
+    return {"token": token, "admin": {"email": login_req.email.strip().lower(), "nome": "Administração Ritmesa"}}
+
+@app.get("/platform/resumo")
+def platform_summary(db: Session = Depends(get_db), _: dict = Depends(auth.get_current_platform_admin)):
+    estabelecimentos = crud.get_estabelecimentos(db)
+    leads = crud.get_leads(db)
+    return {
+        "estabelecimentos": len(estabelecimentos),
+        "ativos": sum(1 for item in estabelecimentos if item.status == "ativo"),
+        "em_teste": sum(1 for item in estabelecimentos if item.status == "trial"),
+        "bloqueados": sum(1 for item in estabelecimentos if item.status in ("bloqueado", "cancelado")),
+        "leads_novos": sum(1 for lead in leads if lead.status == "novo"),
+        "pedidos_processados": db.query(models.Pedido).count(),
+    }
+
+@app.get("/platform/estabelecimentos", response_model=List[schemas.Estabelecimento])
+def platform_establishments(db: Session = Depends(get_db), _: dict = Depends(auth.get_current_platform_admin)):
+    return crud.get_estabelecimentos(db)
+
+@app.post("/platform/estabelecimentos", response_model=schemas.Estabelecimento)
+def platform_create_establishment(payload: schemas.EstabelecimentoCreate, db: Session = Depends(get_db), _: dict = Depends(auth.get_current_platform_admin)):
+    import re
+    payload.slug = re.sub(r"[^a-z0-9-]", "", payload.slug.strip().lower().replace(" ", "-"))
+    if not payload.slug:
+        raise HTTPException(status_code=400, detail="Informe um endereço válido para o cardápio.")
+    try:
+        return crud.create_estabelecimento(db, payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+
+@app.put("/platform/estabelecimentos/{estabelecimento_id}", response_model=schemas.Estabelecimento)
+def platform_update_establishment(estabelecimento_id: int, payload: schemas.EstabelecimentoUpdate, db: Session = Depends(get_db), _: dict = Depends(auth.get_current_platform_admin)):
+    if payload.slug is not None:
+        import re
+        payload.slug = re.sub(r"[^a-z0-9-]", "", payload.slug.strip().lower().replace(" ", "-"))
+    try:
+        item = crud.update_estabelecimento(db, estabelecimento_id, payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    if not item:
+        raise HTTPException(status_code=404, detail="Estabelecimento não encontrado.")
+    return item
+
+@app.post("/comercial/interesse", response_model=schemas.LeadComercial)
+def public_commercial_lead(payload: schemas.LeadComercialCreate, db: Session = Depends(get_db)):
+    return crud.create_lead(db, payload)
+
+@app.get("/platform/leads", response_model=List[schemas.LeadComercial])
+def platform_leads(db: Session = Depends(get_db), _: dict = Depends(auth.get_current_platform_admin)):
+    return crud.get_leads(db)
+
+@app.put("/platform/leads/{lead_id}", response_model=schemas.LeadComercial)
+def platform_update_lead(lead_id: int, payload: schemas.LeadComercialUpdate, db: Session = Depends(get_db), _: dict = Depends(auth.get_current_platform_admin)):
+    lead = crud.update_lead(db, lead_id, payload)
+    if not lead:
+        raise HTTPException(status_code=404, detail="Contato não encontrado.")
+    return lead
+
 @app.post("/pedidos", response_model=schemas.Pedido)
 def create_pedido(pedido: schemas.PedidoCreate, db: Session = Depends(get_db), cliente_id: Optional[str] = Depends(auth.get_current_cliente_optional)):
     if cliente_id:

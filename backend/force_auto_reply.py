@@ -5,7 +5,7 @@ import models
 import whatsapp_api
 import datetime
 
-DEFAULT_DB_URL = "postgresql://neondb_owner:npg_PJaA6coCD2QY@ep-little-tree-ac1havuv-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require"
+DEFAULT_DB_URL = os.environ["DATABASE_URL"]
 engine = create_engine(DEFAULT_DB_URL)
 SessionLocal = sessionmaker(bind=engine)
 db = SessionLocal()
@@ -67,3 +67,4 @@ async def run():
 
 asyncio.run(run())
 db.close()
+import os

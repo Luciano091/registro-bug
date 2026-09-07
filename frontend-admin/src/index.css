@@ -113,6 +113,7 @@
   .product-tile:hover { background-color: #ffffff; border-color: #fdba74; box-shadow: 0 8px 24px rgba(15,23,42,.07); }
   .order-workspace > .glass-card { border-top: 2px solid #f9731670; }
   .login-screen { background: radial-gradient(circle at 80% 0%, rgba(249,115,22,.13), transparent 30%), linear-gradient(135deg,#f8fafc,#eef2f7); }
+  .platform-login { background: radial-gradient(circle at 50% 0%, rgba(249,115,22,.14), transparent 28%), linear-gradient(135deg,#f8fafc,#eef2f7); }
   .login-panel { max-width: 420px; }
   .login-brand { display: flex; align-items: center; gap: 11px; color: #172033; }
   .login-brand strong, .login-brand span { display: block; }

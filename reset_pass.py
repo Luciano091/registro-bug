@@ -7,12 +7,13 @@ sys.path.append(os.path.abspath('backend'))
 from sqlalchemy import create_engine, text
 from backend.auth import get_password_hash
 
-DB_URL = "postgresql://neondb_owner:npg_PJaA6coCD2QY@ep-little-tree-ac1havuv-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require"
+DB_URL = os.environ["DATABASE_URL"]
 engine = create_engine(DB_URL)
 
-new_hash = get_password_hash("burger123")
+new_password = os.environ["NEW_ADMIN_PASSWORD"]
+new_hash = get_password_hash(new_password)
 
 with engine.begin() as conn:
     conn.execute(text("UPDATE configuracoes SET senha_admin = :hash WHERE id = 1"), {"hash": new_hash})
 
-print(f"Senha Admin resetada para 'burger123'. Novo hash: {new_hash}")
+print("Senha administrativa atualizada com sucesso.")

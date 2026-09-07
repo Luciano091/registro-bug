@@ -1,4 +1,5 @@
 import os
+import hmac
 from datetime import datetime, timedelta
 from typing import Optional
 import jwt
@@ -63,6 +64,32 @@ def get_current_admin(token: str = Depends(oauth2_scheme), db: Session = Depends
         raise credentials_exception
         
     return True
+
+def authenticate_platform_admin(email: str, password: str) -> bool:
+    is_production = os.getenv("ENVIRONMENT", "development").lower() == "production"
+    configured_email = os.getenv("RITMESA_ADMIN_EMAIL")
+    configured_password = os.getenv("RITMESA_ADMIN_PASSWORD")
+    if is_production and (not configured_email or not configured_password):
+        return False
+    expected_email = configured_email or "admin@ritmesa.com.br"
+    expected_password = configured_password or "ritmesa-dev"
+    return hmac.compare_digest(email.strip().lower(), expected_email.strip().lower()) and hmac.compare_digest(password, expected_password)
+
+def get_current_platform_admin(token: str = Depends(oauth2_scheme)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Acesso exclusivo da administração Ritmesa.",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    if not token:
+        raise credentials_exception
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("role") != "platform_admin":
+            raise credentials_exception
+        return payload
+    except jwt.PyJWTError:
+        raise credentials_exception
 
 def get_current_cliente_optional(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     if not token:

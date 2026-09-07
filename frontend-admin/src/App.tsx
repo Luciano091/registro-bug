@@ -9,6 +9,8 @@ import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import CashFlow from './pages/CashFlow';
 import Insumos from './pages/Insumos';
+import PlatformLogin from './pages/PlatformLogin';
+import PlatformDashboard from './pages/PlatformDashboard';
 
 import Login from './pages/Login';
 import { Navigate } from 'react-router-dom';
@@ -76,13 +78,23 @@ function AppContent() {
   const [estabelecimento, setEstabelecimento] = useState<{ nome_empresa?: string; logo?: string }>({});
   const location = useLocation();
   const isLoginRoute = location.pathname === '/login';
+  const isPlatformRoute = location.pathname.startsWith('/ritmesa-admin');
 
   useEffect(() => {
-    if (isLoginRoute || !localStorage.getItem('adminToken')) return;
+    if (isLoginRoute || isPlatformRoute || !localStorage.getItem('adminToken')) return;
     api.get('/configuracao')
       .then(({ data }) => setEstabelecimento(data || {}))
       .catch(() => setEstabelecimento({}));
-  }, [isLoginRoute]);
+  }, [isLoginRoute, isPlatformRoute]);
+
+  if (isPlatformRoute) {
+    return (
+      <Routes>
+        <Route path="/ritmesa-admin/login" element={<PlatformLogin />} />
+        <Route path="/ritmesa-admin" element={<PlatformDashboard />} />
+      </Routes>
+    );
+  }
   
   if (isLoginRoute) {
     return (

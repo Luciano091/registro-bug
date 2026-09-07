@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from models import WhatsAppContato, WhatsAppMensagem
 
-DEFAULT_DB_URL = "postgresql://neondb_owner:npg_PJaA6coCD2QY@ep-little-tree-ac1havuv-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require"
+DEFAULT_DB_URL = os.environ["DATABASE_URL"]
 engine = create_engine(DEFAULT_DB_URL)
 SessionLocal = sessionmaker(bind=engine)
 
@@ -37,3 +37,4 @@ def simulate_message():
 
 if __name__ == "__main__":
     simulate_message()
+import os

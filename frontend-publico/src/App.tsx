@@ -3,6 +3,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { NetworkProvider } from './contexts/NetworkContext';
 import { CartProvider } from './contexts/CartContext';
 import PublicMenu from './pages/PublicMenu';
+import LandingPage from './pages/LandingPage';
 
 function App() {
   return (
@@ -12,7 +13,7 @@ function App() {
           <Router>
             <div className="min-h-screen flex flex-col bg-zinc-50">
               <Routes>
-                <Route path="/" element={<PublicMenu />} />
+                <Route path="/" element={<LandingPage />} />
                 <Route path="/:estabelecimento" element={<PublicMenu />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>

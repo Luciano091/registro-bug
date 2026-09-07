@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, DateTime, Text
 from sqlalchemy.orm import relationship
 import datetime
 
@@ -6,6 +6,35 @@ def get_now():
     return datetime.datetime.utcnow() - datetime.timedelta(hours=3)
 
 from database import Base
+
+class Estabelecimento(Base):
+    __tablename__ = "estabelecimentos"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nome = Column(String, nullable=False, index=True)
+    slug = Column(String, unique=True, nullable=False, index=True)
+    email = Column(String, nullable=True, index=True)
+    telefone = Column(String, nullable=True)
+    documento = Column(String, nullable=True)
+    logo = Column(Text, nullable=True)
+    plano = Column(String, default="Essencial")
+    status = Column(String, default="trial", index=True)
+    data_cadastro = Column(DateTime, default=get_now)
+    trial_ate = Column(DateTime, nullable=True)
+    configuracao_id = Column(Integer, ForeignKey("configuracoes.id"), nullable=True, unique=True)
+
+class LeadComercial(Base):
+    __tablename__ = "leads_comerciais"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nome = Column(String, nullable=False)
+    estabelecimento = Column(String, nullable=False)
+    email = Column(String, nullable=True)
+    telefone = Column(String, nullable=False)
+    cidade = Column(String, nullable=True)
+    mensagem = Column(Text, nullable=True)
+    status = Column(String, default="novo", index=True)
+    data_cadastro = Column(DateTime, default=get_now)
 
 class Cliente(Base):
     __tablename__ = "clientes"

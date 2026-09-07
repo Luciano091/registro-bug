@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import models
 
-DEFAULT_DB_URL = "postgresql://neondb_owner:npg_PJaA6coCD2QY@ep-little-tree-ac1havuv-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require"
+DEFAULT_DB_URL = os.environ["DATABASE_URL"]
 engine = create_engine(DEFAULT_DB_URL)
 SessionLocal = sessionmaker(bind=engine)
 db = SessionLocal()
@@ -23,3 +23,4 @@ if contato:
             print("NO REPLY! < 2 hours")
 
 db.close()
+import os

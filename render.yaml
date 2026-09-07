@@ -1,9 +1,17 @@
 services:
   - type: web
-    name: burger-house-backend
+    name: ritmesa-api
     env: python
     buildCommand: "pip install -r backend/requirements.txt"
     startCommand: "cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT"
     envVars:
       - key: DATABASE_URL
-        value: postgresql://neondb_owner:npg_PJaA6coCD2QY@ep-little-tree-ac1havuv-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require
+        sync: false
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: RITMESA_ADMIN_EMAIL
+        sync: false
+      - key: RITMESA_ADMIN_PASSWORD
+        sync: false
+      - key: ENVIRONMENT
+        value: production

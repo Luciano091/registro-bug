@@ -111,6 +111,60 @@ class ConfiguracaoCreate(ConfiguracaoBase):
 class LoginRequest(BaseModel):
     senha: str
 
+class PlatformLoginRequest(BaseModel):
+    email: str
+    senha: str
+
+class EstabelecimentoBase(BaseModel):
+    nome: str
+    slug: str
+    email: Optional[str] = None
+    telefone: Optional[str] = None
+    documento: Optional[str] = None
+    logo: Optional[str] = None
+    plano: str = "Essencial"
+    status: str = "trial"
+    trial_ate: Optional[datetime] = None
+
+class EstabelecimentoCreate(EstabelecimentoBase):
+    pass
+
+class EstabelecimentoUpdate(BaseModel):
+    nome: Optional[str] = None
+    slug: Optional[str] = None
+    email: Optional[str] = None
+    telefone: Optional[str] = None
+    documento: Optional[str] = None
+    logo: Optional[str] = None
+    plano: Optional[str] = None
+    status: Optional[str] = None
+    trial_ate: Optional[datetime] = None
+
+class Estabelecimento(EstabelecimentoBase):
+    id: int
+    data_cadastro: datetime
+    configuracao_id: Optional[int] = None
+    class Config:
+        from_attributes = True
+
+class LeadComercialCreate(BaseModel):
+    nome: str
+    estabelecimento: str
+    telefone: str
+    email: Optional[str] = None
+    cidade: Optional[str] = None
+    mensagem: Optional[str] = None
+
+class LeadComercialUpdate(BaseModel):
+    status: str
+
+class LeadComercial(LeadComercialCreate):
+    id: int
+    status: str
+    data_cadastro: datetime
+    class Config:
+        from_attributes = True
+
 class Configuracao(ConfiguracaoBase):
     id: int
     loja_aberta: Optional[bool] = False

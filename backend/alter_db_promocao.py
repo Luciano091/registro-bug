@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
-DEFAULT_DB_URL = "postgresql://neondb_owner:npg_PJaA6coCD2QY@ep-little-tree-ac1havuv-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require"
+DEFAULT_DB_URL = os.environ["DATABASE_URL"]
 engine = create_engine(DEFAULT_DB_URL)
 with engine.connect() as conn:
     try:
@@ -18,3 +18,4 @@ with engine.connect() as conn:
     
     conn.commit()
 print("Done altering DB")
+import os

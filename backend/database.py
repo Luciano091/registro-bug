@@ -6,8 +6,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Use the Neon string provided by the user as fallback for local dev
-DEFAULT_DB_URL = "postgresql://neondb_owner:npg_PJaA6coCD2QY@ep-little-tree-ac1havuv-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require"
+# Banco local seguro para desenvolvimento; produção deve informar DATABASE_URL.
+DEFAULT_DB_URL = "sqlite:///./banco.db"
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", DEFAULT_DB_URL)
 
 # For SQLite we need check_same_thread, for Postgres we don't

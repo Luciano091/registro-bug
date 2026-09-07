@@ -276,3 +276,71 @@ def update_ficha_tecnica(db: Session, produto_id: int, itens: list[schemas.Produ
         
     db.commit()
     return get_ficha_tecnica(db, produto_id)
+
+# --- Administração da plataforma Ritmesa ---
+def ensure_initial_establishment(db: Session):
+    if db.query(models.Estabelecimento).count() > 0:
+        return
+    config = get_configuracao(db)
+    estabelecimento = models.Estabelecimento(
+        nome=config.nome_empresa or "BisBurger",
+        slug="bisburger",
+        telefone=config.telefone,
+        logo=config.logo,
+        plano="Profissional",
+        status="ativo",
+        configuracao_id=config.id,
+    )
+    db.add(estabelecimento)
+    db.commit()
+
+def get_estabelecimentos(db: Session):
+    ensure_initial_establishment(db)
+    return db.query(models.Estabelecimento).order_by(models.Estabelecimento.data_cadastro.desc()).all()
+
+def create_estabelecimento(db: Session, payload: schemas.EstabelecimentoCreate):
+    existente = db.query(models.Estabelecimento).filter(models.Estabelecimento.slug == payload.slug).first()
+    if existente:
+        raise ValueError("Este endereço de cardápio já está em uso.")
+    estabelecimento = models.Estabelecimento(**payload.model_dump())
+    db.add(estabelecimento)
+    db.commit()
+    db.refresh(estabelecimento)
+    return estabelecimento
+
+def update_estabelecimento(db: Session, estabelecimento_id: int, payload: schemas.EstabelecimentoUpdate):
+    estabelecimento = db.query(models.Estabelecimento).filter(models.Estabelecimento.id == estabelecimento_id).first()
+    if not estabelecimento:
+        return None
+    values = payload.model_dump(exclude_unset=True)
+    if "slug" in values:
+        duplicado = db.query(models.Estabelecimento).filter(
+            models.Estabelecimento.slug == values["slug"],
+            models.Estabelecimento.id != estabelecimento_id,
+        ).first()
+        if duplicado:
+            raise ValueError("Este endereço de cardápio já está em uso.")
+    for key, value in values.items():
+        setattr(estabelecimento, key, value)
+    db.commit()
+    db.refresh(estabelecimento)
+    return estabelecimento
+
+def create_lead(db: Session, payload: schemas.LeadComercialCreate):
+    lead = models.LeadComercial(**payload.model_dump())
+    db.add(lead)
+    db.commit()
+    db.refresh(lead)
+    return lead
+
+def get_leads(db: Session):
+    return db.query(models.LeadComercial).order_by(models.LeadComercial.data_cadastro.desc()).all()
+
+def update_lead(db: Session, lead_id: int, payload: schemas.LeadComercialUpdate):
+    lead = db.query(models.LeadComercial).filter(models.LeadComercial.id == lead_id).first()
+    if not lead:
+        return None
+    lead.status = payload.status
+    db.commit()
+    db.refresh(lead)
+    return lead
