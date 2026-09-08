@@ -7,7 +7,7 @@ type Establishment = {
   id: number; nome: string; slug: string; email?: string; telefone?: string; documento?: string;
   logo?: string; plano: string; status: string; data_cadastro: string; trial_ate?: string;
 };
-type Lead = { id: number; nome: string; estabelecimento: string; telefone: string; email?: string; cidade?: string; status: string; data_cadastro: string };
+type Lead = { id: number; nome: string; estabelecimento: string; telefone: string; email?: string; cidade?: string; mensagem?: string; status: string; data_cadastro: string };
 type Summary = { estabelecimentos: number; ativos: number; em_teste: number; bloqueados: number; leads_novos: number; pedidos_processados: number };
 
 const emptyForm = { nome: '', slug: '', email: '', telefone: '', documento: '', senha_inicial: '', plano: 'Essencial', status: 'trial', trial_ate: '' };
