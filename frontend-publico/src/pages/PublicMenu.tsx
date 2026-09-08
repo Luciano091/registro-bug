@@ -455,6 +455,14 @@ const PublicMenu = () => {
             <img src="/brand/ritmesa-mark.png" alt="" className="w-4 h-4 object-contain" />
             Pedidos com tecnologia <strong className="text-zinc-500">Ritmesa</strong>
           </div>
+          {getEstablishmentSlug() === 'bisburger' && (
+            <div className="mt-5">
+              <a href="/app-bisburger.apk" download="BisBurger.apk" className="inline-flex items-center gap-2 rounded-full bg-slate-200 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-300">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                Baixar App BisBurger (APK)
+              </a>
+            </div>
+          )}
         </div>
       </footer>
 
