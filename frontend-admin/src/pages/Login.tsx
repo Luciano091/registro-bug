@@ -26,6 +26,8 @@ const Login = () => {
     } catch (error: any) {
       if (error.response && error.response.status === 401) {
         setErro('Senha incorreta! Tente novamente.');
+      } else if (error.response && error.response.status === 404) {
+        setErro('Endereço do estabelecimento não encontrado ou inativo.');
       } else {
         setErro('Erro de conexão com o servidor. Verifique se a API está online.');
         console.error("Erro no login:", error);
