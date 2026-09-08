@@ -1,0 +1,10 @@
+{
+  "name": "ritmesa-bisburger-android",
+  "private": true,
+  "scripts": {
+    "twa": "bubblewrap"
+  },
+  "devDependencies": {
+    "@bubblewrap/cli": "latest"
+  }
+}

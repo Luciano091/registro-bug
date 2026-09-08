@@ -1,0 +1,12 @@
+node_modules/
+.bubblewrap/
+.gradle/
+.idea/
+app/build/
+build/
+*.apk
+*.aab
+*.keystore
+.keystore-password
+keystore.properties
+local.properties

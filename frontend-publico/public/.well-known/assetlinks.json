@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "br.com.ritmesa.bisburger",
+      "sha256_cert_fingerprints": [
+        "FB:98:46:B0:FE:59:3E:FE:E8:F1:3B:4C:02:8C:1B:25:1E:DC:BE:96:AB:C9:3D:D2:53:EE:C4:30:90:A8:21:9E"
+      ]
+    }
+  }
+]

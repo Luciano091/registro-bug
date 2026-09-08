@@ -1,0 +1,46 @@
+{
+  "packageId": "br.com.ritmesa.bisburger",
+  "host": "bisburger.ritmesa.com.br",
+  "name": "BisBurger",
+  "launcherName": "BisBurger",
+  "display": "standalone",
+  "themeColor": "#f97316",
+  "themeColorDark": "#c2410c",
+  "navigationColor": "#ffffff",
+  "navigationColorDark": "#111827",
+  "navigationDividerColor": "#e5e7eb",
+  "navigationDividerColorDark": "#1f2937",
+  "backgroundColor": "#fff7ed",
+  "enableNotifications": false,
+  "startUrl": "/",
+  "iconUrl": "https://bisburger.ritmesa.com.br/pwa/icon-512.png",
+  "maskableIconUrl": "https://bisburger.ritmesa.com.br/pwa/icon-maskable-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./bisburger-release.keystore",
+    "alias": "bisburger"
+  },
+  "appVersionCode": 1,
+  "appVersion": "1.0.0",
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://bisburger.ritmesa.com.br/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://bisburger.ritmesa.com.br/",
+  "minSdkVersion": 23,
+  "orientation": "portrait-primary",
+  "fingerprints": [
+    {
+      "value": "FB:98:46:B0:FE:59:3E:FE:E8:F1:3B:4C:02:8C:1B:25:1E:DC:BE:96:AB:C9:3D:D2:53:EE:C4:30:90:A8:21:9E"
+    }
+  ],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": []
+}
