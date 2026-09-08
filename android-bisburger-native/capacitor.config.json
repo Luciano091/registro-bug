@@ -1,0 +1,14 @@
+{
+  "appId": "br.com.ritmesa.bisburger",
+  "appName": "BisBurger",
+  "webDir": "www",
+  "server": {
+    "url": "https://bisburger.ritmesa.com.br/",
+    "cleartext": false,
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#080706"
+  }
+}
