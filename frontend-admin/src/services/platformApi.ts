@@ -13,9 +13,9 @@ platformApi.interceptors.request.use((config) => {
 platformApi.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && window.location.pathname !== '/ritmesa-admin/login') {
+    if (error.response?.status === 401 && !window.location.pathname.endsWith('/login')) {
       localStorage.removeItem('platformToken');
-      window.location.href = '/ritmesa-admin/login';
+      window.location.href = window.location.hostname.toLowerCase().startsWith('admin.') ? '/login' : '/ritmesa-admin/login';
     }
     return Promise.reject(error);
   },

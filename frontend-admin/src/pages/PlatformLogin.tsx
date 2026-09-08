@@ -10,6 +10,7 @@ export default function PlatformLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [erro, setErro] = useState('');
   const [loading, setLoading] = useState(false);
+  const dashboardPath = window.location.hostname.toLowerCase().startsWith('admin.') ? '/' : '/ritmesa-admin';
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -18,7 +19,7 @@ export default function PlatformLogin() {
     try {
       const { data } = await platformApi.post('/platform/auth/login', { email, senha });
       localStorage.setItem('platformToken', data.token);
-      navigate('/ritmesa-admin');
+      navigate(dashboardPath);
     } catch (error: any) {
       setErro(error.response?.data?.detail || 'Não foi possível acessar o painel.');
     } finally {

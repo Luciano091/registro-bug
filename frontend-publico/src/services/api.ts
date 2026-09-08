@@ -6,7 +6,7 @@ const api = axios.create({
 });
 
 export const getEstablishmentSlug = () => {
-  const hostname = window.location.hostname;
+  const hostname = window.location.hostname.toLowerCase();
   
   // Localhost or Vercel dev URL fallback - rely on path
   if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('vercel.app')) {
@@ -18,7 +18,7 @@ export const getEstablishmentSlug = () => {
   const parts = hostname.split('.');
   
   // If it's the root domain ritmesa.com.br or www.ritmesa.com.br
-  if (hostname === 'ritmesa.com.br' || hostname === 'www.ritmesa.com.br') {
+  if (['ritmesa.com.br', 'www.ritmesa.com.br', 'admin.ritmesa.com.br', 'painel.ritmesa.com.br'].includes(hostname)) {
     return null; // Signals the app to show the Landing Page
   }
   

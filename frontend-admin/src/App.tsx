@@ -78,20 +78,25 @@ function AppContent() {
   const [estabelecimento, setEstabelecimento] = useState<{ nome_empresa?: string; logo?: string }>({});
   const location = useLocation();
   const isLoginRoute = location.pathname === '/login';
+  const isPlatformHost = window.location.hostname.toLowerCase().startsWith('admin.');
   const isPlatformRoute = location.pathname.startsWith('/ritmesa-admin');
+  const isPlatformArea = isPlatformHost || isPlatformRoute;
 
   useEffect(() => {
-    if (isLoginRoute || isPlatformRoute || !localStorage.getItem('adminToken')) return;
+    if (isLoginRoute || isPlatformArea || !localStorage.getItem('adminToken')) return;
     api.get('/configuracao')
       .then(({ data }) => setEstabelecimento(data || {}))
       .catch(() => setEstabelecimento({}));
-  }, [isLoginRoute, isPlatformRoute]);
+  }, [isLoginRoute, isPlatformArea]);
 
-  if (isPlatformRoute) {
+  if (isPlatformArea) {
     return (
       <Routes>
+        {isPlatformHost && <Route path="/login" element={<PlatformLogin />} />}
+        {isPlatformHost && <Route path="/" element={<PlatformDashboard />} />}
         <Route path="/ritmesa-admin/login" element={<PlatformLogin />} />
         <Route path="/ritmesa-admin" element={<PlatformDashboard />} />
+        <Route path="*" element={<Navigate to={isPlatformHost ? '/' : '/ritmesa-admin'} replace />} />
       </Routes>
     );
   }
