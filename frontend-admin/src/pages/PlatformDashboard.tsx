@@ -129,12 +129,12 @@ export default function PlatformDashboard() {
                 <article key={item.id} className="grid gap-4 p-4 sm:grid-cols-[1fr_auto] sm:items-center sm:p-5">
                   <div className="flex min-w-0 items-center gap-3.5">
                     {item.logo ? <img src={item.logo} alt="" className="h-12 w-12 rounded-xl border border-slate-200 object-cover" /> : <div className="grid h-12 w-12 place-items-center rounded-xl bg-slate-100 text-slate-500"><Store size={21} /></div>}
-                    <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 className="font-bold">{item.nome}</h2><span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ring-1 ${statusStyle(item.status)}`}>{item.status}</span></div><p className="mt-1 truncate text-xs text-slate-500">ritmesa.com.br/{item.slug} · {item.plano}</p></div>
+                    <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 className="font-bold">{item.nome}</h2><span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ring-1 ${statusStyle(item.status)}`}>{item.status}</span></div><p className="mt-1 truncate text-xs text-slate-500">{item.slug}.ritmesa.com.br · {item.plano}</p></div>
                   </div>
                   <div className="flex items-center gap-2">
                     <select value={item.status} onChange={(e) => changeStatus(item, e.target.value)} className="min-h-10 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600"><option value="trial">Em teste</option><option value="ativo">Ativo</option><option value="bloqueado">Bloqueado</option><option value="cancelado">Cancelado</option></select>
                     <a href={`${operationUrl}/login?estabelecimento=${item.slug}`} target="_blank" rel="noreferrer" className="flex h-10 items-center gap-1.5 rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-600 hover:text-brand-600">Painel <ExternalLink size={14} /></a>
-                    <a href={`${publicUrl}/${item.slug}`} target="_blank" rel="noreferrer" className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 text-slate-500 hover:text-brand-600" aria-label="Abrir cardápio"><ExternalLink size={17} /></a>
+                    <a href={`https://${item.slug}.ritmesa.com.br`} target="_blank" rel="noreferrer" className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 text-slate-500 hover:text-brand-600" aria-label="Abrir cardápio"><ExternalLink size={17} /></a>
                   </div>
                 </article>
               ))}
