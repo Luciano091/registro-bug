@@ -23,7 +23,6 @@ export default function PlatformDashboard() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const publicUrl = import.meta.env.VITE_PUBLIC_URL || 'https://ritmesa.com.br';
   const operationUrl = import.meta.env.VITE_OPERATION_URL || 'https://painel.ritmesa.com.br';
   const loginPath = window.location.hostname.toLowerCase().startsWith('admin.') ? '/login' : '/ritmesa-admin/login';
 
