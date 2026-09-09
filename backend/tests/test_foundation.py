@@ -81,6 +81,47 @@ class FoundationTests(unittest.TestCase):
         self.assertEqual(crud.get_pedido_by_public_token(self.db, order.uuid, first.id).id, order.id)
         self.assertIsNone(crud.get_pedido_by_public_token(self.db, order.uuid, second.id))
 
+    def test_required_options_are_validated_and_snapshotted(self):
+        establishment = self.create_establishment("Hamburgueria", "catalogo", "catalogo@teste.com")
+        product = crud.create_produto(self.db, schemas.ProdutoCreate(nome="X-Burger", categoria="Lanches", preco=20), establishment.id)
+        group = crud.save_grupo_opcao(
+            self.db,
+            schemas.GrupoOpcaoCreate(
+                nome="Tamanho", minimo=1, maximo=1, obrigatorio=True,
+                opcoes=[
+                    schemas.OpcaoProdutoCreate(nome="Normal", preco_adicional=0),
+                    schemas.OpcaoProdutoCreate(nome="Grande", preco_adicional=5),
+                ],
+            ),
+            establishment.id,
+        )
+        crud.set_produto_grupos(self.db, product.id, [group.id], establishment.id)
+        base = dict(cliente="Cliente", telefone="82999999999", tipo_entrega="Retirada", forma_pagamento="Pix")
+        with self.assertRaisesRegex(ValueError, "Tamanho"):
+            crud.create_pedido(
+                self.db,
+                schemas.PedidoCreate(**base, itens=[schemas.ItemPedidoCreate(produto_id=product.id, quantidade=1)]),
+                establishment.id,
+            )
+        order = crud.create_pedido(
+            self.db,
+            schemas.PedidoCreate(**base, itens=[schemas.ItemPedidoCreate(
+                produto_id=product.id, quantidade=2, observacao="Sem cebola",
+                opcoes=[schemas.ItemPedidoOpcaoCreate(opcao_id=group.opcoes[1].id)],
+            )]),
+            establishment.id,
+        )
+        self.assertEqual(order.total, 50)
+        self.assertEqual(order.itens[0].produto_nome, "X-Burger")
+        self.assertEqual(order.itens[0].observacao, "Sem cebola")
+        self.assertEqual(order.itens[0].opcoes[0].opcao_nome, "Grande")
+        group.opcoes[1].nome = "Gigante"
+        product.nome = "X-Burger Novo"
+        self.db.commit()
+        self.db.refresh(order)
+        self.assertEqual(order.itens[0].produto_nome, "X-Burger")
+        self.assertEqual(order.itens[0].opcoes[0].opcao_nome, "Grande")
+
 
 if __name__ == "__main__":
     unittest.main()

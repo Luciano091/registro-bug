@@ -48,6 +48,11 @@ const PublicMenu = () => {
       return;
     }
 
+    if (produto.grupos_opcoes?.some((grupo: any) => grupo.ativo && grupo.opcoes?.some((opcao: any) => opcao.ativo))) {
+      setSelectedProduct(produto);
+      return;
+    }
+
     addItem({
       id: crypto.randomUUID(),
       produtoId: produto.id,

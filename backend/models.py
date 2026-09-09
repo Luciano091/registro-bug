@@ -99,6 +99,41 @@ class Produto(Base):
     preco_promocao = Column(Float, nullable=True)
     
     fichas_tecnicas = relationship("ProdutoInsumo", back_populates="produto")
+    grupos_opcoes = relationship("GrupoOpcao", secondary="produto_grupos_opcoes", order_by="ProdutoGrupoOpcao.ordem")
+
+class GrupoOpcao(Base):
+    __tablename__ = "grupos_opcoes"
+    __table_args__ = (UniqueConstraint("estabelecimento_id", "nome", name="uq_grupo_opcao_estabelecimento_nome"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    estabelecimento_id = Column(Integer, ForeignKey("estabelecimentos.id"), nullable=False, index=True)
+    nome = Column(String, nullable=False)
+    minimo = Column(Integer, nullable=False, default=0)
+    maximo = Column(Integer, nullable=False, default=1)
+    obrigatorio = Column(Boolean, nullable=False, default=False)
+    ativo = Column(Boolean, nullable=False, default=True)
+    ordem = Column(Integer, nullable=False, default=0)
+    opcoes = relationship("OpcaoProduto", back_populates="grupo", cascade="all, delete-orphan", order_by="OpcaoProduto.ordem")
+
+class OpcaoProduto(Base):
+    __tablename__ = "opcoes_produto"
+
+    id = Column(Integer, primary_key=True, index=True)
+    grupo_id = Column(Integer, ForeignKey("grupos_opcoes.id", ondelete="CASCADE"), nullable=False, index=True)
+    nome = Column(String, nullable=False)
+    preco_adicional = Column(Float, nullable=False, default=0.0)
+    ativo = Column(Boolean, nullable=False, default=True)
+    ordem = Column(Integer, nullable=False, default=0)
+    grupo = relationship("GrupoOpcao", back_populates="opcoes")
+
+class ProdutoGrupoOpcao(Base):
+    __tablename__ = "produto_grupos_opcoes"
+    __table_args__ = (UniqueConstraint("produto_id", "grupo_id", name="uq_produto_grupo_opcao"),)
+
+    id = Column(Integer, primary_key=True)
+    produto_id = Column(Integer, ForeignKey("produtos.id", ondelete="CASCADE"), nullable=False, index=True)
+    grupo_id = Column(Integer, ForeignKey("grupos_opcoes.id", ondelete="CASCADE"), nullable=False, index=True)
+    ordem = Column(Integer, nullable=False, default=0)
 
 class Pedido(Base):
     __tablename__ = "pedidos"
@@ -133,9 +168,25 @@ class ItemPedido(Base):
     custo_unitario = Column(Float, default=0.0)
     valor_unitario = Column(Float, default=0.0)
     subtotal = Column(Float, default=0.0)
+    produto_nome = Column(String, nullable=True)
+    observacao = Column(Text, nullable=True)
 
     pedido = relationship("Pedido", back_populates="itens")
     produto = relationship("Produto")
+    opcoes = relationship("ItemPedidoOpcao", back_populates="item", cascade="all, delete-orphan")
+
+class ItemPedidoOpcao(Base):
+    __tablename__ = "itens_pedido_opcoes"
+
+    id = Column(Integer, primary_key=True)
+    item_pedido_id = Column(Integer, ForeignKey("itens_pedido.id", ondelete="CASCADE"), nullable=False, index=True)
+    opcao_id = Column(Integer, ForeignKey("opcoes_produto.id", ondelete="SET NULL"), nullable=True)
+    grupo_nome = Column(String, nullable=False)
+    opcao_nome = Column(String, nullable=False)
+    preco_unitario = Column(Float, nullable=False, default=0.0)
+    quantidade = Column(Integer, nullable=False, default=1)
+    subtotal = Column(Float, nullable=False, default=0.0)
+    item = relationship("ItemPedido", back_populates="opcoes")
 
 class Configuracao(Base):
     __tablename__ = "configuracoes"

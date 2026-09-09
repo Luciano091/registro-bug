@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Search, X, Trash2, Package } from 'lucide-react';
+import { Plus, Edit2, Search, X, Trash2, Package, SlidersHorizontal } from 'lucide-react';
 import api from '../services/api';
 import { useAppData } from '../contexts/AppDataContext';
 import FichaTecnicaModal from '../components/FichaTecnicaModal';
+import ProductOptionsModal from '../components/ProductOptionsModal';
 
 const Menu = () => {
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [showFichaModal, setShowFichaModal] = useState<{id: number, nome: string} | null>(null);
+  const [optionsProduct, setOptionsProduct] = useState<any | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [removerFundo, setRemoverFundo] = useState(false);
@@ -16,7 +18,7 @@ const Menu = () => {
   const [activeCategory, setActiveCategory] = useState('Todos');
 
   const { produtos: cachedProdutos, produtosLoaded, refreshProdutos } = useAppData();
-  const produtos = cachedProdutos;
+  const produtos = cachedProdutos.filter((produto: any) => produto.ativo !== false);
 
   useEffect(() => {
     if (!produtosLoaded) refreshProdutos();
@@ -228,6 +230,13 @@ const Menu = () => {
                     )}
                   </div>
                   <div className="flex items-center gap-1 shrink-0 ml-2">
+                    <button
+                      onClick={() => setOptionsProduct(produto)}
+                      className="text-zinc-400 hover:text-white md:opacity-0 group-hover:opacity-100 transition-all bg-dark-900 p-1.5 rounded-lg border border-white/10 hover:border-brand-500/50"
+                      title="Tamanhos, sabores e adicionais"
+                    >
+                      <SlidersHorizontal size={16} />
+                    </button>
                     <button 
                       onClick={() => setShowFichaModal({id: produto.id, nome: produto.nome})}
                       className="text-zinc-400 hover:text-white opacity-0 group-hover:opacity-100 transition-all bg-dark-900 p-1.5 rounded-lg border border-white/10 hover:border-brand-500/50"
@@ -460,6 +469,7 @@ const Menu = () => {
           }} 
         />
       )}
+      {optionsProduct && <ProductOptionsModal product={optionsProduct} onClose={() => setOptionsProduct(null)} onSaved={refreshProdutos} />}
     </div>
   );
 };

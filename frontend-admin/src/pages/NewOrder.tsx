@@ -6,6 +6,7 @@ import { useNetwork } from '../contexts/NetworkContext';
 import { useAppData } from '../contexts/AppDataContext';
 import { saveOfflineOrder } from '../services/db';
 import { v4 as uuidv4 } from 'uuid';
+import OrderProductOptionsModal from '../components/OrderProductOptionsModal';
 
 const NewOrder = () => {
   const { isOnline } = useNetwork();
@@ -19,7 +20,8 @@ const NewOrder = () => {
   const [tipoEntrega, setTipoEntrega] = useState('Delivery');
   const [formaPagamento, setFormaPagamento] = useState('PIX');
   
-  const [itens, setItens] = useState<{ id: number, produto: any, quantidade: number }[]>([]);
+  const [itens, setItens] = useState<{ id: number, produto: any, quantidade: number, opcoes: any[], precoUnitario: number }[]>([]);
+  const [optionsProduct, setOptionsProduct] = useState<any | null>(null);
   const produtosDisponiveveis = produtosCache;
   
   const [activeCategory, setActiveCategory] = useState('Todos');
@@ -32,6 +34,10 @@ const NewOrder = () => {
   }, [produtosLoaded, refreshProdutos]);
 
   const handleAddProduct = (produto: any) => {
+    if ((produto.grupos_opcoes || []).some((group: any) => group.ativo)) {
+      setOptionsProduct(produto);
+      return;
+    }
     const existing = itens.find(i => i.produto.id === produto.id);
     const requestedQtd = existing ? existing.quantidade + 1 : 1;
     
@@ -43,17 +49,26 @@ const NewOrder = () => {
     if (existing) {
       setItens(itens.map(i => i.produto.id === produto.id ? { ...i, quantidade: requestedQtd } : i));
     } else {
-      setItens([...itens, { id: Date.now(), produto, quantidade: 1 }]);
+      const preco = produto.is_promocao && produto.preco_promocao ? produto.preco_promocao : produto.preco;
+      setItens([...itens, { id: Date.now(), produto, quantidade: 1, opcoes: [], precoUnitario: preco }]);
     }
   };
 
+  const addConfiguredProduct = (opcoes: any[]) => {
+    const produto = optionsProduct;
+    const base = produto.is_promocao && produto.preco_promocao ? produto.preco_promocao : produto.preco;
+    const extras = opcoes.reduce((sum, option) => sum + option.preco * option.quantidade, 0);
+    setItens(current => [...current, { id: Date.now(), produto, quantidade: 1, opcoes, precoUnitario: base + extras }]);
+    setOptionsProduct(null);
+  };
+
   const handleRemoveProduct = (id: number) => {
-    setItens(itens.filter(i => i.produto.id !== id));
+    setItens(itens.filter(i => i.id !== id));
   };
 
   const updateQuantity = (id: number, delta: number) => {
     setItens(itens.map(i => {
-      if (i.produto.id === id) {
+      if (i.id === id) {
         const newQtd = i.quantidade + delta;
         
         if (delta > 0 && i.produto.controlar_estoque && newQtd > i.produto.estoque) {
@@ -67,7 +82,7 @@ const NewOrder = () => {
     }));
   };
 
-  const subtotal = itens.reduce((acc, item) => acc + (item.produto.preco * item.quantidade), 0);
+  const subtotal = itens.reduce((acc, item) => acc + (item.precoUnitario * item.quantidade), 0);
   const total = subtotal;
 
   const handleSubmitOrder = async () => {
@@ -83,7 +98,8 @@ const NewOrder = () => {
         forma_pagamento: formaPagamento,
         itens: itens.map(item => ({
           produto_id: item.produto.id,
-          quantidade: item.quantidade
+          quantidade: item.quantidade,
+          opcoes: item.opcoes.map(option => ({ opcao_id: option.opcaoId, quantidade: option.quantidade }))
         }))
       };
 
@@ -102,7 +118,7 @@ const NewOrder = () => {
         subtotal,
         taxa_entrega: 0,
         data: new Date().toISOString(),
-        itens: itens.map(item => ({ produto_id: item.produto.id, quantidade: item.quantidade, valor_unitario: item.produto.preco, subtotal: item.produto.preco * item.quantidade, produto: item.produto }))
+        itens: itens.map(item => ({ produto_id: item.produto.id, quantidade: item.quantidade, valor_unitario: item.precoUnitario, subtotal: item.precoUnitario * item.quantidade, produto_nome: item.produto.nome, produto: item.produto, opcoes: item.opcoes }))
       };
       
       addOptimisticOrder(optimisticOrder);
@@ -295,7 +311,9 @@ const NewOrder = () => {
           <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
               {filtered.map(produto => {
-                const count = itens.find(i => i.produto.id === produto.id)?.quantidade || 0;
+                const configurable = (produto.grupos_opcoes || []).some((group: any) => group.ativo);
+                const line = itens.find(i => i.produto.id === produto.id && i.opcoes.length === 0);
+                const count = configurable ? 0 : (line?.quantidade || 0);
                 return (
                   <div key={produto.id} className="product-tile glass-card p-4 rounded-xl flex flex-col justify-between group">
                     <div>
@@ -312,9 +330,9 @@ const NewOrder = () => {
                         </button>
                       ) : (
                         <div className="flex items-center gap-2 bg-dark-900 border border-white/10 rounded-lg px-1.5 py-0.5">
-                          <button onClick={() => updateQuantity(produto.id, -1)} className="p-1 hover:text-brand-400 text-zinc-300 transition-colors"><Minus size={14} /></button>
+                          <button onClick={() => updateQuantity(line!.id, -1)} className="p-1 hover:text-brand-400 text-zinc-300 transition-colors"><Minus size={14} /></button>
                           <span className="font-bold w-4 text-center text-xs">{count}</span>
-                          <button onClick={() => updateQuantity(produto.id, 1)} className="p-1 hover:text-brand-400 text-zinc-300 transition-colors"><Plus size={14} /></button>
+                          <button onClick={() => updateQuantity(line!.id, 1)} className="p-1 hover:text-brand-400 text-zinc-300 transition-colors"><Plus size={14} /></button>
                         </div>
                       )}
                     </div>
@@ -332,13 +350,13 @@ const NewOrder = () => {
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {itens.map((item) => (
-              <div key={item.produto.id} className="flex items-center justify-between bg-dark-900 p-2.5 rounded-xl border border-white/5">
-                <p className="font-bold text-zinc-200 text-xs leading-tight line-clamp-1 flex-1 pr-2">{item.produto.nome}</p>
+              <div key={item.id} className="flex items-center justify-between bg-dark-900 p-2.5 rounded-xl border border-white/5">
+                <div className="min-w-0 flex-1 pr-2"><p className="font-bold text-zinc-200 text-xs leading-tight line-clamp-1">{item.produto.nome}</p>{item.opcoes.length > 0 && <p className="mt-1 truncate text-[10px] text-zinc-500">{item.opcoes.map(option => option.nome).join(' · ')}</p>}</div>
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <button onClick={() => updateQuantity(item.produto.id, -1)} className="text-zinc-300 hover:text-brand-400"><Minus size={14} /></button>
+                  <button onClick={() => updateQuantity(item.id, -1)} className="text-zinc-300 hover:text-brand-400"><Minus size={14} /></button>
                   <span className="text-xs font-bold w-4 text-center">{item.quantidade}</span>
-                  <button onClick={() => updateQuantity(item.produto.id, 1)} className="text-zinc-300 hover:text-brand-400"><Plus size={14} /></button>
-                  <button onClick={() => handleRemoveProduct(item.produto.id)} className="ml-1 text-red-500 hover:text-red-400"><Trash2 size={14} /></button>
+                  <button onClick={() => updateQuantity(item.id, 1)} className="text-zinc-300 hover:text-brand-400"><Plus size={14} /></button>
+                  <button onClick={() => handleRemoveProduct(item.id)} className="ml-1 text-red-500 hover:text-red-400"><Trash2 size={14} /></button>
                 </div>
               </div>
             ))}
@@ -354,6 +372,7 @@ const NewOrder = () => {
           </div>
         </div>
       </div>
+      {optionsProduct && <OrderProductOptionsModal product={optionsProduct} onClose={() => setOptionsProduct(null)} onConfirm={addConfiguredProduct} />}
     </div>
   );
 };

@@ -5,8 +5,11 @@ import datetime
 import uuid as uuid_lib
 
 # --- Produtos ---
-def get_produtos(db: Session, estabelecimento_id: int, skip: int = 0, limit: int = 100):
-    return db.query(models.Produto).filter(models.Produto.estabelecimento_id == estabelecimento_id).offset(skip).limit(limit).all()
+def get_produtos(db: Session, estabelecimento_id: int, skip: int = 0, limit: int = 100, somente_ativos: bool = False):
+    query = db.query(models.Produto).filter(models.Produto.estabelecimento_id == estabelecimento_id)
+    if somente_ativos:
+        query = query.filter(models.Produto.ativo == True)
+    return query.offset(skip).limit(limit).all()
 
 def create_produto(db: Session, produto: schemas.ProdutoCreate, estabelecimento_id: int):
     db_produto = models.Produto(**produto.model_dump(), estabelecimento_id=estabelecimento_id)
@@ -27,9 +30,80 @@ def update_produto(db: Session, produto_id: int, produto: schemas.ProdutoCreate,
 def delete_produto(db: Session, produto_id: int, estabelecimento_id: int):
     db_produto = db.query(models.Produto).filter(models.Produto.id == produto_id, models.Produto.estabelecimento_id == estabelecimento_id).first()
     if db_produto:
-        db.delete(db_produto)
+        # Produtos vendidos permanecem como histórico; removê-los do cardápio é uma desativação.
+        db_produto.ativo = False
         db.commit()
+        db.refresh(db_produto)
     return db_produto
+
+# --- Grupos de opções e adicionais ---
+def get_grupos_opcoes(db: Session, estabelecimento_id: int, somente_ativos: bool = False):
+    query = db.query(models.GrupoOpcao).filter(models.GrupoOpcao.estabelecimento_id == estabelecimento_id)
+    if somente_ativos:
+        query = query.filter(models.GrupoOpcao.ativo == True)
+    return query.order_by(models.GrupoOpcao.ordem, models.GrupoOpcao.id).all()
+
+def get_grupo_opcao(db: Session, grupo_id: int, estabelecimento_id: int):
+    return db.query(models.GrupoOpcao).filter(
+        models.GrupoOpcao.id == grupo_id,
+        models.GrupoOpcao.estabelecimento_id == estabelecimento_id,
+    ).first()
+
+def save_grupo_opcao(db: Session, payload: schemas.GrupoOpcaoCreate, estabelecimento_id: int, grupo_id: int = None):
+    if payload.minimo > payload.maximo:
+        raise ValueError("O mínimo de escolhas não pode ser maior que o máximo.")
+    grupo = get_grupo_opcao(db, grupo_id, estabelecimento_id) if grupo_id else None
+    if grupo_id and not grupo:
+        return None
+    duplicate = db.query(models.GrupoOpcao).filter(
+        models.GrupoOpcao.estabelecimento_id == estabelecimento_id,
+        func.lower(models.GrupoOpcao.nome) == payload.nome.strip().lower(),
+    )
+    if grupo_id:
+        duplicate = duplicate.filter(models.GrupoOpcao.id != grupo_id)
+    if duplicate.first():
+        raise ValueError("Já existe um grupo com este nome.")
+    values = payload.model_dump(exclude={"opcoes"})
+    values["nome"] = values["nome"].strip()
+    if grupo:
+        for key, value in values.items():
+            setattr(grupo, key, value)
+        grupo.opcoes.clear()
+    else:
+        grupo = models.GrupoOpcao(estabelecimento_id=estabelecimento_id, **values)
+        db.add(grupo)
+    for opcao in payload.opcoes:
+        grupo.opcoes.append(models.OpcaoProduto(**opcao.model_dump()))
+    db.commit()
+    db.refresh(grupo)
+    return grupo
+
+def delete_grupo_opcao(db: Session, grupo_id: int, estabelecimento_id: int):
+    grupo = get_grupo_opcao(db, grupo_id, estabelecimento_id)
+    if not grupo:
+        return False
+    db.query(models.ProdutoGrupoOpcao).filter(models.ProdutoGrupoOpcao.grupo_id == grupo.id).delete()
+    db.delete(grupo)
+    db.commit()
+    return True
+
+def set_produto_grupos(db: Session, produto_id: int, grupo_ids: list[int], estabelecimento_id: int):
+    produto = db.query(models.Produto).filter(
+        models.Produto.id == produto_id, models.Produto.estabelecimento_id == estabelecimento_id,
+    ).first()
+    if not produto:
+        return None
+    grupos = db.query(models.GrupoOpcao).filter(
+        models.GrupoOpcao.estabelecimento_id == estabelecimento_id,
+        models.GrupoOpcao.id.in_(grupo_ids),
+    ).all() if grupo_ids else []
+    if len(grupos) != len(set(grupo_ids)):
+        raise ValueError("Um ou mais grupos não pertencem a este estabelecimento.")
+    by_id = {grupo.id: grupo for grupo in grupos}
+    produto.grupos_opcoes = [by_id[group_id] for group_id in grupo_ids]
+    db.commit()
+    db.refresh(produto)
+    return produto
 
 
 # --- Clientes ---
@@ -90,31 +164,63 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate, estabelecimento_id:
     
     for item in pedido.itens:
         produto = db.query(models.Produto).filter(models.Produto.id == item.produto_id, models.Produto.estabelecimento_id == estabelecimento_id).first()
-        if produto:
-            preco_venda = produto.preco_promocao if (produto.is_promocao and produto.preco_promocao) else produto.preco
-            item_subtotal = preco_venda * item.quantidade
-            subtotal += item_subtotal
-            db_itens.append(
-                models.ItemPedido(
-                    produto_id=item.produto_id,
-                    quantidade=item.quantidade,
-                    custo_unitario=produto.preco_compra or 0.0,
-                    valor_unitario=preco_venda,
-                    subtotal=item_subtotal
-                )
+        if not produto or not produto.ativo:
+            raise ValueError("Um dos produtos não existe ou está indisponível.")
+        if item.quantidade < 1:
+            raise ValueError("A quantidade do produto deve ser maior que zero.")
+        preco_venda = produto.preco_promocao if (produto.is_promocao and produto.preco_promocao) else produto.preco
+        grupos_vinculados = {grupo.id: grupo for grupo in produto.grupos_opcoes if grupo.ativo}
+        opcoes_ids = [selecao.opcao_id for selecao in item.opcoes]
+        opcoes = db.query(models.OpcaoProduto).join(models.GrupoOpcao).filter(
+            models.OpcaoProduto.id.in_(opcoes_ids),
+            models.OpcaoProduto.ativo == True,
+            models.GrupoOpcao.estabelecimento_id == estabelecimento_id,
+        ).all() if opcoes_ids else []
+        opcoes_por_id = {opcao.id: opcao for opcao in opcoes}
+        if len(opcoes_por_id) != len(set(opcoes_ids)):
+            raise ValueError("Uma das opções escolhidas é inválida ou está indisponível.")
+        contagem_por_grupo = {grupo_id: 0 for grupo_id in grupos_vinculados}
+        snapshots = []
+        adicionais_total = 0.0
+        for selecao in item.opcoes:
+            opcao = opcoes_por_id[selecao.opcao_id]
+            if opcao.grupo_id not in grupos_vinculados:
+                raise ValueError(f"A opção '{opcao.nome}' não pertence a este produto.")
+            contagem_por_grupo[opcao.grupo_id] += selecao.quantidade
+            valor = opcao.preco_adicional * selecao.quantidade
+            adicionais_total += valor
+            snapshots.append(models.ItemPedidoOpcao(
+                opcao_id=opcao.id, grupo_nome=opcao.grupo.nome, opcao_nome=opcao.nome,
+                preco_unitario=opcao.preco_adicional, quantidade=selecao.quantidade, subtotal=valor,
+            ))
+        for grupo_id, grupo in grupos_vinculados.items():
+            minimo = max(grupo.minimo, 1 if grupo.obrigatorio else 0)
+            quantidade_escolhida = contagem_por_grupo[grupo_id]
+            if quantidade_escolhida < minimo:
+                raise ValueError(f"Escolha pelo menos {minimo} opção(ões) em '{grupo.nome}'.")
+            if quantidade_escolhida > grupo.maximo:
+                raise ValueError(f"Escolha no máximo {grupo.maximo} opção(ões) em '{grupo.nome}'.")
+        item_subtotal = (preco_venda + adicionais_total) * item.quantidade
+        subtotal += item_subtotal
+        db_itens.append(
+            models.ItemPedido(
+                produto_id=item.produto_id, produto_nome=produto.nome, observacao=item.observacao,
+                quantidade=item.quantidade, custo_unitario=produto.preco_compra or 0.0,
+                valor_unitario=preco_venda + adicionais_total, subtotal=item_subtotal, opcoes=snapshots,
             )
-            if produto.controlar_estoque:
-                if produto.estoque < item.quantidade:
-                    raise ValueError(f"Estoque insuficiente para o produto '{produto.nome}'. Restam apenas {produto.estoque} unidades.")
-                produto.estoque -= item.quantidade
+        )
+        if produto.controlar_estoque:
+            if produto.estoque < item.quantidade:
+                raise ValueError(f"Estoque insuficiente para o produto '{produto.nome}'. Restam apenas {produto.estoque} unidades.")
+            produto.estoque -= item.quantidade
                 
-            # Baixa de Insumos (Ficha Técnica)
-            for ficha in produto.fichas_tecnicas:
-                if ficha.insumo and ficha.insumo.controlar_estoque:
-                    qtde_necessaria = item.quantidade * ficha.quantidade
-                    if ficha.insumo.estoque < qtde_necessaria:
-                        raise ValueError(f"Estoque de insumo insuficiente: '{ficha.insumo.nome}'. Necessário: {qtde_necessaria}, Disponível: {ficha.insumo.estoque}.")
-                    ficha.insumo.estoque -= qtde_necessaria
+        # Baixa de Insumos (Ficha Técnica)
+        for ficha in produto.fichas_tecnicas:
+            if ficha.insumo and ficha.insumo.controlar_estoque:
+                qtde_necessaria = item.quantidade * ficha.quantidade
+                if ficha.insumo.estoque < qtde_necessaria:
+                    raise ValueError(f"Estoque de insumo insuficiente: '{ficha.insumo.nome}'. Necessário: {qtde_necessaria}, Disponível: {ficha.insumo.estoque}.")
+                ficha.insumo.estoque -= qtde_necessaria
             
     taxa_entrega = 0.0
     

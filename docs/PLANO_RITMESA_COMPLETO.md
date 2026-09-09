@@ -117,7 +117,9 @@ interna é:
 - Concluído: usuários individuais, sete perfis, permissões aplicadas nas rotas atuais e tela responsiva de equipe.
 - Concluído: auditoria de login e administração de usuários.
 - Concluído: acompanhamento público por UUID não sequencial e isolado por estabelecimento.
-- Em andamento: restrições compostas multi-tenant e catálogo com adicionais e variações.
+- Concluído: grupos reutilizáveis de tamanhos, sabores, pontos e adicionais, com mínimo, máximo e obrigatoriedade.
+- Concluído: seleção responsiva no cardápio e no pedido do caixa, preço recalculado pelo servidor e retrato histórico do item vendido.
+- Em andamento: restrições compostas multi-tenant, categorias programáveis, combos, cupons e promoções agendadas.
 
 ## Critério para iniciar vendas em escala
 

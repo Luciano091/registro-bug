@@ -41,8 +41,44 @@ class ProdutoBase(BaseModel):
 class ProdutoCreate(ProdutoBase):
     pass
 
+class OpcaoProdutoBase(BaseModel):
+    nome: str = Field(min_length=1, max_length=120)
+    preco_adicional: float = Field(default=0, ge=0)
+    ativo: bool = True
+    ordem: int = 0
+
+class OpcaoProdutoCreate(OpcaoProdutoBase):
+    pass
+
+class OpcaoProduto(OpcaoProdutoBase):
+    id: int
+    grupo_id: int
+    class Config:
+        from_attributes = True
+
+class GrupoOpcaoBase(BaseModel):
+    nome: str = Field(min_length=1, max_length=120)
+    minimo: int = Field(default=0, ge=0)
+    maximo: int = Field(default=1, ge=1)
+    obrigatorio: bool = False
+    ativo: bool = True
+    ordem: int = 0
+
+class GrupoOpcaoCreate(GrupoOpcaoBase):
+    opcoes: List[OpcaoProdutoCreate] = Field(default_factory=list)
+
+class GrupoOpcao(GrupoOpcaoBase):
+    id: int
+    opcoes: List[OpcaoProduto] = Field(default_factory=list)
+    class Config:
+        from_attributes = True
+
+class ProdutoGruposUpdate(BaseModel):
+    grupo_ids: List[int] = Field(default_factory=list)
+
 class Produto(ProdutoBase):
     id: int
+    grupos_opcoes: List[GrupoOpcao] = Field(default_factory=list)
     class Config:
         from_attributes = True
 
@@ -51,8 +87,24 @@ class ItemPedidoBase(BaseModel):
     produto_id: int
     quantidade: int
 
+class ItemPedidoOpcaoCreate(BaseModel):
+    opcao_id: int
+    quantidade: int = Field(default=1, ge=1, le=20)
+
 class ItemPedidoCreate(ItemPedidoBase):
-    pass
+    observacao: Optional[str] = Field(default=None, max_length=500)
+    opcoes: List[ItemPedidoOpcaoCreate] = Field(default_factory=list)
+
+class ItemPedidoOpcao(BaseModel):
+    id: int
+    opcao_id: Optional[int] = None
+    grupo_nome: str
+    opcao_nome: str
+    preco_unitario: float
+    quantidade: int
+    subtotal: float
+    class Config:
+        from_attributes = True
 
 class ItemPedido(ItemPedidoBase):
     id: int
@@ -60,6 +112,9 @@ class ItemPedido(ItemPedidoBase):
     custo_unitario: float = 0.0
     valor_unitario: float
     subtotal: float
+    produto_nome: Optional[str] = None
+    observacao: Optional[str] = None
+    opcoes: List[ItemPedidoOpcao] = Field(default_factory=list)
     
     produto: Optional[Produto] = None
     
@@ -88,7 +143,7 @@ class Pedido(PedidoBase):
     taxa_entrega: float
     total: float
     data: datetime
-    itens: List[ItemPedido] = []
+    itens: List[ItemPedido] = Field(default_factory=list)
 
     class Config:
         from_attributes = True

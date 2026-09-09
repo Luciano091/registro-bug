@@ -127,7 +127,7 @@ def require_public_establishment(slug: str, db: Session):
 @app.get("/public/{slug}/produtos", response_model=List[schemas.Produto])
 def public_products(slug: str, skip: int = 0, limit: int = 500, db: Session = Depends(get_db)):
     estabelecimento = require_public_establishment(slug, db)
-    return crud.get_produtos(db, estabelecimento.id, skip=skip, limit=limit)
+    return crud.get_produtos(db, estabelecimento.id, skip=skip, limit=limit, somente_ativos=True)
 
 @app.get("/produtos", response_model=List[schemas.Produto])
 def read_produtos(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("cardapio.visualizar"))):
@@ -150,6 +150,48 @@ def delete_produto(produto_id: int, db: Session = Depends(get_db), estabelecimen
     if db_produto is None:
         raise HTTPException(status_code=404, detail="Produto não encontrado")
     return db_produto
+
+@app.get("/grupos-opcoes", response_model=List[schemas.GrupoOpcao])
+def list_option_groups(db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("cardapio.visualizar"))):
+    return crud.get_grupos_opcoes(db, estabelecimento_id)
+
+@app.post("/grupos-opcoes", response_model=schemas.GrupoOpcao, status_code=201)
+def create_option_group(payload: schemas.GrupoOpcaoCreate, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("cardapio.gerenciar"))):
+    try:
+        grupo = crud.save_grupo_opcao(db, payload, usuario.estabelecimento_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    crud.create_audit_log(db, usuario.estabelecimento_id, "grupo_opcao.criado", usuario.usuario_id, "grupo_opcao", grupo.id)
+    return grupo
+
+@app.put("/grupos-opcoes/{grupo_id}", response_model=schemas.GrupoOpcao)
+def update_option_group(grupo_id: int, payload: schemas.GrupoOpcaoCreate, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("cardapio.gerenciar"))):
+    try:
+        grupo = crud.save_grupo_opcao(db, payload, usuario.estabelecimento_id, grupo_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    if not grupo:
+        raise HTTPException(status_code=404, detail="Grupo não encontrado.")
+    crud.create_audit_log(db, usuario.estabelecimento_id, "grupo_opcao.atualizado", usuario.usuario_id, "grupo_opcao", grupo.id)
+    return grupo
+
+@app.delete("/grupos-opcoes/{grupo_id}")
+def delete_option_group(grupo_id: int, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("cardapio.gerenciar"))):
+    if not crud.delete_grupo_opcao(db, grupo_id, usuario.estabelecimento_id):
+        raise HTTPException(status_code=404, detail="Grupo não encontrado.")
+    crud.create_audit_log(db, usuario.estabelecimento_id, "grupo_opcao.excluido", usuario.usuario_id, "grupo_opcao", grupo_id)
+    return {"status": "ok"}
+
+@app.put("/produtos/{produto_id}/grupos-opcoes", response_model=schemas.Produto)
+def update_product_option_groups(produto_id: int, payload: schemas.ProdutoGruposUpdate, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("cardapio.gerenciar"))):
+    try:
+        produto = crud.set_produto_grupos(db, produto_id, payload.grupo_ids, usuario.estabelecimento_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    if not produto:
+        raise HTTPException(status_code=404, detail="Produto não encontrado.")
+    crud.create_audit_log(db, usuario.estabelecimento_id, "produto.grupos_atualizados", usuario.usuario_id, "produto", produto_id, {"grupos": payload.grupo_ids})
+    return produto
 
 # --- Pedidos ---
 @app.get("/pedidos", response_model=List[schemas.Pedido])

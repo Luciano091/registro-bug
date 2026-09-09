@@ -8,6 +8,8 @@ export interface CartItem {
   precoBase: number;
   quantidade: number;
   adicionais: Array<{
+    opcaoId: number;
+    grupoNome: string;
     nome: string;
     preco: number;
     quantidade: number;

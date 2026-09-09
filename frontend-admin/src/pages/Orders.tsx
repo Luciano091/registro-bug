@@ -58,9 +58,11 @@ const Orders = () => {
     
     text += `*Resumo do Pedido:*\n`;
     passedOrder.itens?.forEach((item: any) => {
-      const productName = item.produto?.nome || 'Produto';
+      const productName = item.produto_nome || item.produto?.nome || 'Produto';
       const itemTotal = item.subtotal || (item.quantidade * (item.produto?.preco || 0));
       text += `${item.quantidade}x ${productName} - R$ ${itemTotal.toFixed(2)}\n`;
+      item.opcoes?.forEach((option: any) => { text += `  + ${option.quantidade}x ${option.opcao_nome}\n`; });
+      if (item.observacao) text += `  Obs.: ${item.observacao}\n`;
     });
     
     text += `\n*Total:* R$ ${passedOrder.total?.toFixed(2) || '0.00'}\n`;
@@ -308,12 +310,12 @@ const Orders = () => {
               <div className="space-y-3">
                 <h4 className="text-sm font-semibold text-zinc-300 uppercase tracking-wider mb-2">Itens do Pedido</h4>
                 {selectedOrder.itens?.map((item: any) => (
-                  <div key={item.id} className="flex justify-between items-center py-2 border-b border-white/5 last:border-0">
-                    <div className="flex items-center gap-3">
+                  <div key={item.id} className="flex justify-between items-start py-3 border-b border-white/5 last:border-0">
+                    <div className="flex items-start gap-3">
                       <div className="bg-white/5 text-zinc-200 px-2 py-1 rounded text-xs font-bold">
                         {item.quantidade}x
                       </div>
-                      <span className="text-zinc-200 font-medium">{item.produto?.nome || 'Produto'}</span>
+                      <div><span className="text-zinc-200 font-medium">{item.produto_nome || item.produto?.nome || 'Produto'}</span>{item.opcoes?.map((option: any) => <p key={option.id} className="mt-1 text-xs text-zinc-500">+ {option.quantidade}x {option.opcao_nome} · {option.grupo_nome}</p>)}{item.observacao && <p className="mt-1 text-xs italic text-amber-400/80">Obs.: {item.observacao}</p>}</div>
                     </div>
                     <span className="text-zinc-300 text-sm">R$ {item.subtotal?.toFixed(2) || (item.quantidade * (item.produto?.preco || 0)).toFixed(2)}</span>
                   </div>

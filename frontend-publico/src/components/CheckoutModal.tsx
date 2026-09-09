@@ -38,7 +38,8 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
         itens: items.map(item => ({
           produto_id: item.produtoId,
           quantidade: item.quantidade,
-          observacao: item.observacao
+          observacao: item.observacao,
+          opcoes: item.adicionais.map(add => ({ opcao_id: add.opcaoId, quantidade: add.quantidade }))
         }))
       };
 
@@ -146,7 +147,7 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
                         <div className="mt-2 space-y-1">
                           {item.adicionais.map((add, idx) => (
                             <div key={idx} className="text-xs text-zinc-500 flex items-center gap-1">
-                              <span className="text-brand-500">+</span> {add.quantidade}x {add.nome}
+                              <span className="text-brand-500">+</span> {add.quantidade}x {add.nome} <span className="text-zinc-400">· {add.grupoNome}</span>
                             </div>
                           ))}
                         </div>
