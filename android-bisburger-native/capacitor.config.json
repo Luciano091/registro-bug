@@ -9,6 +9,7 @@
   },
   "android": {
     "allowMixedContent": false,
-    "backgroundColor": "#080706"
+    "backgroundColor": "#080706",
+    "appendUserAgent": " BisBurgerApp/1.0.2"
   }
 }
