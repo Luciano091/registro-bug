@@ -13,7 +13,7 @@ export default function ProductAvailabilityModal({ product, onClose, onSaved }: 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const days = form.dias_semana.split(',').filter(Boolean);
-  const toggleDay = (day: string) => setForm({ ...form, dias_semana: (days.includes(day) ? days.filter(value => value !== day) : [...days, day]).sort().join(',') });
+  const toggleDay = (day: string) => setForm({ ...form, dias_semana: (days.includes(day) ? days.filter((value: string) => value !== day) : [...days, day]).sort().join(',') });
   const save = async () => {
     if (!form.dias_semana) return setError('Selecione ao menos um dia.');
     if (form.is_promocao && (!form.preco_promocao || Number(form.preco_promocao) >= product.preco)) return setError('Informe um preço promocional menor que o preço normal.');
