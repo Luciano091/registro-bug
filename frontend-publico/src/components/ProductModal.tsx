@@ -12,7 +12,7 @@ export const ProductModal = ({ produto, onClose, lojaAberta = true, onLojaFechad
   const [selected, setSelected] = useState<Selection[]>([]);
   const [error, setError] = useState('');
   const groups = useMemo(() => (produto.grupos_opcoes || []).filter((group: any) => group.ativo), [produto]);
-  const basePrice = produto.is_promocao && produto.preco_promocao ? produto.preco_promocao : produto.preco;
+  const basePrice = produto.promocao_ativa && produto.preco_promocao ? produto.preco_promocao : produto.preco;
   const groupCount = (groupId: number) => selected.filter(item => item.grupoId === groupId).reduce((sum, item) => sum + item.quantidade, 0);
 
   const validate = () => {

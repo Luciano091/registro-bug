@@ -125,9 +125,23 @@ def require_public_establishment(slug: str, db: Session):
     return estabelecimento
 
 @app.get("/public/{slug}/produtos", response_model=List[schemas.Produto])
-def public_products(slug: str, skip: int = 0, limit: int = 500, db: Session = Depends(get_db)):
+def public_products(slug: str, skip: int = 0, limit: int = 500, canal: str = None, db: Session = Depends(get_db)):
     estabelecimento = require_public_establishment(slug, db)
-    return crud.get_produtos(db, estabelecimento.id, skip=skip, limit=limit, somente_ativos=True)
+    return crud.get_produtos(db, estabelecimento.id, skip=skip, limit=limit, somente_ativos=True, canal=canal)
+
+@app.get("/public/{slug}/categorias", response_model=List[schemas.Categoria])
+def public_categories(slug: str, db: Session = Depends(get_db)):
+    estabelecimento = require_public_establishment(slug, db)
+    return crud.get_categorias(db, estabelecimento.id, somente_disponiveis=True)
+
+@app.post("/public/{slug}/cupons/validar", response_model=schemas.CupomValidado)
+def public_validate_coupon(slug: str, payload: schemas.CupomValidar, db: Session = Depends(get_db)):
+    estabelecimento = require_public_establishment(slug, db)
+    try:
+        cupom, desconto = crud.validar_cupom(db, payload.codigo, payload.subtotal, estabelecimento.id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return schemas.CupomValidado(codigo=cupom.codigo, desconto=desconto, total=max(0, payload.subtotal - desconto), descricao=cupom.descricao)
 
 @app.get("/produtos", response_model=List[schemas.Produto])
 def read_produtos(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("cardapio.visualizar"))):
@@ -135,14 +149,76 @@ def read_produtos(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)
 
 @app.post("/produtos", response_model=schemas.Produto)
 def create_produto(produto: schemas.ProdutoCreate, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("cardapio.gerenciar"))):
-    return crud.create_produto(db=db, produto=produto, estabelecimento_id=estabelecimento_id)
+    try:
+        return crud.create_produto(db=db, produto=produto, estabelecimento_id=estabelecimento_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
 @app.put("/produtos/{produto_id}", response_model=schemas.Produto)
 def update_produto(produto_id: int, produto: schemas.ProdutoCreate, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("cardapio.gerenciar"))):
-    db_produto = crud.update_produto(db, produto_id, produto, estabelecimento_id)
+    try:
+        db_produto = crud.update_produto(db, produto_id, produto, estabelecimento_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
     if db_produto is None:
         raise HTTPException(status_code=404, detail="Produto não encontrado")
     return db_produto
+
+@app.get("/categorias", response_model=List[schemas.Categoria])
+def list_categories(db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("cardapio.visualizar"))):
+    return crud.get_categorias(db, estabelecimento_id)
+
+@app.post("/categorias", response_model=schemas.Categoria, status_code=201)
+def create_category(payload: schemas.CategoriaCreate, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("cardapio.gerenciar"))):
+    try:
+        categoria = crud.save_categoria(db, payload, usuario.estabelecimento_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    crud.create_audit_log(db, usuario.estabelecimento_id, "categoria.criada", usuario.usuario_id, "categoria", categoria.id)
+    return categoria
+
+@app.put("/categorias/{categoria_id}", response_model=schemas.Categoria)
+def update_category(categoria_id: int, payload: schemas.CategoriaCreate, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("cardapio.gerenciar"))):
+    try:
+        categoria = crud.save_categoria(db, payload, usuario.estabelecimento_id, categoria_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    if not categoria:
+        raise HTTPException(status_code=404, detail="Categoria não encontrada.")
+    crud.create_audit_log(db, usuario.estabelecimento_id, "categoria.atualizada", usuario.usuario_id, "categoria", categoria.id)
+    return categoria
+
+@app.delete("/categorias/{categoria_id}", response_model=schemas.Categoria)
+def delete_category(categoria_id: int, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("cardapio.gerenciar"))):
+    categoria = crud.delete_categoria(db, categoria_id, usuario.estabelecimento_id)
+    if not categoria:
+        raise HTTPException(status_code=404, detail="Categoria não encontrada.")
+    crud.create_audit_log(db, usuario.estabelecimento_id, "categoria.desativada", usuario.usuario_id, "categoria", categoria.id)
+    return categoria
+
+@app.get("/cupons", response_model=List[schemas.Cupom])
+def list_coupons(db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("cardapio.visualizar"))):
+    return crud.get_cupons(db, estabelecimento_id)
+
+@app.post("/cupons", response_model=schemas.Cupom, status_code=201)
+def create_coupon(payload: schemas.CupomCreate, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("cardapio.gerenciar"))):
+    try:
+        cupom = crud.save_cupom(db, payload, usuario.estabelecimento_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    crud.create_audit_log(db, usuario.estabelecimento_id, "cupom.criado", usuario.usuario_id, "cupom", cupom.id)
+    return cupom
+
+@app.put("/cupons/{cupom_id}", response_model=schemas.Cupom)
+def update_coupon(cupom_id: int, payload: schemas.CupomCreate, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("cardapio.gerenciar"))):
+    try:
+        cupom = crud.save_cupom(db, payload, usuario.estabelecimento_id, cupom_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    if not cupom:
+        raise HTTPException(status_code=404, detail="Cupom não encontrado.")
+    crud.create_audit_log(db, usuario.estabelecimento_id, "cupom.atualizado", usuario.usuario_id, "cupom", cupom.id)
+    return cupom
 
 @app.delete("/produtos/{produto_id}", response_model=schemas.Produto)
 def delete_produto(produto_id: int, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("cardapio.gerenciar"))):

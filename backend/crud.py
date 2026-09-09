@@ -5,14 +5,54 @@ import datetime
 import uuid as uuid_lib
 
 # --- Produtos ---
-def get_produtos(db: Session, estabelecimento_id: int, skip: int = 0, limit: int = 100, somente_ativos: bool = False):
+def get_produtos(db: Session, estabelecimento_id: int, skip: int = 0, limit: int = 100, somente_ativos: bool = False, canal: str = None):
     query = db.query(models.Produto).filter(models.Produto.estabelecimento_id == estabelecimento_id)
     if somente_ativos:
         query = query.filter(models.Produto.ativo == True)
-    return query.offset(skip).limit(limit).all()
+    produtos = query.offset(skip).limit(limit).all()
+    if somente_ativos:
+        produtos = [produto for produto in produtos if produto_disponivel_agora(produto)]
+    if canal == "delivery":
+        produtos = [produto for produto in produtos if produto.disponivel_delivery]
+    elif canal == "retirada":
+        produtos = [produto for produto in produtos if produto.disponivel_retirada]
+    elif canal == "salao":
+        produtos = [produto for produto in produtos if produto.disponivel_salao]
+    return produtos
+
+def dentro_do_horario(dias_semana: str, horario_inicio: str, horario_fim: str, agora=None):
+    agora = agora or models.get_now()
+    dias = {int(value) for value in (dias_semana or "0,1,2,3,4,5,6").split(",") if value.strip().isdigit()}
+    if not horario_inicio or not horario_fim:
+        return agora.weekday() in dias
+    inicio = datetime.time.fromisoformat(horario_inicio)
+    fim = datetime.time.fromisoformat(horario_fim)
+    atual = agora.time().replace(second=0, microsecond=0)
+    if inicio <= fim:
+        return agora.weekday() in dias and inicio <= atual <= fim
+    return (agora.weekday() in dias and atual >= inicio) or ((agora.weekday() - 1) % 7 in dias and atual <= fim)
+
+def produto_disponivel_agora(produto: models.Produto):
+    if not produto.ativo or not dentro_do_horario(produto.dias_semana, produto.horario_inicio, produto.horario_fim):
+        return False
+    categoria = produto.categoria_obj
+    return not categoria or (categoria.ativo and dentro_do_horario(categoria.dias_semana, categoria.horario_inicio, categoria.horario_fim))
+
+def preco_vigente(produto: models.Produto):
+    return produto.preco_promocao if produto.promocao_ativa else produto.preco
 
 def create_produto(db: Session, produto: schemas.ProdutoCreate, estabelecimento_id: int):
-    db_produto = models.Produto(**produto.model_dump(), estabelecimento_id=estabelecimento_id)
+    values = produto.model_dump()
+    if values.get("categoria_id"):
+        categoria = get_categoria(db, values["categoria_id"], estabelecimento_id)
+        if not categoria:
+            raise ValueError("Categoria inválida para este estabelecimento.")
+        values["categoria"] = categoria.nome
+    else:
+        categoria = db.query(models.Categoria).filter(models.Categoria.estabelecimento_id == estabelecimento_id, func.lower(models.Categoria.nome) == values["categoria"].strip().lower()).first()
+        if categoria:
+            values["categoria_id"] = categoria.id
+    db_produto = models.Produto(**values, estabelecimento_id=estabelecimento_id)
     db.add(db_produto)
     db.commit()
     db.refresh(db_produto)
@@ -21,11 +61,115 @@ def create_produto(db: Session, produto: schemas.ProdutoCreate, estabelecimento_
 def update_produto(db: Session, produto_id: int, produto: schemas.ProdutoCreate, estabelecimento_id: int):
     db_produto = db.query(models.Produto).filter(models.Produto.id == produto_id, models.Produto.estabelecimento_id == estabelecimento_id).first()
     if db_produto:
-        for key, value in produto.model_dump().items():
+        values = produto.model_dump()
+        if values.get("categoria_id"):
+            categoria = get_categoria(db, values["categoria_id"], estabelecimento_id)
+            if not categoria:
+                raise ValueError("Categoria inválida para este estabelecimento.")
+            values["categoria"] = categoria.nome
+        else:
+            categoria = db.query(models.Categoria).filter(models.Categoria.estabelecimento_id == estabelecimento_id, func.lower(models.Categoria.nome) == values["categoria"].strip().lower()).first()
+            values["categoria_id"] = categoria.id if categoria else None
+        for key, value in values.items():
             setattr(db_produto, key, value)
         db.commit()
         db.refresh(db_produto)
     return db_produto
+
+# --- Categorias e disponibilidade ---
+def get_categorias(db: Session, estabelecimento_id: int, somente_disponiveis: bool = False):
+    categorias = db.query(models.Categoria).filter(models.Categoria.estabelecimento_id == estabelecimento_id).order_by(models.Categoria.ordem, models.Categoria.nome).all()
+    return [categoria for categoria in categorias if not somente_disponiveis or (categoria.ativo and dentro_do_horario(categoria.dias_semana, categoria.horario_inicio, categoria.horario_fim))]
+
+def get_categoria(db: Session, categoria_id: int, estabelecimento_id: int):
+    return db.query(models.Categoria).filter(models.Categoria.id == categoria_id, models.Categoria.estabelecimento_id == estabelecimento_id).first()
+
+def save_categoria(db: Session, payload: schemas.CategoriaCreate, estabelecimento_id: int, categoria_id: int = None):
+    categoria = get_categoria(db, categoria_id, estabelecimento_id) if categoria_id else None
+    if categoria_id and not categoria:
+        return None
+    duplicate = db.query(models.Categoria).filter(models.Categoria.estabelecimento_id == estabelecimento_id, func.lower(models.Categoria.nome) == payload.nome.strip().lower())
+    if categoria_id:
+        duplicate = duplicate.filter(models.Categoria.id != categoria_id)
+    if duplicate.first():
+        raise ValueError("Já existe uma categoria com este nome.")
+    values = payload.model_dump()
+    values["nome"] = values["nome"].strip()
+    if categoria:
+        nome_antigo = categoria.nome
+        for key, value in values.items():
+            setattr(categoria, key, value)
+        db.query(models.Produto).filter(models.Produto.estabelecimento_id == estabelecimento_id, models.Produto.categoria == nome_antigo).update({"categoria": categoria.nome})
+    else:
+        categoria = models.Categoria(estabelecimento_id=estabelecimento_id, **values)
+        db.add(categoria)
+    db.commit()
+    db.refresh(categoria)
+    return categoria
+
+def delete_categoria(db: Session, categoria_id: int, estabelecimento_id: int):
+    categoria = get_categoria(db, categoria_id, estabelecimento_id)
+    if not categoria:
+        return None
+    categoria.ativo = False
+    db.commit()
+    db.refresh(categoria)
+    return categoria
+
+def get_cupons(db: Session, estabelecimento_id: int):
+    return db.query(models.Cupom).filter(models.Cupom.estabelecimento_id == estabelecimento_id).order_by(models.Cupom.id.desc()).all()
+
+def get_cupom(db: Session, cupom_id: int, estabelecimento_id: int):
+    return db.query(models.Cupom).filter(models.Cupom.id == cupom_id, models.Cupom.estabelecimento_id == estabelecimento_id).first()
+
+def save_cupom(db: Session, payload: schemas.CupomCreate, estabelecimento_id: int, cupom_id: int = None):
+    if payload.tipo not in ("percentual", "fixo"):
+        raise ValueError("O tipo do cupom deve ser percentual ou fixo.")
+    if payload.tipo == "percentual" and payload.valor > 100:
+        raise ValueError("O desconto percentual não pode ultrapassar 100%.")
+    if payload.inicio and payload.fim and payload.inicio >= payload.fim:
+        raise ValueError("A data final deve ser posterior à data inicial.")
+    cupom = get_cupom(db, cupom_id, estabelecimento_id) if cupom_id else None
+    if cupom_id and not cupom:
+        return None
+    codigo = payload.codigo.strip().upper()
+    duplicate = db.query(models.Cupom).filter(models.Cupom.estabelecimento_id == estabelecimento_id, func.upper(models.Cupom.codigo) == codigo)
+    if cupom_id:
+        duplicate = duplicate.filter(models.Cupom.id != cupom_id)
+    if duplicate.first():
+        raise ValueError("Já existe um cupom com este código.")
+    values = payload.model_dump()
+    values["codigo"] = codigo
+    if cupom:
+        for key, value in values.items():
+            setattr(cupom, key, value)
+    else:
+        cupom = models.Cupom(estabelecimento_id=estabelecimento_id, **values)
+        db.add(cupom)
+    db.commit()
+    db.refresh(cupom)
+    return cupom
+
+def validar_cupom(db: Session, codigo: str, subtotal: float, estabelecimento_id: int):
+    codigo_normalizado = (codigo or "").strip().upper()
+    cupom = db.query(models.Cupom).filter(
+        models.Cupom.estabelecimento_id == estabelecimento_id,
+        func.upper(models.Cupom.codigo) == codigo_normalizado,
+    ).first()
+    agora = models.get_now()
+    if not cupom or not cupom.ativo:
+        raise ValueError("Cupom inválido ou inativo.")
+    if cupom.inicio and agora < cupom.inicio:
+        raise ValueError("Este cupom ainda não está disponível.")
+    if cupom.fim and agora > cupom.fim:
+        raise ValueError("Este cupom expirou.")
+    if cupom.limite_usos is not None and cupom.usos >= cupom.limite_usos:
+        raise ValueError("Este cupom atingiu o limite de usos.")
+    if subtotal < cupom.pedido_minimo:
+        raise ValueError(f"Pedido mínimo de R$ {cupom.pedido_minimo:.2f} para usar este cupom.")
+    desconto = subtotal * cupom.valor / 100 if cupom.tipo == "percentual" else cupom.valor
+    desconto = round(min(subtotal, desconto), 2)
+    return cupom, desconto
 
 def delete_produto(db: Session, produto_id: int, estabelecimento_id: int):
     db_produto = db.query(models.Produto).filter(models.Produto.id == produto_id, models.Produto.estabelecimento_id == estabelecimento_id).first()
@@ -168,7 +312,15 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate, estabelecimento_id:
             raise ValueError("Um dos produtos não existe ou está indisponível.")
         if item.quantidade < 1:
             raise ValueError("A quantidade do produto deve ser maior que zero.")
-        preco_venda = produto.preco_promocao if (produto.is_promocao and produto.preco_promocao) else produto.preco
+        if not produto_disponivel_agora(produto):
+            raise ValueError(f"O produto '{produto.nome}' não está disponível neste horário.")
+        if pedido.tipo_entrega.lower() in ("delivery", "entrega") and not produto.disponivel_delivery:
+            raise ValueError(f"O produto '{produto.nome}' não está disponível para entrega.")
+        if pedido.tipo_entrega.lower() == "retirada" and not produto.disponivel_retirada:
+            raise ValueError(f"O produto '{produto.nome}' não está disponível para retirada.")
+        if pedido.tipo_entrega.lower() in ("salao", "salão", "mesa") and not produto.disponivel_salao:
+            raise ValueError(f"O produto '{produto.nome}' não está disponível para consumo no salão.")
+        preco_venda = preco_vigente(produto)
         grupos_vinculados = {grupo.id: grupo for grupo in produto.grupos_opcoes if grupo.ativo}
         opcoes_ids = [selecao.opcao_id for selecao in item.opcoes]
         opcoes = db.query(models.OpcaoProduto).join(models.GrupoOpcao).filter(
@@ -224,7 +376,11 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate, estabelecimento_id:
             
     taxa_entrega = 0.0
     
-    total = subtotal + taxa_entrega
+    cupom = None
+    desconto = 0.0
+    if pedido.cupom_codigo:
+        cupom, desconto = validar_cupom(db, pedido.cupom_codigo, subtotal, estabelecimento_id)
+    total = max(0.0, subtotal + taxa_entrega - desconto)
     
     # Gerar numero do pedido baseado na data e id (simplificado: YYYYMMDD-COUNT)
     hoje = (datetime.datetime.utcnow() - datetime.timedelta(hours=3)).date()
@@ -245,11 +401,15 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate, estabelecimento_id:
         cliente_id=pedido.cliente_id,
         subtotal=subtotal,
         taxa_entrega=taxa_entrega,
+        cupom_codigo=cupom.codigo if cupom else None,
+        desconto=desconto,
         total=total,
         status="Recebido"
     )
     
     db.add(db_pedido)
+    if cupom:
+        cupom.usos += 1
     db.commit()
     db.refresh(db_pedido)
     

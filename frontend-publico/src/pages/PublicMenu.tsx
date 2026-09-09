@@ -28,6 +28,7 @@ const isRunningInNativeApp = () => {
 const PublicMenu = () => {
   const [config, setConfig] = useState<any>(null);
   const [produtos, setProdutos] = useState<any[]>([]);
+  const [categoriasConfiguradas, setCategoriasConfiguradas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string>('Todos');
   const [activeTab, setActiveTab] = useState<TabType>('cardapio');
@@ -57,7 +58,7 @@ const PublicMenu = () => {
       id: crypto.randomUUID(),
       produtoId: produto.id,
       nome: produto.nome,
-      precoBase: produto.is_promocao && produto.preco_promocao ? produto.preco_promocao : produto.preco,
+      precoBase: produto.promocao_ativa && produto.preco_promocao ? produto.preco_promocao : produto.preco,
       quantidade: 1,
       adicionais: [],
       observacao: ''
@@ -69,13 +70,15 @@ const PublicMenu = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [configRes, prodRes] = await Promise.all([
+        const [configRes, prodRes, categoriasRes] = await Promise.all([
           api.get(`/public/${getEstablishmentSlug()}/configuracao`),
-          api.get(`/public/${getEstablishmentSlug()}/produtos`)
+          api.get(`/public/${getEstablishmentSlug()}/produtos`),
+          api.get(`/public/${getEstablishmentSlug()}/categorias`)
         ]);
         const conf = configRes.data;
         setConfig(conf);
         setProdutos(prodRes.data.filter((p: any) => p.ativo));
+        setCategoriasConfiguradas(categoriasRes.data);
         document.title = `${conf.nome_empresa || 'Cardápio'} | Ritmesa`;
         
         // Atualizar o ícone (favicon) dinamicamente com a logo do restaurante
@@ -117,7 +120,7 @@ const PublicMenu = () => {
   // Promoções do Dia
   const promocoesAtivas = useMemo(() => {
     if (activeCategory !== 'Todos') return [];
-    return produtos.filter(p => p.is_promocao);
+    return produtos.filter(p => p.promocao_ativa);
   }, [produtos, activeCategory]);
 
   if (loading) {
@@ -128,7 +131,9 @@ const PublicMenu = () => {
     );
   }
 
-  const uniqueCategories = Array.from(new Set(produtos.map(p => p.categoria?.trim()).filter(Boolean))) as string[];
+  const configuredNames = categoriasConfiguradas.map(categoria => categoria.nome);
+  const legacyNames = Array.from(new Set(produtos.map(p => p.categoria?.trim()).filter(Boolean))) as string[];
+  const uniqueCategories = [...configuredNames, ...legacyNames.filter(nome => !configuredNames.includes(nome))];
 
   const categories = ['Todos', ...uniqueCategories];
   const filteredProducts = activeCategory === 'Todos' 
@@ -404,7 +409,7 @@ const PublicMenu = () => {
                       </div>
                       <div className="flex items-center justify-between mt-2">
                         <div className="flex flex-col">
-                          {produto.is_promocao && produto.preco_promocao ? (
+                          {produto.promocao_ativa && produto.preco_promocao ? (
                             <>
                               <span className="font-price text-[11px] text-zinc-400 line-through leading-none mb-0.5">
                                 {produto.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}

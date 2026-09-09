@@ -28,6 +28,7 @@ class Cliente(ClienteBase):
 class ProdutoBase(BaseModel):
     nome: str
     categoria: str
+    categoria_id: Optional[int] = None
     descricao: Optional[str] = None
     imagem_url: Optional[str] = None
     preco_compra: Optional[float] = 0.0
@@ -37,9 +38,64 @@ class ProdutoBase(BaseModel):
     estoque: int = 0
     is_promocao: bool = False
     preco_promocao: Optional[float] = None
+    promocao_inicio: Optional[datetime] = None
+    promocao_fim: Optional[datetime] = None
+    dias_semana: str = "0,1,2,3,4,5,6"
+    horario_inicio: Optional[str] = None
+    horario_fim: Optional[str] = None
+    disponivel_delivery: bool = True
+    disponivel_retirada: bool = True
+    disponivel_salao: bool = True
 
 class ProdutoCreate(ProdutoBase):
     pass
+
+class CategoriaBase(BaseModel):
+    nome: str = Field(min_length=1, max_length=100)
+    descricao: Optional[str] = Field(default=None, max_length=255)
+    ordem: int = 0
+    ativo: bool = True
+    dias_semana: str = "0,1,2,3,4,5,6"
+    horario_inicio: Optional[str] = None
+    horario_fim: Optional[str] = None
+
+class CategoriaCreate(CategoriaBase):
+    pass
+
+class Categoria(CategoriaBase):
+    id: int
+    class Config:
+        from_attributes = True
+
+class CupomBase(BaseModel):
+    codigo: str = Field(min_length=2, max_length=40)
+    descricao: Optional[str] = Field(default=None, max_length=255)
+    tipo: str = "percentual"
+    valor: float = Field(gt=0)
+    pedido_minimo: float = Field(default=0, ge=0)
+    inicio: Optional[datetime] = None
+    fim: Optional[datetime] = None
+    limite_usos: Optional[int] = Field(default=None, ge=1)
+    ativo: bool = True
+
+class CupomCreate(CupomBase):
+    pass
+
+class Cupom(CupomBase):
+    id: int
+    usos: int
+    class Config:
+        from_attributes = True
+
+class CupomValidar(BaseModel):
+    codigo: str
+    subtotal: float = Field(ge=0)
+
+class CupomValidado(BaseModel):
+    codigo: str
+    desconto: float
+    total: float
+    descricao: Optional[str] = None
 
 class OpcaoProdutoBase(BaseModel):
     nome: str = Field(min_length=1, max_length=120)
@@ -78,6 +134,7 @@ class ProdutoGruposUpdate(BaseModel):
 
 class Produto(ProdutoBase):
     id: int
+    promocao_ativa: bool = False
     grupos_opcoes: List[GrupoOpcao] = Field(default_factory=list)
     class Config:
         from_attributes = True
@@ -131,6 +188,7 @@ class PedidoBase(BaseModel):
     tipo_entrega: str
     forma_pagamento: str
     observacao: Optional[str] = None
+    cupom_codigo: Optional[str] = None
 
 class PedidoCreate(PedidoBase):
     itens: List[ItemPedidoCreate]
@@ -141,6 +199,7 @@ class Pedido(PedidoBase):
     status: str
     subtotal: float
     taxa_entrega: float
+    desconto: float = 0.0
     total: float
     data: datetime
     itens: List[ItemPedido] = Field(default_factory=list)

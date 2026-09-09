@@ -49,14 +49,14 @@ const NewOrder = () => {
     if (existing) {
       setItens(itens.map(i => i.produto.id === produto.id ? { ...i, quantidade: requestedQtd } : i));
     } else {
-      const preco = produto.is_promocao && produto.preco_promocao ? produto.preco_promocao : produto.preco;
+      const preco = produto.promocao_ativa && produto.preco_promocao ? produto.preco_promocao : produto.preco;
       setItens([...itens, { id: Date.now(), produto, quantidade: 1, opcoes: [], precoUnitario: preco }]);
     }
   };
 
   const addConfiguredProduct = (opcoes: any[]) => {
     const produto = optionsProduct;
-    const base = produto.is_promocao && produto.preco_promocao ? produto.preco_promocao : produto.preco;
+    const base = produto.promocao_ativa && produto.preco_promocao ? produto.preco_promocao : produto.preco;
     const extras = opcoes.reduce((sum, option) => sum + option.preco * option.quantidade, 0);
     setItens(current => [...current, { id: Date.now(), produto, quantidade: 1, opcoes, precoUnitario: base + extras }]);
     setOptionsProduct(null);

@@ -21,7 +21,7 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     # Mantém a primeira implantação segura tanto em bancos novos quanto no banco
     # já usado pelo BisBurger. As próximas alterações serão migrações incrementais.
-    catalog_tables = {"grupos_opcoes", "opcoes_produto", "produto_grupos_opcoes", "itens_pedido_opcoes"}
+    catalog_tables = {"categorias", "cupons", "grupos_opcoes", "opcoes_produto", "produto_grupos_opcoes", "itens_pedido_opcoes"}
     models.Base.metadata.create_all(
         bind=op.get_bind(),
         tables=[table for table in models.Base.metadata.tables.values() if table.name not in catalog_tables],

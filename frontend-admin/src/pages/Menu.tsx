@@ -1,15 +1,19 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Search, X, Trash2, Package, SlidersHorizontal } from 'lucide-react';
+import { Plus, Edit2, Search, X, Trash2, Package, SlidersHorizontal, CalendarClock, FolderCog } from 'lucide-react';
 import api from '../services/api';
 import { useAppData } from '../contexts/AppDataContext';
 import FichaTecnicaModal from '../components/FichaTecnicaModal';
 import ProductOptionsModal from '../components/ProductOptionsModal';
+import CategoriesModal from '../components/CategoriesModal';
+import ProductAvailabilityModal from '../components/ProductAvailabilityModal';
 
 const Menu = () => {
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [showFichaModal, setShowFichaModal] = useState<{id: number, nome: string} | null>(null);
   const [optionsProduct, setOptionsProduct] = useState<any | null>(null);
+  const [availabilityProduct, setAvailabilityProduct] = useState<any | null>(null);
+  const [showCategories, setShowCategories] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [removerFundo, setRemoverFundo] = useState(false);
@@ -79,6 +83,7 @@ const Menu = () => {
   const handleSave = async (e: any) => {
     e.preventDefault();
     try {
+      const existing = editingId ? produtos.find((produto: any) => produto.id === editingId) : null;
       const payload = {
         nome: novoProduto.nome,
         preco: parseFloat(novoProduto.preco),
@@ -89,7 +94,17 @@ const Menu = () => {
         controlar_estoque: novoProduto.controlar_estoque,
         estoque: parseInt(novoProduto.estoque) || 0,
         is_promocao: novoProduto.is_promocao,
-        preco_promocao: novoProduto.is_promocao && novoProduto.preco_promocao ? parseFloat(novoProduto.preco_promocao) : null
+        preco_promocao: novoProduto.is_promocao && novoProduto.preco_promocao ? parseFloat(novoProduto.preco_promocao) : null,
+        categoria_id: existing?.categoria_id ?? null,
+        ativo: existing?.ativo ?? true,
+        dias_semana: existing?.dias_semana ?? '0,1,2,3,4,5,6',
+        horario_inicio: existing?.horario_inicio ?? null,
+        horario_fim: existing?.horario_fim ?? null,
+        disponivel_delivery: existing?.disponivel_delivery ?? true,
+        disponivel_retirada: existing?.disponivel_retirada ?? true,
+        disponivel_salao: existing?.disponivel_salao ?? true,
+        promocao_inicio: existing?.promocao_inicio ?? null,
+        promocao_fim: existing?.promocao_fim ?? null
       };
 
       if (editingId) {
@@ -163,17 +178,22 @@ const Menu = () => {
           <h2 className="text-3xl font-bold tracking-tight text-white font-heading drop-shadow-sm">Cardápio</h2>
           <p className="text-zinc-300 mt-1">Gerencie os produtos e categorias.</p>
         </div>
+        <div className="flex w-full gap-2 md:w-auto">
+        <button type="button" onClick={() => setShowCategories(true)} className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 font-semibold text-zinc-200 transition hover:bg-white/10 md:flex-none">
+          <FolderCog size={18} /> Categorias
+        </button>
         <button 
           onClick={() => {
             setEditingId(null);
                   setNovoProduto({ nome: '', preco: '', preco_compra: '', categoria: '', descricao: '', imagem_url: '', controlar_estoque: false, estoque: '', is_promocao: false, preco_promocao: '' });
             setShowModal(true);
           }}
-          className="premium-btn px-5 py-2.5 rounded-xl font-semibold flex items-center gap-2"
+          className="premium-btn flex flex-1 items-center justify-center gap-2 rounded-xl px-5 py-2.5 font-semibold md:flex-none"
         >
           <Plus size={18} />
           <span>Novo Produto</span>
         </button>
+        </div>
       </header>
 
       <div className="flex flex-col md:flex-row gap-4 mb-6 justify-between">
@@ -230,6 +250,13 @@ const Menu = () => {
                     )}
                   </div>
                   <div className="flex items-center gap-1 shrink-0 ml-2">
+                    <button
+                      onClick={() => setAvailabilityProduct(produto)}
+                      className="text-zinc-400 hover:text-white md:opacity-0 group-hover:opacity-100 transition-all bg-dark-900 p-1.5 rounded-lg border border-white/10 hover:border-brand-500/50"
+                      title="Disponibilidade, canais e promoção"
+                    >
+                      <CalendarClock size={16} />
+                    </button>
                     <button
                       onClick={() => setOptionsProduct(produto)}
                       className="text-zinc-400 hover:text-white md:opacity-0 group-hover:opacity-100 transition-all bg-dark-900 p-1.5 rounded-lg border border-white/10 hover:border-brand-500/50"
@@ -470,6 +497,8 @@ const Menu = () => {
         />
       )}
       {optionsProduct && <ProductOptionsModal product={optionsProduct} onClose={() => setOptionsProduct(null)} onSaved={refreshProdutos} />}
+      {availabilityProduct && <ProductAvailabilityModal product={availabilityProduct} onClose={() => setAvailabilityProduct(null)} onSaved={refreshProdutos} />}
+      {showCategories && <CategoriesModal onClose={() => setShowCategories(false)} onChanged={refreshProdutos} />}
     </div>
   );
 };

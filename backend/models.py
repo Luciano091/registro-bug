@@ -88,6 +88,7 @@ class Produto(Base):
     estabelecimento_id = Column(Integer, ForeignKey("estabelecimentos.id"), nullable=True, index=True)
     nome = Column(String, index=True)
     categoria = Column(String, index=True)
+    categoria_id = Column(Integer, ForeignKey("categorias.id", ondelete="SET NULL"), nullable=True, index=True)
     descricao = Column(String, nullable=True)
     imagem_url = Column(String, nullable=True)
     preco_compra = Column(Float, default=0.0)
@@ -97,9 +98,57 @@ class Produto(Base):
     estoque = Column(Integer, default=0)
     is_promocao = Column(Boolean, default=False)
     preco_promocao = Column(Float, nullable=True)
+    promocao_inicio = Column(DateTime, nullable=True)
+    promocao_fim = Column(DateTime, nullable=True)
+    dias_semana = Column(String, nullable=False, default="0,1,2,3,4,5,6")
+    horario_inicio = Column(String, nullable=True)
+    horario_fim = Column(String, nullable=True)
+    disponivel_delivery = Column(Boolean, nullable=False, default=True)
+    disponivel_retirada = Column(Boolean, nullable=False, default=True)
+    disponivel_salao = Column(Boolean, nullable=False, default=True)
     
     fichas_tecnicas = relationship("ProdutoInsumo", back_populates="produto")
     grupos_opcoes = relationship("GrupoOpcao", secondary="produto_grupos_opcoes", order_by="ProdutoGrupoOpcao.ordem")
+    categoria_obj = relationship("Categoria", back_populates="produtos")
+
+    @property
+    def promocao_ativa(self):
+        if not self.is_promocao or self.preco_promocao is None:
+            return False
+        agora = get_now()
+        return (self.promocao_inicio is None or agora >= self.promocao_inicio) and (self.promocao_fim is None or agora <= self.promocao_fim)
+
+class Categoria(Base):
+    __tablename__ = "categorias"
+    __table_args__ = (UniqueConstraint("estabelecimento_id", "nome", name="uq_categoria_estabelecimento_nome"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    estabelecimento_id = Column(Integer, ForeignKey("estabelecimentos.id"), nullable=False, index=True)
+    nome = Column(String, nullable=False)
+    descricao = Column(String, nullable=True)
+    ordem = Column(Integer, nullable=False, default=0)
+    ativo = Column(Boolean, nullable=False, default=True)
+    dias_semana = Column(String, nullable=False, default="0,1,2,3,4,5,6")
+    horario_inicio = Column(String, nullable=True)
+    horario_fim = Column(String, nullable=True)
+    produtos = relationship("Produto", back_populates="categoria_obj")
+
+class Cupom(Base):
+    __tablename__ = "cupons"
+    __table_args__ = (UniqueConstraint("estabelecimento_id", "codigo", name="uq_cupom_estabelecimento_codigo"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    estabelecimento_id = Column(Integer, ForeignKey("estabelecimentos.id"), nullable=False, index=True)
+    codigo = Column(String, nullable=False)
+    descricao = Column(String, nullable=True)
+    tipo = Column(String, nullable=False, default="percentual")
+    valor = Column(Float, nullable=False)
+    pedido_minimo = Column(Float, nullable=False, default=0.0)
+    inicio = Column(DateTime, nullable=True)
+    fim = Column(DateTime, nullable=True)
+    limite_usos = Column(Integer, nullable=True)
+    usos = Column(Integer, nullable=False, default=0)
+    ativo = Column(Boolean, nullable=False, default=True)
 
 class GrupoOpcao(Base):
     __tablename__ = "grupos_opcoes"
@@ -151,6 +200,8 @@ class Pedido(Base):
     status = Column(String, default="Recebido")
     subtotal = Column(Float, default=0.0)
     taxa_entrega = Column(Float, default=0.0)
+    cupom_codigo = Column(String, nullable=True)
+    desconto = Column(Float, default=0.0)
     total = Column(Float, default=0.0)
     observacao = Column(String, nullable=True)
     data = Column(DateTime, default=get_now)

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { X, Trash2, MapPin, CreditCard, ChevronRight, ShoppingCart, MessageSquare } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { X, Trash2, MapPin, CreditCard, ChevronRight, ShoppingCart, MessageSquare, TicketPercent } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useNetwork } from '../contexts/NetworkContext';
 import { saveOfflineOrder } from '../services/db';
@@ -23,6 +23,24 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
   const [endereco, setEndereco] = useState(localStorage.getItem('user_endereco') || '');
   const [pagamento, setPagamento] = useState('');
   const [showObsFor, setShowObsFor] = useState<string | null>(null);
+  const [cupomCodigo, setCupomCodigo] = useState('');
+  const [cupomAplicado, setCupomAplicado] = useState<any | null>(null);
+  const [cupomErro, setCupomErro] = useState('');
+  const [validandoCupom, setValidandoCupom] = useState(false);
+  const totalFinal = Math.max(0, cartTotal - (cupomAplicado?.desconto || 0));
+
+  useEffect(() => { setCupomAplicado(null); setCupomErro(''); }, [cartTotal]);
+
+  const validarCupom = async () => {
+    if (!cupomCodigo.trim()) return;
+    setValidandoCupom(true); setCupomErro('');
+    try {
+      const response = await api.post(`/public/${getEstablishmentSlug()}/cupons/validar`, { codigo: cupomCodigo, subtotal: cartTotal });
+      setCupomAplicado(response.data); setCupomCodigo(response.data.codigo);
+    } catch (error: any) {
+      setCupomAplicado(null); setCupomErro(error.response?.data?.detail || 'Não foi possível validar o cupom.');
+    } finally { setValidandoCupom(false); }
+  };
 
   const handleFinalizeOrder = async () => {
     setIsSubmitting(true);
@@ -35,6 +53,7 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
         endereco: tipoPedido === 'entrega' ? endereco : undefined,
         tipo_entrega: tipoPedido === 'entrega' ? 'Delivery' : 'Retirada',
         forma_pagamento: pagamento,
+        cupom_codigo: cupomAplicado?.codigo || undefined,
         itens: items.map(item => ({
           produto_id: item.produtoId,
           quantidade: item.quantidade,
@@ -210,6 +229,12 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
                   )}
                 </div>
               ))}
+              <div className="rounded-2xl border border-zinc-200 bg-white p-4">
+                <label className="flex items-center gap-2 text-sm font-bold text-zinc-700"><TicketPercent size={17} className="text-brand-500" /> Cupom de desconto</label>
+                <div className="mt-3 flex gap-2"><input value={cupomCodigo} onChange={event => { setCupomCodigo(event.target.value.toUpperCase()); setCupomAplicado(null); }} placeholder="DIGITE O CÓDIGO" className="min-w-0 flex-1 rounded-xl border border-zinc-200 px-3 py-2.5 text-sm font-semibold uppercase outline-none focus:border-brand-500" /><button onClick={validarCupom} disabled={validandoCupom || !cupomCodigo.trim()} className="rounded-xl bg-zinc-900 px-4 text-sm font-bold text-white disabled:opacity-50">{validandoCupom ? 'Validando' : 'Aplicar'}</button></div>
+                {cupomAplicado && <p className="mt-2 text-sm font-semibold text-emerald-600">Cupom aplicado: − {cupomAplicado.desconto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>}
+                {cupomErro && <p className="mt-2 text-sm font-medium text-red-600">{cupomErro}</p>}
+              </div>
             </div>
           ) : (
             <div className="space-y-6">
@@ -300,7 +325,7 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
             <div className="flex items-center justify-between mb-4">
               <span className="text-zinc-500 font-medium">Total do pedido</span>
               <span className="font-price font-bold text-xl text-zinc-900 tracking-tight">
-                {cartTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                {totalFinal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
               </span>
             </div>
             
