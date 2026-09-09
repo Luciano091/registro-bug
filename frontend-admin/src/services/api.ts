@@ -29,6 +29,7 @@ api.interceptors.response.use(
       let slug = 'bisburger';
       try {
         localStorage.removeItem('adminToken');
+        localStorage.removeItem('ritmesaSession');
         slug = localStorage.getItem('estabelecimentoSlug') || 'bisburger';
       } catch (err) {}
       window.location.href = `/login?estabelecimento=${encodeURIComponent(slug)}`;

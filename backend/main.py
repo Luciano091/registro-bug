@@ -86,10 +86,17 @@ cloudinary.config(
 
 app = FastAPI(title="Ritmesa API")
 
+cors_env = os.getenv("CORS_ORIGINS", "")
+cors_origins = [origin.strip() for origin in cors_env.split(",") if origin.strip()] or [
+    "http://localhost:5173", "http://localhost:5174",
+    "https://ritmesa.com.br", "https://www.ritmesa.com.br",
+    "https://painel.ritmesa.com.br", "https://admin.ritmesa.com.br",
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
+    allow_origins=cors_origins,
+    allow_origin_regex=r"https://[a-z0-9-]+\.ritmesa\.com\.br",
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -97,7 +104,7 @@ app.add_middleware(
 @app.post("/upload")
 def upload_image(
     file: UploadFile = File(...), 
-    admin: bool = Depends(auth.get_current_admin)
+    admin: int = Depends(auth.require_permission("cardapio.gerenciar"))
 ):
     if not os.getenv("CLOUDINARY_CLOUD_NAME"):
         raise HTTPException(status_code=500, detail="Cloudinary não configurado nas variáveis de ambiente do Render")
@@ -123,22 +130,22 @@ def public_products(slug: str, skip: int = 0, limit: int = 500, db: Session = De
     return crud.get_produtos(db, estabelecimento.id, skip=skip, limit=limit)
 
 @app.get("/produtos", response_model=List[schemas.Produto])
-def read_produtos(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+def read_produtos(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("cardapio.visualizar"))):
     return crud.get_produtos(db, estabelecimento_id, skip=skip, limit=limit)
 
 @app.post("/produtos", response_model=schemas.Produto)
-def create_produto(produto: schemas.ProdutoCreate, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+def create_produto(produto: schemas.ProdutoCreate, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("cardapio.gerenciar"))):
     return crud.create_produto(db=db, produto=produto, estabelecimento_id=estabelecimento_id)
 
 @app.put("/produtos/{produto_id}", response_model=schemas.Produto)
-def update_produto(produto_id: int, produto: schemas.ProdutoCreate, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+def update_produto(produto_id: int, produto: schemas.ProdutoCreate, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("cardapio.gerenciar"))):
     db_produto = crud.update_produto(db, produto_id, produto, estabelecimento_id)
     if db_produto is None:
         raise HTTPException(status_code=404, detail="Produto não encontrado")
     return db_produto
 
 @app.delete("/produtos/{produto_id}", response_model=schemas.Produto)
-def delete_produto(produto_id: int, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+def delete_produto(produto_id: int, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("cardapio.gerenciar"))):
     db_produto = crud.delete_produto(db, produto_id, estabelecimento_id)
     if db_produto is None:
         raise HTTPException(status_code=404, detail="Produto não encontrado")
@@ -146,11 +153,11 @@ def delete_produto(produto_id: int, db: Session = Depends(get_db), estabelecimen
 
 # --- Pedidos ---
 @app.get("/pedidos", response_model=List[schemas.Pedido])
-def read_pedidos(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+def read_pedidos(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("pedidos.visualizar"))):
     return crud.get_pedidos(db, estabelecimento_id, skip=skip, limit=limit)
 
 @app.get("/pedidos/{pedido_id}", response_model=schemas.Pedido)
-def read_pedido(pedido_id: int, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+def read_pedido(pedido_id: int, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("pedidos.visualizar"))):
     db_pedido = crud.get_pedido(db, pedido_id=pedido_id, estabelecimento_id=estabelecimento_id)
     if db_pedido is None:
         raise HTTPException(status_code=404, detail="Pedido não encontrado")
@@ -318,7 +325,7 @@ def create_pedido(slug: str, pedido: schemas.PedidoCreate, db: Session = Depends
     return db_pedido
 
 @app.post("/pedidos", response_model=schemas.Pedido)
-def create_admin_order(pedido: schemas.PedidoCreate, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+def create_admin_order(pedido: schemas.PedidoCreate, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("pedidos.criar"))):
     caixa_aberto = crud.get_caixa_aberto(db, estabelecimento_id)
     if not caixa_aberto:
         raise HTTPException(status_code=400, detail="Não é possível registrar pedido: o Caixa está fechado.")
@@ -335,10 +342,10 @@ def create_admin_order(pedido: schemas.PedidoCreate, db: Session = Depends(get_d
     crud.add_movimentacao(db, caixa_aberto.id, movimento)
     return db_pedido
 
-@app.get("/public/{slug}/pedidos/{pedido_id}", response_model=schemas.Pedido)
-def public_order(slug: str, pedido_id: int, db: Session = Depends(get_db)):
+@app.get("/public/{slug}/acompanhamento/{codigo}", response_model=schemas.Pedido)
+def public_order(slug: str, codigo: str, db: Session = Depends(get_db)):
     estabelecimento = require_public_establishment(slug, db)
-    pedido = crud.get_pedido(db, pedido_id, estabelecimento.id)
+    pedido = crud.get_pedido_by_public_token(db, codigo, estabelecimento.id)
     if not pedido:
         raise HTTPException(status_code=404, detail="Pedido não encontrado.")
     return pedido
@@ -351,7 +358,7 @@ async def send_status_whatsapp(telefone: str, message: str, estabelecimento_id: 
         db.close()
 
 @app.put("/pedidos/{pedido_id}/status", response_model=schemas.Pedido)
-def update_pedido_status(pedido_id: int, status: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+def update_pedido_status(pedido_id: int, status: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("pedidos.atualizar"))):
     db_pedido = crud.update_pedido_status(db, pedido_id=pedido_id, status=status, estabelecimento_id=estabelecimento_id)
     if db_pedido is None:
         raise HTTPException(status_code=404, detail="Pedido não encontrado")
@@ -378,6 +385,31 @@ def login(login_req: schemas.LoginRequest, db: Session = Depends(get_db)):
     if not estabelecimento:
         raise HTTPException(status_code=404, detail="Estabelecimento indisponível.")
     config = crud.get_configuracao(db, estabelecimento.id)
+
+    if login_req.email:
+        usuario = crud.get_usuario_by_email(db, login_req.email, estabelecimento.id)
+        if not usuario or not usuario.ativo or not auth.verify_password(login_req.senha, usuario.senha_hash):
+            raise HTTPException(status_code=401, detail="E-mail ou senha incorretos.")
+        usuario.ultimo_acesso_em = models.get_now()
+        db.commit()
+        access_token = auth.create_access_token(
+            data={
+                "role": "staff", "usuario_id": usuario.id,
+                "estabelecimento_id": estabelecimento.id, "estabelecimento": estabelecimento.slug,
+            },
+            expires_delta=timedelta(days=7),
+        )
+        contexto = auth.UsuarioAutenticado(
+            estabelecimento_id=estabelecimento.id, usuario_id=usuario.id, nome=usuario.nome,
+            email=usuario.email, perfil=usuario.perfil,
+            permissoes=frozenset(auth.PERMISSOES_POR_PERFIL.get(usuario.perfil, set())),
+        )
+        crud.create_audit_log(db, estabelecimento.id, "auth.login", usuario.id, "usuario", usuario.id)
+        return {
+            "token": access_token,
+            "estabelecimento": {"id": estabelecimento.id, "nome": estabelecimento.nome, "slug": estabelecimento.slug},
+            "usuario": auth.serialize_user(contexto),
+        }
     
     is_valid = False
     needs_rehash = False
@@ -407,13 +439,85 @@ def login(login_req: schemas.LoginRequest, db: Session = Depends(get_db)):
             config.senha_admin = auth.get_password_hash(login_req.senha)
             db.commit()
             
+        usuario = crud.ensure_owner_user(db, estabelecimento, login_req.senha)
+        usuario.ultimo_acesso_em = models.get_now()
+        db.commit()
         access_token = auth.create_access_token(
-            data={"role": "admin", "estabelecimento_id": estabelecimento.id, "estabelecimento": estabelecimento.slug},
+            data={"role": "staff", "usuario_id": usuario.id, "estabelecimento_id": estabelecimento.id, "estabelecimento": estabelecimento.slug},
             expires_delta=timedelta(days=7)
         )
-        return {"token": access_token, "estabelecimento": {"id": estabelecimento.id, "nome": estabelecimento.nome, "slug": estabelecimento.slug}}
+        contexto = auth.UsuarioAutenticado(
+            estabelecimento_id=estabelecimento.id, usuario_id=usuario.id, nome=usuario.nome,
+            email=usuario.email, perfil=usuario.perfil, permissoes=frozenset({"*"}),
+        )
+        crud.create_audit_log(db, estabelecimento.id, "auth.login_legado", usuario.id, "usuario", usuario.id)
+        return {
+            "token": access_token,
+            "estabelecimento": {"id": estabelecimento.id, "nome": estabelecimento.nome, "slug": estabelecimento.slug},
+            "usuario": auth.serialize_user(contexto),
+        }
 
     raise HTTPException(status_code=401, detail="Senha incorreta")
+
+@app.get("/auth/me", response_model=schemas.SessaoUsuario)
+def auth_me(usuario: auth.UsuarioAutenticado = Depends(auth.get_current_user)):
+    return auth.serialize_user(usuario)
+
+# --- Equipe e permissões ---
+@app.get("/usuarios/perfis")
+def list_profiles(_: auth.UsuarioAutenticado = Depends(auth.require_user_permission("usuarios.visualizar"))):
+    return [
+        {"id": perfil, "nome": perfil.replace("_", " ").title(), "permissoes": sorted(permissoes)}
+        for perfil, permissoes in auth.PERMISSOES_POR_PERFIL.items()
+    ]
+
+@app.get("/usuarios", response_model=List[schemas.Usuario])
+def list_users(
+    db: Session = Depends(get_db),
+    atual: auth.UsuarioAutenticado = Depends(auth.require_user_permission("usuarios.visualizar")),
+):
+    return crud.get_usuarios(db, atual.estabelecimento_id)
+
+@app.post("/usuarios", response_model=schemas.Usuario, status_code=201)
+def create_user(
+    payload: schemas.UsuarioCreate,
+    db: Session = Depends(get_db),
+    atual: auth.UsuarioAutenticado = Depends(auth.require_user_permission("usuarios.gerenciar")),
+):
+    if payload.perfil == "proprietario" and atual.perfil != "proprietario":
+        raise HTTPException(status_code=403, detail="Somente o proprietário pode cadastrar outro proprietário.")
+    try:
+        usuario = crud.create_usuario(db, payload, atual.estabelecimento_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    crud.create_audit_log(db, atual.estabelecimento_id, "usuario.criado", atual.usuario_id, "usuario", usuario.id, {"perfil": usuario.perfil})
+    return usuario
+
+@app.put("/usuarios/{usuario_id}", response_model=schemas.Usuario)
+def update_user(
+    usuario_id: int,
+    payload: schemas.UsuarioUpdate,
+    db: Session = Depends(get_db),
+    atual: auth.UsuarioAutenticado = Depends(auth.require_user_permission("usuarios.gerenciar")),
+):
+    alvo = crud.get_usuario(db, usuario_id, atual.estabelecimento_id)
+    if not alvo:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado.")
+    novo_perfil = payload.perfil or alvo.perfil
+    if (alvo.perfil == "proprietario" or novo_perfil == "proprietario") and atual.perfil != "proprietario":
+        raise HTTPException(status_code=403, detail="Somente o proprietário pode alterar esse perfil.")
+    if usuario_id == atual.usuario_id and payload.ativo is False:
+        raise HTTPException(status_code=400, detail="Você não pode desativar o próprio acesso.")
+    if alvo.perfil == "proprietario" and (payload.ativo is False or novo_perfil != "proprietario"):
+        proprietarios = [item for item in crud.get_usuarios(db, atual.estabelecimento_id) if item.perfil == "proprietario" and item.ativo]
+        if len(proprietarios) <= 1:
+            raise HTTPException(status_code=400, detail="O estabelecimento precisa manter ao menos um proprietário ativo.")
+    try:
+        usuario = crud.update_usuario(db, usuario_id, payload, atual.estabelecimento_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    crud.create_audit_log(db, atual.estabelecimento_id, "usuario.atualizado", atual.usuario_id, "usuario", usuario.id, payload.model_dump(exclude_unset=True, exclude={"senha"}))
+    return usuario
 
 # --- Configuracoes ---
 @app.get("/public/{slug}/configuracao", response_model=schemas.ConfiguracaoPublica)
@@ -426,7 +530,7 @@ def public_configuracao(slug: str, db: Session = Depends(get_db)):
     return config_dict
 
 @app.get("/configuracao", response_model=schemas.Configuracao)
-def read_configuracao(db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+def read_configuracao(db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("configuracoes.visualizar"))):
     config = crud.get_configuracao(db, estabelecimento_id)
     caixa_aberto = crud.get_caixa_aberto(db, estabelecimento_id)
     
@@ -435,12 +539,18 @@ def read_configuracao(db: Session = Depends(get_db), estabelecimento_id: int = D
     return config_dict
 
 @app.put("/configuracao", response_model=schemas.Configuracao)
-def update_configuracao(config: schemas.ConfiguracaoCreate, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
-    return crud.update_configuracao(db=db, config=config, estabelecimento_id=estabelecimento_id)
+def update_configuracao(
+    config: schemas.ConfiguracaoCreate,
+    db: Session = Depends(get_db),
+    atual: auth.UsuarioAutenticado = Depends(auth.require_user_permission("configuracoes.gerenciar")),
+):
+    if config.senha_admin and atual.perfil != "proprietario":
+        raise HTTPException(status_code=403, detail="Somente o proprietário pode alterar a senha principal.")
+    return crud.update_configuracao(db=db, config=config, estabelecimento_id=atual.estabelecimento_id)
 
 # --- Dashboard & Relatorios ---
 @app.get("/dashboard/resumo")
-def get_dashboard_resumo(db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+def get_dashboard_resumo(db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("dashboard.visualizar"))):
     hoje = (datetime.datetime.utcnow() - datetime.timedelta(hours=3)).date()
     inicio_dia = datetime.datetime.combine(hoje, datetime.time.min)
     fim_dia = datetime.datetime.combine(hoje, datetime.time.max)
@@ -488,7 +598,7 @@ def get_dashboard_resumo(db: Session = Depends(get_db), estabelecimento_id: int 
     }
 
 @app.get("/dashboard/relatorios")
-def get_dashboard_relatorios(periodo: str = "mes", start: str = None, end: str = None, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+def get_dashboard_relatorios(periodo: str = "mes", start: str = None, end: str = None, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("relatorios.visualizar"))):
     from datetime import timedelta
     import datetime
     hoje = (datetime.datetime.utcnow() - datetime.timedelta(hours=3)).date()
@@ -665,7 +775,7 @@ def get_dashboard_relatorios(periodo: str = "mes", start: str = None, end: str =
     }
 
 @app.get("/debug/relatorios")
-def debug_relatorios(db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+def debug_relatorios(db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("relatorios.visualizar"))):
     import traceback
     try:
         return get_dashboard_relatorios(periodo="mes", start=None, end=None, db=db, estabelecimento_id=estabelecimento_id)
@@ -674,28 +784,28 @@ def debug_relatorios(db: Session = Depends(get_db), estabelecimento_id: int = De
 
 # --- Caixa ---
 @app.get("/caixa/status", response_model=schemas.Caixa)
-def get_caixa_status(db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+def get_caixa_status(db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("caixa.visualizar"))):
     caixa = crud.get_caixa_aberto(db, estabelecimento_id)
     if not caixa:
         raise HTTPException(status_code=404, detail="Nenhum caixa aberto no momento.")
     return caixa
 
 @app.post("/caixa/abrir", response_model=schemas.Caixa)
-def abrir_caixa(caixa: schemas.CaixaCreate, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+def abrir_caixa(caixa: schemas.CaixaCreate, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("caixa.operar"))):
     caixa_aberto = crud.get_caixa_aberto(db, estabelecimento_id)
     if caixa_aberto:
         raise HTTPException(status_code=400, detail="Já existe um caixa aberto.")
     return crud.abrir_caixa(db=db, caixa=caixa, estabelecimento_id=estabelecimento_id)
 
 @app.post("/caixa/{caixa_id}/fechar", response_model=schemas.Caixa)
-def fechar_caixa(caixa_id: int, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+def fechar_caixa(caixa_id: int, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("caixa.operar"))):
     caixa = crud.fechar_caixa(db=db, caixa_id=caixa_id, estabelecimento_id=estabelecimento_id)
     if not caixa:
         raise HTTPException(status_code=404, detail="Caixa não encontrado.")
     return caixa
 
 @app.post("/caixa/{caixa_id}/movimento", response_model=schemas.MovimentacaoCaixa)
-def add_movimento_caixa(caixa_id: int, movimento: schemas.MovimentacaoCaixaCreate, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+def add_movimento_caixa(caixa_id: int, movimento: schemas.MovimentacaoCaixaCreate, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("caixa.operar"))):
     caixa = crud.get_caixa_aberto(db, estabelecimento_id)
     if not caixa or caixa.id != caixa_id:
         raise HTTPException(status_code=400, detail="Caixa não está aberto ou ID inválido.")
@@ -727,13 +837,13 @@ async def receive_webhook(request: Request, background_tasks: BackgroundTasks):
     return {"status": "ok"}
 
 @app.get("/whatsapp/chats", response_model=List[schemas.WhatsAppContato])
-def get_whatsapp_chats(db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+def get_whatsapp_chats(db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("whatsapp.visualizar"))):
     # Returns contacts with their latest messages, ordered by recent interaction
     contatos = db.query(models.WhatsAppContato).filter(models.WhatsAppContato.estabelecimento_id == estabelecimento_id).order_by(models.WhatsAppContato.ultima_interacao.desc()).all()
     return contatos
 
 @app.post("/whatsapp/send")
-async def send_manual_message(telefone: str, texto: str, background_tasks: BackgroundTasks, estabelecimento_id: int = Depends(auth.get_current_admin)):
+async def send_manual_message(telefone: str, texto: str, background_tasks: BackgroundTasks, estabelecimento_id: int = Depends(auth.require_permission("whatsapp.enviar"))):
     async def send_msg_task():
         db = SessionLocal()
         try:
@@ -746,22 +856,22 @@ async def send_manual_message(telefone: str, texto: str, background_tasks: Backg
 
 # --- Insumos ---
 @app.get("/insumos", response_model=List[schemas.Insumo])
-def get_insumos(db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+def get_insumos(db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("estoque.visualizar"))):
     return crud.get_insumos(db, estabelecimento_id)
 
 @app.post("/insumos", response_model=schemas.Insumo)
-def create_insumo(insumo: schemas.InsumoCreate, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+def create_insumo(insumo: schemas.InsumoCreate, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("estoque.gerenciar"))):
     return crud.create_insumo(db=db, insumo=insumo, estabelecimento_id=estabelecimento_id)
 
 @app.put("/insumos/{insumo_id}", response_model=schemas.Insumo)
-def update_insumo(insumo_id: int, insumo: schemas.InsumoCreate, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+def update_insumo(insumo_id: int, insumo: schemas.InsumoCreate, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("estoque.gerenciar"))):
     db_insumo = crud.update_insumo(db, insumo_id, insumo, estabelecimento_id)
     if not db_insumo:
         raise HTTPException(status_code=404, detail="Insumo não encontrado")
     return db_insumo
 
 @app.delete("/insumos/{insumo_id}")
-def delete_insumo(insumo_id: int, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+def delete_insumo(insumo_id: int, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("estoque.gerenciar"))):
     db_insumo = crud.delete_insumo(db, insumo_id, estabelecimento_id)
     if not db_insumo:
         raise HTTPException(status_code=404, detail="Insumo não encontrado")
@@ -769,9 +879,9 @@ def delete_insumo(insumo_id: int, db: Session = Depends(get_db), estabelecimento
 
 # --- Ficha Tecnica ---
 @app.get("/produtos/{produto_id}/ficha-tecnica", response_model=List[schemas.ProdutoInsumo])
-def get_ficha_tecnica(produto_id: int, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+def get_ficha_tecnica(produto_id: int, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("estoque.visualizar"))):
     return crud.get_ficha_tecnica(db, produto_id, estabelecimento_id)
 
 @app.put("/produtos/{produto_id}/ficha-tecnica", response_model=List[schemas.ProdutoInsumo])
-def update_ficha_tecnica(produto_id: int, itens: List[schemas.ProdutoInsumoCreate], db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.get_current_admin)):
+def update_ficha_tecnica(produto_id: int, itens: List[schemas.ProdutoInsumoCreate], db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("estoque.gerenciar"))):
     return crud.update_ficha_tecnica(db, produto_id, itens, estabelecimento_id)

@@ -51,7 +51,7 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
       } else {
         try {
           const response = await api.post(`/public/${getEstablishmentSlug()}/pedidos`, pedidoData);
-          if (response.data && response.data.id) {
+          if (response.data && response.data.uuid) {
             let saved = [];
             try {
               saved = JSON.parse(localStorage.getItem('meus_pedidos') || '[]');
@@ -59,8 +59,8 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
             } catch (e) {
               saved = [];
             }
-            if (!saved.includes(response.data.id)) {
-              saved.push(response.data.id);
+            if (!saved.includes(response.data.uuid)) {
+              saved.push(response.data.uuid);
             }
             localStorage.setItem('meus_pedidos', JSON.stringify(saved));
           }

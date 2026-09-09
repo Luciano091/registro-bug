@@ -1,6 +1,7 @@
 import os
 import hmac
 from datetime import datetime, timedelta
+from dataclasses import dataclass
 from typing import Optional
 import jwt
 from fastapi import Depends, HTTPException, status
@@ -18,6 +19,39 @@ import bcrypt
 
 # Como não estamos usando form-data e sim JSON no login, usamos uma verificação customizada ou o esquema padrão com URL falsa
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login", auto_error=False)
+
+PERFIS = ("proprietario", "gerente", "caixa", "atendente", "garcom", "cozinha", "entregador")
+
+PERMISSOES_POR_PERFIL = {
+    "proprietario": {"*"},
+    "gerente": {
+        "dashboard.visualizar", "pedidos.visualizar", "pedidos.criar", "pedidos.atualizar",
+        "caixa.visualizar", "caixa.operar", "cardapio.visualizar", "cardapio.gerenciar",
+        "estoque.visualizar", "estoque.gerenciar", "relatorios.visualizar",
+        "configuracoes.visualizar", "configuracoes.gerenciar", "usuarios.visualizar",
+        "usuarios.gerenciar", "whatsapp.visualizar", "whatsapp.enviar",
+    },
+    "caixa": {
+        "dashboard.visualizar", "pedidos.visualizar", "pedidos.criar", "pedidos.atualizar",
+        "caixa.visualizar", "caixa.operar", "cardapio.visualizar", "relatorios.visualizar",
+    },
+    "atendente": {"pedidos.visualizar", "pedidos.criar", "pedidos.atualizar", "cardapio.visualizar"},
+    "garcom": {"pedidos.visualizar", "pedidos.criar", "cardapio.visualizar", "salao.operar"},
+    "cozinha": {"pedidos.visualizar", "pedidos.atualizar", "cozinha.operar"},
+    "entregador": {"pedidos.visualizar", "entregas.operar"},
+}
+
+@dataclass(frozen=True)
+class UsuarioAutenticado:
+    estabelecimento_id: int
+    usuario_id: Optional[int]
+    nome: str
+    email: Optional[str]
+    perfil: str
+    permissoes: frozenset[str]
+
+    def pode(self, permissao: str) -> bool:
+        return "*" in self.permissoes or permissao in self.permissoes
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     try:
@@ -45,7 +79,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-def get_current_admin(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> UsuarioAutenticado:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Acesso Negado: Token inválido ou expirado.",
@@ -59,7 +93,7 @@ def get_current_admin(token: str = Depends(oauth2_scheme), db: Session = Depends
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         role: str = payload.get("role")
         estabelecimento_id = payload.get("estabelecimento_id")
-        if role != "admin" or not estabelecimento_id:
+        if role not in ("admin", "staff") or not estabelecimento_id:
             raise credentials_exception
         import models
         estabelecimento = db.query(models.Estabelecimento).filter(
@@ -68,10 +102,54 @@ def get_current_admin(token: str = Depends(oauth2_scheme), db: Session = Depends
         ).first()
         if not estabelecimento:
             raise credentials_exception
-    except jwt.PyJWTError:
+        if role == "admin":
+            return UsuarioAutenticado(
+                estabelecimento_id=int(estabelecimento_id), usuario_id=payload.get("usuario_id"),
+                nome=payload.get("nome") or "Administrador", email=payload.get("email"),
+                perfil=payload.get("perfil") or "proprietario", permissoes=frozenset({"*"}),
+            )
+        usuario_id = payload.get("usuario_id")
+        usuario = db.query(models.Usuario).filter(
+            models.Usuario.id == usuario_id,
+            models.Usuario.estabelecimento_id == int(estabelecimento_id),
+            models.Usuario.ativo == True,
+        ).first()
+        if not usuario:
+            raise credentials_exception
+        permissoes = PERMISSOES_POR_PERFIL.get(usuario.perfil, set())
+        return UsuarioAutenticado(
+            estabelecimento_id=int(estabelecimento_id), usuario_id=usuario.id, nome=usuario.nome,
+            email=usuario.email, perfil=usuario.perfil, permissoes=frozenset(permissoes),
+        )
+    except (jwt.PyJWTError, TypeError, ValueError):
         raise credentials_exception
-        
-    return int(estabelecimento_id)
+
+def serialize_user(usuario: UsuarioAutenticado) -> dict:
+    return {
+        "id": usuario.usuario_id,
+        "nome": usuario.nome,
+        "email": usuario.email,
+        "perfil": usuario.perfil,
+        "permissoes": sorted(usuario.permissoes),
+    }
+
+def get_current_admin(usuario: UsuarioAutenticado = Depends(get_current_user)) -> int:
+    """Compatibilidade temporária para rotas ainda não associadas a uma permissão."""
+    return usuario.estabelecimento_id
+
+def require_permission(permissao: str):
+    def dependency(usuario: UsuarioAutenticado = Depends(get_current_user)) -> int:
+        if not usuario.pode(permissao):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Você não tem permissão para esta ação.")
+        return usuario.estabelecimento_id
+    return dependency
+
+def require_user_permission(permissao: str):
+    def dependency(usuario: UsuarioAutenticado = Depends(get_current_user)) -> UsuarioAutenticado:
+        if not usuario.pode(permissao):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Você não tem permissão para esta ação.")
+        return usuario
+    return dependency
 
 def authenticate_platform_admin(email: str, password: str) -> bool:
     is_production = os.getenv("ENVIRONMENT", "development").lower() == "production"

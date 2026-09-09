@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 import models, schemas
 import datetime
+import uuid as uuid_lib
 
 # --- Produtos ---
 def get_produtos(db: Session, estabelecimento_id: int, skip: int = 0, limit: int = 100):
@@ -68,6 +69,12 @@ def get_pedidos(db: Session, estabelecimento_id: int, skip: int = 0, limit: int 
 def get_pedido(db: Session, pedido_id: int, estabelecimento_id: int):
     return db.query(models.Pedido).filter(models.Pedido.id == pedido_id, models.Pedido.estabelecimento_id == estabelecimento_id).first()
 
+def get_pedido_by_public_token(db: Session, token: str, estabelecimento_id: int):
+    return db.query(models.Pedido).filter(
+        models.Pedido.uuid == token,
+        models.Pedido.estabelecimento_id == estabelecimento_id,
+    ).first()
+
 def get_pedidos_by_date_range(db: Session, start_date: datetime.datetime, end_date: datetime.datetime, estabelecimento_id: int):
     return db.query(models.Pedido).filter(models.Pedido.estabelecimento_id == estabelecimento_id, models.Pedido.data >= start_date, models.Pedido.data <= end_date).all()
 
@@ -118,9 +125,10 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate, estabelecimento_id:
     count_hoje = db.query(models.Pedido).filter(models.Pedido.estabelecimento_id == estabelecimento_id, func.date(models.Pedido.data) == hoje).count() + 1
     numero_pedido = f"{estabelecimento_id}-{hoje.strftime('%Y%m%d')}-{count_hoje:03d}"
 
+    pedido_uuid = pedido.uuid or str(uuid_lib.uuid4())
     db_pedido = models.Pedido(
         estabelecimento_id=estabelecimento_id,
-        uuid=pedido.uuid,
+        uuid=pedido_uuid,
         numero=numero_pedido,
         cliente=pedido.cliente,
         telefone=pedido.telefone,
@@ -156,9 +164,9 @@ def update_pedido_status(db: Session, pedido_id: int, status: str, estabelecimen
     return db_pedido
 
 # --- Configuracoes ---
-import auth
 
 def get_configuracao(db: Session, estabelecimento_id: int = None):
+    import auth
     query = db.query(models.Configuracao)
     config = query.filter(models.Configuracao.estabelecimento_id == estabelecimento_id).first() if estabelecimento_id else query.first()
     if not config:
@@ -169,8 +177,10 @@ def get_configuracao(db: Session, estabelecimento_id: int = None):
     return config
 
 def update_configuracao(db: Session, config: schemas.ConfiguracaoCreate, estabelecimento_id: int):
+    import auth
     db_config = db.query(models.Configuracao).filter(models.Configuracao.estabelecimento_id == estabelecimento_id).first()
     config_data = config.model_dump()
+    senha_plana = config_data.get("senha_admin")
     
     # Hash password if provided
     if "senha_admin" in config_data and config_data["senha_admin"]:
@@ -198,6 +208,15 @@ def update_configuracao(db: Session, config: schemas.ConfiguracaoCreate, estabel
         estabelecimento.logo = db_config.logo
         estabelecimento.configuracao_id = db_config.id
         db.commit()
+    if senha_plana:
+        owner = db.query(models.Usuario).filter(
+            models.Usuario.estabelecimento_id == estabelecimento_id,
+            models.Usuario.perfil == "proprietario",
+            models.Usuario.ativo == True,
+        ).order_by(models.Usuario.id).first()
+        if owner:
+            owner.senha_hash = auth.get_password_hash(senha_plana)
+            db.commit()
     return db_config
 
 # --- Caixa ---
@@ -288,6 +307,108 @@ def update_ficha_tecnica(db: Session, produto_id: int, itens: list[schemas.Produ
     db.commit()
     return get_ficha_tecnica(db, produto_id, estabelecimento_id)
 
+# --- Usuários e auditoria ---
+def normalize_email(email: str) -> str:
+    return email.strip().lower()
+
+def get_usuario(db: Session, usuario_id: int, estabelecimento_id: int):
+    return db.query(models.Usuario).filter(
+        models.Usuario.id == usuario_id,
+        models.Usuario.estabelecimento_id == estabelecimento_id,
+    ).first()
+
+def get_usuario_by_email(db: Session, email: str, estabelecimento_id: int):
+    return db.query(models.Usuario).filter(
+        models.Usuario.estabelecimento_id == estabelecimento_id,
+        func.lower(models.Usuario.email) == normalize_email(email),
+    ).first()
+
+def get_usuarios(db: Session, estabelecimento_id: int):
+    return db.query(models.Usuario).filter(
+        models.Usuario.estabelecimento_id == estabelecimento_id,
+    ).order_by(models.Usuario.nome.asc()).all()
+
+def create_usuario(db: Session, payload: schemas.UsuarioCreate, estabelecimento_id: int):
+    import auth
+    if payload.perfil not in auth.PERFIS:
+        raise ValueError("Perfil de usuário inválido.")
+    email = normalize_email(payload.email)
+    if get_usuario_by_email(db, email, estabelecimento_id):
+        raise ValueError("Já existe um usuário com este e-mail neste estabelecimento.")
+    usuario = models.Usuario(
+        estabelecimento_id=estabelecimento_id,
+        nome=payload.nome.strip(),
+        email=email,
+        senha_hash=auth.get_password_hash(payload.senha),
+        perfil=payload.perfil,
+        ativo=True,
+    )
+    db.add(usuario)
+    db.commit()
+    db.refresh(usuario)
+    return usuario
+
+def update_usuario(db: Session, usuario_id: int, payload: schemas.UsuarioUpdate, estabelecimento_id: int):
+    import auth
+    usuario = get_usuario(db, usuario_id, estabelecimento_id)
+    if not usuario:
+        return None
+    values = payload.model_dump(exclude_unset=True)
+    if "perfil" in values and values["perfil"] not in auth.PERFIS:
+        raise ValueError("Perfil de usuário inválido.")
+    if "email" in values:
+        values["email"] = normalize_email(values["email"])
+        duplicado = get_usuario_by_email(db, values["email"], estabelecimento_id)
+        if duplicado and duplicado.id != usuario_id:
+            raise ValueError("Já existe um usuário com este e-mail neste estabelecimento.")
+    senha = values.pop("senha", None)
+    if senha:
+        values["senha_hash"] = auth.get_password_hash(senha)
+    for key, value in values.items():
+        setattr(usuario, key, value.strip() if isinstance(value, str) else value)
+    db.commit()
+    db.refresh(usuario)
+    return usuario
+
+def ensure_owner_user(db: Session, estabelecimento: models.Estabelecimento, password: str):
+    import auth
+    owner = db.query(models.Usuario).filter(
+        models.Usuario.estabelecimento_id == estabelecimento.id,
+        models.Usuario.perfil == "proprietario",
+    ).first()
+    if owner:
+        return owner
+    email = normalize_email(estabelecimento.email or f"proprietario@{estabelecimento.slug}.ritmesa")
+    owner = models.Usuario(
+        estabelecimento_id=estabelecimento.id,
+        nome=estabelecimento.nome,
+        email=email,
+        senha_hash=auth.get_password_hash(password),
+        perfil="proprietario",
+        ativo=True,
+    )
+    db.add(owner)
+    db.commit()
+    db.refresh(owner)
+    return owner
+
+def create_audit_log(db: Session, estabelecimento_id: int, acao: str, usuario_id=None,
+                     entidade=None, entidade_id=None, detalhes=None, ip=None, user_agent=None):
+    import json
+    log = models.LogAuditoria(
+        estabelecimento_id=estabelecimento_id,
+        usuario_id=usuario_id,
+        acao=acao,
+        entidade=entidade,
+        entidade_id=str(entidade_id) if entidade_id is not None else None,
+        detalhes=json.dumps(detalhes, ensure_ascii=False, default=str) if detalhes is not None else None,
+        ip=ip,
+        user_agent=user_agent,
+    )
+    db.add(log)
+    db.commit()
+    return log
+
 # --- Administração da plataforma Ritmesa ---
 def ensure_initial_establishment(db: Session):
     existente = db.query(models.Estabelecimento).filter(models.Estabelecimento.slug == "bisburger").first()
@@ -328,6 +449,7 @@ def get_estabelecimentos(db: Session):
     return db.query(models.Estabelecimento).order_by(models.Estabelecimento.data_cadastro.desc()).all()
 
 def create_estabelecimento(db: Session, payload: schemas.EstabelecimentoCreate):
+    import auth
     existente = db.query(models.Estabelecimento).filter(models.Estabelecimento.slug == payload.slug).first()
     if existente:
         raise ValueError("Este endereço de cardápio já está em uso.")
@@ -349,6 +471,7 @@ def create_estabelecimento(db: Session, payload: schemas.EstabelecimentoCreate):
     estabelecimento.configuracao_id = config.id
     db.commit()
     db.refresh(estabelecimento)
+    ensure_owner_user(db, estabelecimento, payload.senha_inicial)
     return estabelecimento
 
 def update_estabelecimento(db: Session, estabelecimento_id: int, payload: schemas.EstabelecimentoUpdate):

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Home, PlusCircle, ListOrdered, Utensils, BarChart3, Settings as SettingsIcon, ChevronLeft, ChevronRight, Wallet, LogOut, Menu as MenuIcon, X, Package, Store } from 'lucide-react';
+import { Home, PlusCircle, ListOrdered, Utensils, BarChart3, Settings as SettingsIcon, ChevronLeft, ChevronRight, Wallet, LogOut, Menu as MenuIcon, X, Package, Store, Users } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import NewOrder from './pages/NewOrder';
 import Orders from './pages/Orders';
@@ -11,6 +11,7 @@ import CashFlow from './pages/CashFlow';
 import Insumos from './pages/Insumos';
 import PlatformLogin from './pages/PlatformLogin';
 import PlatformDashboard from './pages/PlatformDashboard';
+import Team from './pages/Team';
 
 import Login from './pages/Login';
 import { Navigate } from 'react-router-dom';
@@ -18,6 +19,7 @@ import { NetworkProvider, useNetwork } from './contexts/NetworkContext';
 import { AppDataProvider } from './contexts/AppDataContext';
 import { WifiOff, RefreshCcw } from 'lucide-react';
 import api from './services/api';
+import { can, readSession, type SessionUser } from './services/session';
 
 const NetworkBanner = () => {
   const { isOnline, isSyncing } = useNetwork();
@@ -67,15 +69,27 @@ const NavLink = ({ to, icon: Icon, children, isCollapsed, hasBadge }: { to: stri
   );
 };
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+const ProtectedRoute = ({ children, permission, user }: { children: React.ReactNode, permission?: string, user?: SessionUser | null }) => {
   const isAuthenticated = localStorage.getItem('adminToken') !== null;
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (permission && !can(user ?? null, permission)) {
+    return <div className="p-10"><div className="max-w-xl mx-auto bg-white border border-slate-200 rounded-2xl p-8 text-center"><h1 className="text-2xl font-bold text-slate-900">Acesso restrito</h1><p className="text-slate-500 mt-2">Sua função não possui permissão para abrir esta área.</p></div></div>;
+  }
+  return <>{children}</>;
+};
+
+const HomeRoute = ({ user }: { user: SessionUser | null }) => {
+  if (can(user, 'dashboard.visualizar')) return <Dashboard />;
+  if (can(user, 'pedidos.visualizar')) return <Navigate to="/pedidos" replace />;
+  if (can(user, 'cardapio.visualizar')) return <Navigate to="/cardapio" replace />;
+  return <div className="p-10 text-center text-slate-600">Seu acesso ainda não possui uma área operacional disponível.</div>;
 };
 
 function AppContent() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [estabelecimento, setEstabelecimento] = useState<{ nome_empresa?: string; logo?: string }>({});
+  const [session, setSession] = useState<SessionUser | null>(readSession());
   const location = useLocation();
   const isLoginRoute = location.pathname === '/login';
   const isPlatformHost = window.location.hostname.toLowerCase().startsWith('admin.');
@@ -87,6 +101,14 @@ function AppContent() {
     api.get('/configuracao')
       .then(({ data }) => setEstabelecimento(data || {}))
       .catch(() => setEstabelecimento({}));
+  }, [isLoginRoute, isPlatformArea]);
+
+  useEffect(() => {
+    if (isLoginRoute || isPlatformArea || !localStorage.getItem('adminToken')) return;
+    api.get('/auth/me').then(({ data }) => {
+      localStorage.setItem('ritmesaSession', JSON.stringify(data));
+      setSession(data);
+    }).catch(() => undefined);
   }, [isLoginRoute, isPlatformArea]);
 
   if (isPlatformArea) {
@@ -138,16 +160,17 @@ function AppContent() {
           
           <nav className="flex-1 px-3 py-5 flex flex-col gap-1 overflow-x-hidden overflow-y-auto custom-scrollbar">
             {!isCollapsed && <span className="nav-section-label">Operação</span>}
-            <NavLink to="/" icon={Home} isCollapsed={isCollapsed}>Dashboard</NavLink>
-            <NavLink to="/novo-pedido" icon={PlusCircle} isCollapsed={isCollapsed}>Novo Pedido</NavLink>
-            <NavLink to="/pedidos" icon={ListOrdered} isCollapsed={isCollapsed}>Pedidos</NavLink>
-            <NavLink to="/caixa" icon={Wallet} isCollapsed={isCollapsed}>Caixa</NavLink>
+            {can(session, 'dashboard.visualizar') && <NavLink to="/" icon={Home} isCollapsed={isCollapsed}>Dashboard</NavLink>}
+            {can(session, 'pedidos.criar') && <NavLink to="/novo-pedido" icon={PlusCircle} isCollapsed={isCollapsed}>Novo Pedido</NavLink>}
+            {can(session, 'pedidos.visualizar') && <NavLink to="/pedidos" icon={ListOrdered} isCollapsed={isCollapsed}>Pedidos</NavLink>}
+            {can(session, 'caixa.visualizar') && <NavLink to="/caixa" icon={Wallet} isCollapsed={isCollapsed}>Caixa</NavLink>}
 
             {!isCollapsed && <span className="nav-section-label mt-5">Gestão</span>}
-            <NavLink to="/cardapio" icon={Utensils} isCollapsed={isCollapsed}>Cardápio</NavLink>
-            <NavLink to="/insumos" icon={Package} isCollapsed={isCollapsed}>Insumos</NavLink>
-            <NavLink to="/relatorios" icon={BarChart3} isCollapsed={isCollapsed}>Relatórios</NavLink>
-            <NavLink to="/configuracoes" icon={SettingsIcon} isCollapsed={isCollapsed}>Configurações</NavLink>
+            {can(session, 'cardapio.visualizar') && <NavLink to="/cardapio" icon={Utensils} isCollapsed={isCollapsed}>Cardápio</NavLink>}
+            {can(session, 'estoque.visualizar') && <NavLink to="/insumos" icon={Package} isCollapsed={isCollapsed}>Insumos</NavLink>}
+            {can(session, 'relatorios.visualizar') && <NavLink to="/relatorios" icon={BarChart3} isCollapsed={isCollapsed}>Relatórios</NavLink>}
+            {can(session, 'usuarios.visualizar') && <NavLink to="/equipe" icon={Users} isCollapsed={isCollapsed}>Equipe</NavLink>}
+            {can(session, 'configuracoes.visualizar') && <NavLink to="/configuracoes" icon={SettingsIcon} isCollapsed={isCollapsed}>Configurações</NavLink>}
           </nav>
           
           <div className="p-3 border-t border-white/5 mt-auto space-y-1">
@@ -167,6 +190,7 @@ function AppContent() {
             <button 
               onClick={() => {
                 localStorage.removeItem('adminToken');
+                localStorage.removeItem('ritmesaSession');
                 window.location.href = '/login';
               }}
               className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 px-4'} py-2.5 rounded-lg transition-all duration-200 font-medium text-slate-400 hover:text-white hover:bg-white/5`}
@@ -192,15 +216,16 @@ function AppContent() {
             </div>
           </div>
           <Routes>
-            <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/novo-pedido" element={<ProtectedRoute><NewOrder /></ProtectedRoute>} />
-            <Route path="/pedidos" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+            <Route path="/" element={<ProtectedRoute user={session}><HomeRoute user={session} /></ProtectedRoute>} />
+            <Route path="/novo-pedido" element={<ProtectedRoute permission="pedidos.criar" user={session}><NewOrder /></ProtectedRoute>} />
+            <Route path="/pedidos" element={<ProtectedRoute permission="pedidos.visualizar" user={session}><Orders /></ProtectedRoute>} />
 
-            <Route path="/caixa" element={<ProtectedRoute><CashFlow /></ProtectedRoute>} />
-            <Route path="/cardapio" element={<ProtectedRoute><Menu /></ProtectedRoute>} />
-            <Route path="/insumos" element={<ProtectedRoute><Insumos /></ProtectedRoute>} />
-            <Route path="/relatorios" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-            <Route path="/configuracoes" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/caixa" element={<ProtectedRoute permission="caixa.visualizar" user={session}><CashFlow /></ProtectedRoute>} />
+            <Route path="/cardapio" element={<ProtectedRoute permission="cardapio.visualizar" user={session}><Menu /></ProtectedRoute>} />
+            <Route path="/insumos" element={<ProtectedRoute permission="estoque.visualizar" user={session}><Insumos /></ProtectedRoute>} />
+            <Route path="/relatorios" element={<ProtectedRoute permission="relatorios.visualizar" user={session}><Reports /></ProtectedRoute>} />
+            <Route path="/equipe" element={<ProtectedRoute permission="usuarios.visualizar" user={session}><Team /></ProtectedRoute>} />
+            <Route path="/configuracoes" element={<ProtectedRoute permission="configuracoes.visualizar" user={session}><Settings /></ProtectedRoute>} />
           </Routes>
         </main>
 
@@ -217,15 +242,17 @@ function AppContent() {
               </button>
             </div>
             <nav className="flex flex-col gap-4 overflow-y-auto">
-              <Link to="/caixa" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><Wallet className="text-brand-400" /> Caixa</Link>
-              <Link to="/insumos" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><Package className="text-brand-400" /> Insumos</Link>
-              <Link to="/relatorios" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><BarChart3 className="text-brand-400" /> Relatórios</Link>
-              <Link to="/configuracoes" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><SettingsIcon className="text-brand-400" /> Configurações</Link>
+              {can(session, 'caixa.visualizar') && <Link to="/caixa" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><Wallet className="text-brand-400" /> Caixa</Link>}
+              {can(session, 'estoque.visualizar') && <Link to="/insumos" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><Package className="text-brand-400" /> Insumos</Link>}
+              {can(session, 'relatorios.visualizar') && <Link to="/relatorios" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><BarChart3 className="text-brand-400" /> Relatórios</Link>}
+              {can(session, 'usuarios.visualizar') && <Link to="/equipe" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><Users className="text-brand-400" /> Equipe</Link>}
+              {can(session, 'configuracoes.visualizar') && <Link to="/configuracoes" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><SettingsIcon className="text-brand-400" /> Configurações</Link>}
               
               <div className="mt-8">
                 <button 
                   onClick={() => {
                     localStorage.removeItem('adminToken');
+                    localStorage.removeItem('ritmesaSession');
                     window.location.href = '/login';
                   }}
                   className="w-full flex items-center gap-4 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-lg font-medium text-red-400 transition-colors hover:bg-red-500/20"
@@ -239,14 +266,14 @@ function AppContent() {
 
         {/* Mobile Bottom Nav */}
         <nav className="mobile-bottom-nav fixed bottom-0 z-50 flex w-full justify-between px-2 py-1.5 md:hidden print:hidden pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-          <Link to="/" aria-current={location.pathname === '/' ? 'page' : undefined} className={`mobile-nav-item ${location.pathname === '/' ? 'is-active' : ''}`}><Home size={22} /><span>Início</span></Link>
-          <Link to="/pedidos" aria-current={location.pathname === '/pedidos' ? 'page' : undefined} className={`mobile-nav-item ${location.pathname === '/pedidos' ? 'is-active' : ''}`}><ListOrdered size={22} /><span>Pedidos</span></Link>
+          {can(session, 'dashboard.visualizar') && <Link to="/" aria-current={location.pathname === '/' ? 'page' : undefined} className={`mobile-nav-item ${location.pathname === '/' ? 'is-active' : ''}`}><Home size={22} /><span>Início</span></Link>}
+          {can(session, 'pedidos.visualizar') && <Link to="/pedidos" aria-current={location.pathname === '/pedidos' ? 'page' : undefined} className={`mobile-nav-item ${location.pathname === '/pedidos' ? 'is-active' : ''}`}><ListOrdered size={22} /><span>Pedidos</span></Link>}
           
-          <Link to="/novo-pedido" aria-label="Novo pedido" className="relative -top-6 p-4 premium-btn rounded-full shadow-xl shadow-brand-500/20 border-4 border-white">
+          {can(session, 'pedidos.criar') && <Link to="/novo-pedido" aria-label="Novo pedido" className="relative -top-6 p-4 premium-btn rounded-full shadow-xl shadow-brand-500/20 border-4 border-white">
             <PlusCircle size={28} />
-          </Link>
+          </Link>}
           
-          <Link to="/cardapio" aria-current={location.pathname === '/cardapio' ? 'page' : undefined} className={`mobile-nav-item ${location.pathname === '/cardapio' ? 'is-active' : ''}`}><Utensils size={22} /><span>Cardápio</span></Link>
+          {can(session, 'cardapio.visualizar') && <Link to="/cardapio" aria-current={location.pathname === '/cardapio' ? 'page' : undefined} className={`mobile-nav-item ${location.pathname === '/cardapio' ? 'is-active' : ''}`}><Utensils size={22} /><span>Cardápio</span></Link>}
           <button onClick={() => setIsMobileMenuOpen(true)} className={`mobile-nav-item ${isMobileMenuOpen ? 'is-active' : ''}`}><MenuIcon size={22} /><span>Mais</span></button>
         </nav>
       </div>

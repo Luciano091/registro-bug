@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, DateTime, Text
+from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, DateTime, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 import datetime
 
@@ -22,6 +22,36 @@ class Estabelecimento(Base):
     data_cadastro = Column(DateTime, default=get_now)
     trial_ate = Column(DateTime, nullable=True)
     configuracao_id = Column(Integer, ForeignKey("configuracoes.id"), nullable=True, unique=True)
+
+class Usuario(Base):
+    __tablename__ = "usuarios"
+    __table_args__ = (
+        UniqueConstraint("estabelecimento_id", "email", name="uq_usuario_estabelecimento_email"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    estabelecimento_id = Column(Integer, ForeignKey("estabelecimentos.id"), nullable=False, index=True)
+    nome = Column(String, nullable=False)
+    email = Column(String, nullable=False, index=True)
+    senha_hash = Column(String, nullable=False)
+    perfil = Column(String, nullable=False, default="atendente", index=True)
+    ativo = Column(Boolean, nullable=False, default=True, index=True)
+    criado_em = Column(DateTime, default=get_now, nullable=False)
+    ultimo_acesso_em = Column(DateTime, nullable=True)
+
+class LogAuditoria(Base):
+    __tablename__ = "logs_auditoria"
+
+    id = Column(Integer, primary_key=True, index=True)
+    estabelecimento_id = Column(Integer, ForeignKey("estabelecimentos.id"), nullable=False, index=True)
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True, index=True)
+    acao = Column(String, nullable=False, index=True)
+    entidade = Column(String, nullable=True, index=True)
+    entidade_id = Column(String, nullable=True)
+    detalhes = Column(Text, nullable=True)
+    ip = Column(String, nullable=True)
+    user_agent = Column(String, nullable=True)
+    criado_em = Column(DateTime, default=get_now, nullable=False, index=True)
 
 class LeadComercial(Base):
     __tablename__ = "leads_comerciais"

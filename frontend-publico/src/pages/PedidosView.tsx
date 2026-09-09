@@ -16,14 +16,16 @@ export const PedidosView = () => {
           return;
         }
         
-        const ids = JSON.parse(idsStr);
-        if (!Array.isArray(ids) || ids.length === 0) {
+        const codigos = JSON.parse(idsStr);
+        if (!Array.isArray(codigos) || codigos.length === 0) {
           setLoading(false);
           return;
         }
 
         // Buscar todos os pedidos
-        const promessas = ids.map((id: number) => api.get(`/public/${getEstablishmentSlug()}/pedidos/${id}`).catch(() => null));
+        const promessas = codigos
+          .filter((codigo: unknown) => typeof codigo === 'string')
+          .map((codigo: string) => api.get(`/public/${getEstablishmentSlug()}/acompanhamento/${encodeURIComponent(codigo)}`).catch(() => null));
         const resultados = await Promise.all(promessas);
         
         // Filtrar nulos e ordenar do mais novo para o mais antigo

@@ -4,6 +4,7 @@ import { Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import api from '../services/api';
 
 const Login = () => {
+  const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
   const [loading, setLoading] = useState(false);
@@ -17,10 +18,11 @@ const Login = () => {
     setErro('');
 
     try {
-      const response = await api.post('/auth/login', { senha, estabelecimento });
+      const response = await api.post('/auth/login', { senha, estabelecimento, email: email.trim() || null });
       if (response.data.token) {
         localStorage.setItem('adminToken', response.data.token);
         localStorage.setItem('estabelecimentoSlug', response.data.estabelecimento.slug);
+        if (response.data.usuario) localStorage.setItem('ritmesaSession', JSON.stringify(response.data.usuario));
         navigate('/'); // Vai para o Dashboard
       }
     } catch (error: any) {
@@ -58,6 +60,19 @@ const Login = () => {
         <div className="login-form bg-dark-900 border border-white/5 p-6 rounded-3xl shadow-2xl">
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">E-mail</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="seuemail@restaurante.com.br"
+                autoComplete="username"
+                className="w-full bg-white border border-slate-200 rounded-2xl px-5 py-4 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10 transition-all text-slate-900 placeholder-slate-400"
+              />
+              <p className="mt-2 text-xs text-slate-500">No primeiro acesso antigo, você ainda pode entrar apenas com a senha.</p>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Senha</label>
               <div className="relative">
                 <input 
                   type={showPassword ? "text" : "password"}
@@ -65,7 +80,7 @@ const Login = () => {
                   onChange={(e) => setSenha(e.target.value)}
                   placeholder="Senha de acesso"
                   className="w-full bg-dark-950 border border-white/10 rounded-2xl pl-5 pr-12 py-4 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all text-white placeholder-zinc-600 text-center text-lg tracking-widest font-bold"
-                  autoFocus
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"

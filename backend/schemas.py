@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime
 
@@ -112,6 +112,39 @@ class ConfiguracaoCreate(ConfiguracaoBase):
 class LoginRequest(BaseModel):
     senha: str
     estabelecimento: str = "bisburger"
+    email: Optional[str] = None
+
+class UsuarioCreate(BaseModel):
+    nome: str = Field(min_length=2, max_length=120)
+    email: str = Field(min_length=5, max_length=255)
+    senha: str = Field(min_length=8, max_length=72)
+    perfil: str
+
+class UsuarioUpdate(BaseModel):
+    nome: Optional[str] = None
+    email: Optional[str] = None
+    senha: Optional[str] = Field(default=None, min_length=8, max_length=72)
+    perfil: Optional[str] = None
+    ativo: Optional[bool] = None
+
+class Usuario(BaseModel):
+    id: int
+    nome: str
+    email: str
+    perfil: str
+    ativo: bool
+    criado_em: datetime
+    ultimo_acesso_em: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+class SessaoUsuario(BaseModel):
+    id: Optional[int] = None
+    nome: str
+    email: Optional[str] = None
+    perfil: str
+    permissoes: List[str]
 
 class PlatformLoginRequest(BaseModel):
     email: str
@@ -170,6 +203,7 @@ class LeadComercial(LeadComercialCreate):
 class Configuracao(ConfiguracaoBase):
     id: int
     loja_aberta: Optional[bool] = False
+    senha_admin: Optional[str] = Field(default=None, exclude=True)
     class Config:
         from_attributes = True
 

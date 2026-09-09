@@ -50,7 +50,7 @@ export function NetworkProvider({ children }: { children: React.ReactNode }) {
         try {
           // Re-enviar para a API. O UUID já vai no payload.
           const response = await api.post(`/public/${getEstablishmentSlug()}/pedidos`, order.payload);
-          if (response.data && response.data.id) {
+          if (response.data && response.data.uuid) {
             let saved = [];
             try {
               saved = JSON.parse(localStorage.getItem('meus_pedidos') || '[]');
@@ -58,8 +58,8 @@ export function NetworkProvider({ children }: { children: React.ReactNode }) {
             } catch (e) {
               saved = [];
             }
-            if (!saved.includes(response.data.id)) {
-              saved.push(response.data.id);
+            if (!saved.includes(response.data.uuid)) {
+              saved.push(response.data.uuid);
               localStorage.setItem('meus_pedidos', JSON.stringify(saved));
             }
           }
