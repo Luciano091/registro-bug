@@ -201,6 +201,24 @@ class FoundationTests(unittest.TestCase):
         cash = crud.get_caixa_aberto(self.db, establishment.id)
         self.assertEqual(sum(m.valor for m in cash.movimentacoes), 55)
 
+    def test_kitchen_queue_is_tenant_scoped_and_tracks_production(self):
+        first = self.create_establishment("Cozinha A", "cozinha-a", "cozinha-a@teste.com")
+        second = self.create_establishment("Cozinha B", "cozinha-b", "cozinha-b@teste.com")
+        grill = crud.save_setor_producao(self.db, schemas.SetorProducaoCreate(nome="Chapa", cor="#ef4444"), first.id)
+        product = crud.create_produto(self.db, schemas.ProdutoCreate(nome="X-Salada", categoria="Lanches", preco=25, setor_producao_id=grill.id), first.id)
+        with self.assertRaisesRegex(ValueError, "Setor de produção inválido"):
+            crud.create_produto(self.db, schemas.ProdutoCreate(nome="Invasor", categoria="Lanches", preco=10, setor_producao_id=grill.id), second.id)
+        order = crud.create_pedido(self.db, schemas.PedidoCreate(cliente="Ana", telefone="", tipo_entrega="Retirada", forma_pagamento="Pix", itens=[schemas.ItemPedidoCreate(produto_id=product.id, quantidade=1, observacao="Sem cebola")]), first.id)
+        self.assertEqual(order.itens[0].setor_producao_id, grill.id)
+        self.assertEqual(crud.get_fila_cozinha(self.db, second.id), [])
+        queue = crud.get_fila_cozinha(self.db, first.id, grill.id)
+        self.assertEqual(queue[0]["itens"][0]["observacao"], "Sem cebola")
+        item = crud.atualizar_item_cozinha(self.db, "pedido", order.itens[0].id, "em_preparo", first.id)
+        self.assertIsNotNone(item.iniciado_em)
+        self.assertEqual(order.status, "Em preparo")
+        crud.atualizar_item_cozinha(self.db, "pedido", item.id, "pronto", first.id)
+        self.assertEqual(order.status, "Pronto")
+
 
 if __name__ == "__main__":
     unittest.main()

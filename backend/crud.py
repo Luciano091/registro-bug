@@ -44,6 +44,11 @@ def preco_vigente(produto: models.Produto):
 
 def create_produto(db: Session, produto: schemas.ProdutoCreate, estabelecimento_id: int):
     values = produto.model_dump()
+    if values.get("setor_producao_id") is None:
+        setor_padrao = db.query(models.SetorProducao).filter(models.SetorProducao.estabelecimento_id == estabelecimento_id, models.SetorProducao.ativo == True).order_by(models.SetorProducao.ordem, models.SetorProducao.id).first()
+        values["setor_producao_id"] = setor_padrao.id if setor_padrao else None
+    if values.get("setor_producao_id") and not get_setor_producao(db, values["setor_producao_id"], estabelecimento_id):
+        raise ValueError("Setor de produção inválido para este estabelecimento.")
     if values.get("categoria_id"):
         categoria = get_categoria(db, values["categoria_id"], estabelecimento_id)
         if not categoria:
@@ -63,6 +68,8 @@ def update_produto(db: Session, produto_id: int, produto: schemas.ProdutoCreate,
     db_produto = db.query(models.Produto).filter(models.Produto.id == produto_id, models.Produto.estabelecimento_id == estabelecimento_id).first()
     if db_produto:
         values = produto.model_dump()
+        if values.get("setor_producao_id") and not get_setor_producao(db, values["setor_producao_id"], estabelecimento_id):
+            raise ValueError("Setor de produção inválido para este estabelecimento.")
         if values.get("categoria_id"):
             categoria = get_categoria(db, values["categoria_id"], estabelecimento_id)
             if not categoria:
@@ -76,6 +83,33 @@ def update_produto(db: Session, produto_id: int, produto: schemas.ProdutoCreate,
         db.commit()
         db.refresh(db_produto)
     return db_produto
+
+# --- Cozinha e setores de produção ---
+def get_setores_producao(db: Session, estabelecimento_id: int):
+    return db.query(models.SetorProducao).filter(models.SetorProducao.estabelecimento_id == estabelecimento_id).order_by(models.SetorProducao.ordem, models.SetorProducao.nome).all()
+
+def get_setor_producao(db: Session, setor_id: int, estabelecimento_id: int):
+    return db.query(models.SetorProducao).filter(models.SetorProducao.id == setor_id, models.SetorProducao.estabelecimento_id == estabelecimento_id).first()
+
+def save_setor_producao(db: Session, payload: schemas.SetorProducaoCreate, estabelecimento_id: int, setor_id: int = None):
+    setor = get_setor_producao(db, setor_id, estabelecimento_id) if setor_id else None
+    if setor_id and not setor: return None
+    duplicate = db.query(models.SetorProducao).filter(models.SetorProducao.estabelecimento_id == estabelecimento_id, func.lower(models.SetorProducao.nome) == payload.nome.strip().lower())
+    if setor_id: duplicate = duplicate.filter(models.SetorProducao.id != setor_id)
+    if duplicate.first(): raise ValueError("Já existe um setor com este nome.")
+    values = payload.model_dump(); values["nome"] = values["nome"].strip()
+    if setor:
+        for key, value in values.items(): setattr(setor, key, value)
+    else:
+        setor = models.SetorProducao(estabelecimento_id=estabelecimento_id, **values); db.add(setor)
+    db.commit(); db.refresh(setor); return setor
+
+def set_produto_setor(db: Session, produto_id: int, setor_id: int | None, estabelecimento_id: int):
+    produto = db.query(models.Produto).filter(models.Produto.id == produto_id, models.Produto.estabelecimento_id == estabelecimento_id).first()
+    if not produto: return None
+    if setor_id is not None and not get_setor_producao(db, setor_id, estabelecimento_id):
+        raise ValueError("Setor de produção inválido para este estabelecimento.")
+    produto.setor_producao_id = setor_id; db.commit(); db.refresh(produto); return produto
 
 # --- Categorias e disponibilidade ---
 def get_categorias(db: Session, estabelecimento_id: int, somente_disponiveis: bool = False):
@@ -361,6 +395,7 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate, estabelecimento_id:
                 produto_id=item.produto_id, produto_nome=produto.nome, observacao=item.observacao,
                 quantidade=item.quantidade, custo_unitario=produto.preco_compra or 0.0,
                 valor_unitario=preco_venda + adicionais_total, subtotal=item_subtotal, opcoes=snapshots,
+                setor_producao_id=produto.setor_producao_id, status_producao="pendente",
             )
         )
         if produto.controlar_estoque:
@@ -518,6 +553,7 @@ def adicionar_item_comanda(db: Session, comanda_id: int, payload: schemas.Comand
         produto_id=produto.id, produto_nome=produto.nome, quantidade=payload.quantidade, custo_unitario=produto.preco_compra or 0,
         valor_unitario=valor, subtotal=round(valor * payload.quantidade, 2), observacao=payload.observacao,
         opcoes_json=json.dumps(snapshots, ensure_ascii=False), criado_por_id=usuario.usuario_id,
+        setor_producao_id=produto.setor_producao_id,
     )
     comanda.itens.append(item)
     if produto.controlar_estoque: produto.estoque -= payload.quantidade
@@ -534,7 +570,12 @@ def atualizar_status_item_comanda(db: Session, item_id: int, status_item: str, e
     if status_item not in permitidos: raise ValueError("Status de item inválido.")
     item = db.query(models.ComandaItem).join(models.Comanda).filter(models.ComandaItem.id == item_id, models.Comanda.estabelecimento_id == estabelecimento_id, models.Comanda.status == "aberta").first()
     if not item or item.status == "cancelado": return None
-    item.status = status_item; item.atualizado_em = models.get_now(); db.commit(); db.refresh(item)
+    agora = models.get_now(); item.status = status_item; item.atualizado_em = agora
+    if status_item == "em_preparo" and not item.iniciado_em: item.iniciado_em = agora
+    if status_item == "pronto":
+        if not item.iniciado_em: item.iniciado_em = agora
+        item.pronto_em = agora
+    db.commit(); db.refresh(item)
     return item
 
 def cancelar_item_comanda(db: Session, item_id: int, estabelecimento_id: int):
@@ -591,12 +632,53 @@ def fechar_comanda(db: Session, comanda_id: int, payload: schemas.ComandaFechar,
         total=comanda.total, origem="salao", comanda_id=comanda.id, observacao=comanda.observacao,
     )
     for item in comanda.itens:
-        if item.status != "cancelado": pedido.itens.append(models.ItemPedido(produto_id=item.produto_id, produto_nome=item.produto_nome, quantidade=item.quantidade, custo_unitario=item.custo_unitario, valor_unitario=item.valor_unitario, subtotal=item.subtotal, observacao=item.observacao))
+        if item.status != "cancelado": pedido.itens.append(models.ItemPedido(produto_id=item.produto_id, produto_nome=item.produto_nome, quantidade=item.quantidade, custo_unitario=item.custo_unitario, valor_unitario=item.valor_unitario, subtotal=item.subtotal, observacao=item.observacao, setor_producao_id=item.setor_producao_id, status_producao="finalizado", iniciado_em=item.iniciado_em, pronto_em=item.pronto_em))
     for pagamento in payload.pagamentos:
         comanda.pagamentos.append(models.ComandaPagamento(forma_pagamento=pagamento.forma_pagamento, valor=pagamento.valor))
         caixa.movimentacoes.append(models.MovimentacaoCaixa(tipo="venda", valor=pagamento.valor, forma_pagamento=pagamento.forma_pagamento, descricao=f"Comanda {comanda.numero} · Mesa {comanda.mesa.numero}"))
     comanda.status = "fechada"; comanda.fechada_em = models.get_now(); comanda.mesa.status = "livre"; db.add(pedido); db.commit(); db.refresh(comanda)
     return comanda
+
+def get_fila_cozinha(db: Session, estabelecimento_id: int, setor_id: int = None):
+    tickets = []
+    pedidos = db.query(models.Pedido).filter(
+        models.Pedido.estabelecimento_id == estabelecimento_id,
+        ~models.Pedido.status.in_(("Cancelado", "Finalizado", "Concluído", "Entregue")),
+    ).order_by(models.Pedido.data).all()
+    for pedido in pedidos:
+        itens = []
+        for item in pedido.itens:
+            if item.status_producao not in ("pendente", "em_preparo", "pronto") or (setor_id and item.setor_producao_id != setor_id): continue
+            itens.append({"id": item.id, "origem": "pedido", "produto_nome": item.produto_nome or (item.produto.nome if item.produto else "Produto"), "quantidade": item.quantidade, "observacao": item.observacao, "opcoes": [{"grupo": opcao.grupo_nome, "opcao": opcao.opcao_nome, "quantidade": opcao.quantidade} for opcao in item.opcoes], "status": item.status_producao, "setor_producao_id": item.setor_producao_id, "criado_em": item.criado_em or pedido.data, "iniciado_em": item.iniciado_em, "pronto_em": item.pronto_em})
+        if itens: tickets.append({"chave": f"pedido-{pedido.id}", "origem": "pedido", "referencia": f"Pedido #{pedido.numero.split('-')[-1]}", "cliente": pedido.cliente, "tipo": pedido.tipo_entrega, "mesa": None, "criado_em": pedido.data, "itens": itens})
+    comandas = db.query(models.Comanda).filter(models.Comanda.estabelecimento_id == estabelecimento_id, models.Comanda.status == "aberta").order_by(models.Comanda.aberta_em).all()
+    for comanda in comandas:
+        itens = []
+        for item in comanda.itens:
+            if item.status not in ("enviado", "em_preparo", "pronto") or (setor_id and item.setor_producao_id != setor_id): continue
+            raw = json.loads(item.opcoes_json or "[]")
+            itens.append({"id": item.id, "origem": "comanda", "produto_nome": item.produto_nome, "quantidade": item.quantidade, "observacao": item.observacao, "opcoes": [{"grupo": op.get("grupo", "Opção"), "opcao": op.get("opcao", ""), "quantidade": op.get("quantidade", 1)} for op in raw], "status": item.status, "setor_producao_id": item.setor_producao_id, "criado_em": item.criado_em, "iniciado_em": item.iniciado_em, "pronto_em": item.pronto_em})
+        if itens: tickets.append({"chave": f"comanda-{comanda.id}", "origem": "comanda", "referencia": f"Mesa {comanda.mesa.numero}", "cliente": comanda.cliente, "tipo": "Salão", "mesa": comanda.mesa.numero, "criado_em": min(i["criado_em"] for i in itens), "itens": itens})
+    return sorted(tickets, key=lambda ticket: ticket["criado_em"])
+
+def atualizar_item_cozinha(db: Session, origem: str, item_id: int, novo_status: str, estabelecimento_id: int):
+    if origem == "comanda":
+        mapa = {"pendente": "enviado", "em_preparo": "em_preparo", "pronto": "pronto", "finalizado": "servido"}
+        if novo_status not in mapa: raise ValueError("Status de produção inválido.")
+        return atualizar_status_item_comanda(db, item_id, mapa[novo_status], estabelecimento_id)
+    if origem != "pedido" or novo_status not in ("pendente", "em_preparo", "pronto", "finalizado"):
+        raise ValueError("Status de produção inválido.")
+    item = db.query(models.ItemPedido).join(models.Pedido).filter(models.ItemPedido.id == item_id, models.Pedido.estabelecimento_id == estabelecimento_id).first()
+    if not item: return None
+    agora = models.get_now(); item.status_producao = novo_status
+    if novo_status == "em_preparo" and not item.iniciado_em: item.iniciado_em = agora
+    if novo_status == "pronto":
+        if not item.iniciado_em: item.iniciado_em = agora
+        item.pronto_em = agora
+    ativos = [i for i in item.pedido.itens if i.status_producao != "finalizado"]
+    if ativos and all(i.status_producao == "pronto" for i in ativos): item.pedido.status = "Pronto"
+    elif any(i.status_producao == "em_preparo" for i in ativos): item.pedido.status = "Em preparo"
+    db.commit(); db.refresh(item); return item
 
 # --- Configuracoes ---
 
@@ -911,6 +993,7 @@ def create_estabelecimento(db: Session, payload: schemas.EstabelecimentoCreate):
         senha_admin=auth.get_password_hash(payload.senha_inicial),
     )
     db.add(config)
+    db.add(models.SetorProducao(estabelecimento_id=estabelecimento.id, nome="Cozinha", cor="#f97316", ordem=0, ativo=True))
     db.flush()
     estabelecimento.configuracao_id = config.id
     db.commit()

@@ -31,6 +31,7 @@ PERMISSOES_POR_PERFIL = {
         "configuracoes.visualizar", "configuracoes.gerenciar", "usuarios.visualizar",
         "usuarios.gerenciar", "whatsapp.visualizar", "whatsapp.enviar",
         "salao.operar", "salao.gerenciar",
+        "cozinha.operar", "cozinha.gerenciar",
     },
     "caixa": {
         "dashboard.visualizar", "pedidos.visualizar", "pedidos.criar", "pedidos.atualizar",

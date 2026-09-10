@@ -89,6 +89,7 @@ class Produto(Base):
     nome = Column(String, index=True)
     categoria = Column(String, index=True)
     categoria_id = Column(Integer, ForeignKey("categorias.id", ondelete="SET NULL"), nullable=True, index=True)
+    setor_producao_id = Column(Integer, ForeignKey("setores_producao.id", ondelete="SET NULL"), nullable=True, index=True)
     descricao = Column(String, nullable=True)
     imagem_url = Column(String, nullable=True)
     preco_compra = Column(Float, default=0.0)
@@ -110,6 +111,7 @@ class Produto(Base):
     fichas_tecnicas = relationship("ProdutoInsumo", back_populates="produto")
     grupos_opcoes = relationship("GrupoOpcao", secondary="produto_grupos_opcoes", order_by="ProdutoGrupoOpcao.ordem")
     categoria_obj = relationship("Categoria", back_populates="produtos")
+    setor_producao = relationship("SetorProducao", back_populates="produtos")
 
     @property
     def promocao_ativa(self):
@@ -132,6 +134,18 @@ class Categoria(Base):
     horario_inicio = Column(String, nullable=True)
     horario_fim = Column(String, nullable=True)
     produtos = relationship("Produto", back_populates="categoria_obj")
+
+class SetorProducao(Base):
+    __tablename__ = "setores_producao"
+    __table_args__ = (UniqueConstraint("estabelecimento_id", "nome", name="uq_setor_producao_estabelecimento_nome"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    estabelecimento_id = Column(Integer, ForeignKey("estabelecimentos.id"), nullable=False, index=True)
+    nome = Column(String, nullable=False)
+    cor = Column(String, nullable=False, default="#f97316")
+    ordem = Column(Integer, nullable=False, default=0)
+    ativo = Column(Boolean, nullable=False, default=True)
+    produtos = relationship("Produto", back_populates="setor_producao")
 
 class Cupom(Base):
     __tablename__ = "cupons"
@@ -255,6 +269,7 @@ class ComandaItem(Base):
     id = Column(Integer, primary_key=True, index=True)
     comanda_id = Column(Integer, ForeignKey("comandas.id", ondelete="CASCADE"), nullable=False, index=True)
     produto_id = Column(Integer, ForeignKey("produtos.id"), nullable=False)
+    setor_producao_id = Column(Integer, ForeignKey("setores_producao.id", ondelete="SET NULL"), nullable=True, index=True)
     produto_nome = Column(String, nullable=False)
     quantidade = Column(Integer, nullable=False, default=1)
     custo_unitario = Column(Float, nullable=False, default=0.0)
@@ -266,6 +281,8 @@ class ComandaItem(Base):
     criado_por_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True)
     criado_em = Column(DateTime, nullable=False, default=get_now)
     atualizado_em = Column(DateTime, nullable=False, default=get_now)
+    iniciado_em = Column(DateTime, nullable=True)
+    pronto_em = Column(DateTime, nullable=True)
     comanda = relationship("Comanda", back_populates="itens")
 
 class ComandaPagamento(Base):
@@ -284,12 +301,17 @@ class ItemPedido(Base):
     id = Column(Integer, primary_key=True, index=True)
     pedido_id = Column(Integer, ForeignKey("pedidos.id"))
     produto_id = Column(Integer, ForeignKey("produtos.id"))
+    setor_producao_id = Column(Integer, ForeignKey("setores_producao.id", ondelete="SET NULL"), nullable=True, index=True)
     quantidade = Column(Integer, default=1)
     custo_unitario = Column(Float, default=0.0)
     valor_unitario = Column(Float, default=0.0)
     subtotal = Column(Float, default=0.0)
     produto_nome = Column(String, nullable=True)
     observacao = Column(Text, nullable=True)
+    status_producao = Column(String, nullable=False, default="pendente", index=True)
+    criado_em = Column(DateTime, nullable=False, default=get_now)
+    iniciado_em = Column(DateTime, nullable=True)
+    pronto_em = Column(DateTime, nullable=True)
 
     pedido = relationship("Pedido", back_populates="itens")
     produto = relationship("Produto")

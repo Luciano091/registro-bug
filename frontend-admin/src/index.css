@@ -142,6 +142,11 @@
 
 /* Print Styles */
 @media print {
+  .kds-page { padding: 0 !important; background: white !important; }
+  .kds-page > header, .kds-page > section:first-of-type, .kds-page > div { display: none !important; }
+  .kds-page > section:last-of-type { display: block !important; }
+  .kds-ticket { break-inside: avoid; page-break-inside: avoid; margin: 0 0 14px; box-shadow: none !important; }
+  body.printing-kds-ticket .kds-ticket:not(.print-target) { display: none !important; }
   body {
     background: white !important;
     color: black !important;
@@ -182,3 +187,5 @@
     fill: #18181b !important;
   }
 }
+
+.admin-main .kds-inverse { color: #fff !important; }

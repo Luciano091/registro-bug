@@ -29,6 +29,7 @@ class ProdutoBase(BaseModel):
     nome: str
     categoria: str
     categoria_id: Optional[int] = None
+    setor_producao_id: Optional[int] = None
     descricao: Optional[str] = None
     imagem_url: Optional[str] = None
     preco_compra: Optional[float] = 0.0
@@ -49,6 +50,23 @@ class ProdutoBase(BaseModel):
 
 class ProdutoCreate(ProdutoBase):
     pass
+
+class SetorProducaoBase(BaseModel):
+    nome: str = Field(min_length=1, max_length=80)
+    cor: str = "#f97316"
+    ordem: int = 0
+    ativo: bool = True
+
+class SetorProducaoCreate(SetorProducaoBase):
+    pass
+
+class SetorProducao(SetorProducaoBase):
+    id: int
+    class Config:
+        from_attributes = True
+
+class ProdutoSetorUpdate(BaseModel):
+    setor_producao_id: Optional[int] = None
 
 class CategoriaBase(BaseModel):
     nome: str = Field(min_length=1, max_length=100)
@@ -171,6 +189,11 @@ class ItemPedido(ItemPedidoBase):
     subtotal: float
     produto_nome: Optional[str] = None
     observacao: Optional[str] = None
+    setor_producao_id: Optional[int] = None
+    status_producao: str = "pendente"
+    criado_em: Optional[datetime] = None
+    iniciado_em: Optional[datetime] = None
+    pronto_em: Optional[datetime] = None
     opcoes: List[ItemPedidoOpcao] = Field(default_factory=list)
     
     produto: Optional[Produto] = None
@@ -246,6 +269,9 @@ class ComandaItem(BaseModel):
     opcoes_json: Optional[str] = None
     status: str
     criado_em: datetime
+    setor_producao_id: Optional[int] = None
+    iniciado_em: Optional[datetime] = None
+    pronto_em: Optional[datetime] = None
     class Config:
         from_attributes = True
 
@@ -300,6 +326,37 @@ class Comanda(BaseModel):
 
 class MesaVisao(Mesa):
     comanda: Optional[Comanda] = None
+
+class CozinhaStatusUpdate(BaseModel):
+    status: str
+
+class CozinhaOpcao(BaseModel):
+    grupo: str
+    opcao: str
+    quantidade: int = 1
+
+class CozinhaItem(BaseModel):
+    id: int
+    origem: str
+    produto_nome: str
+    quantidade: int
+    observacao: Optional[str] = None
+    opcoes: List[CozinhaOpcao] = Field(default_factory=list)
+    status: str
+    setor_producao_id: Optional[int] = None
+    criado_em: datetime
+    iniciado_em: Optional[datetime] = None
+    pronto_em: Optional[datetime] = None
+
+class CozinhaTicket(BaseModel):
+    chave: str
+    origem: str
+    referencia: str
+    cliente: Optional[str] = None
+    tipo: str
+    mesa: Optional[str] = None
+    criado_em: datetime
+    itens: List[CozinhaItem] = Field(default_factory=list)
 
 # --- Configuracao ---
 class ConfiguracaoBase(BaseModel):

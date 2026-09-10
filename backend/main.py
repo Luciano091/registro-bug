@@ -460,6 +460,44 @@ def create_admin_order(pedido: schemas.PedidoCreate, db: Session = Depends(get_d
     crud.add_movimentacao(db, caixa_aberto.id, movimento)
     return db_pedido
 
+# --- Painel de cozinha (KDS) ---
+@app.get("/cozinha/setores", response_model=List[schemas.SetorProducao])
+def list_kitchen_stations(db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("cozinha.operar"))):
+    return crud.get_setores_producao(db, estabelecimento_id)
+
+@app.post("/cozinha/setores", response_model=schemas.SetorProducao, status_code=201)
+def create_kitchen_station(payload: schemas.SetorProducaoCreate, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("cozinha.gerenciar"))):
+    try: setor = crud.save_setor_producao(db, payload, usuario.estabelecimento_id)
+    except ValueError as exc: raise HTTPException(status_code=400, detail=str(exc))
+    crud.create_audit_log(db, usuario.estabelecimento_id, "cozinha.setor_criado", usuario.usuario_id, "setor_producao", setor.id)
+    return setor
+
+@app.put("/cozinha/setores/{setor_id}", response_model=schemas.SetorProducao)
+def update_kitchen_station(setor_id: int, payload: schemas.SetorProducaoCreate, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("cozinha.gerenciar"))):
+    try: setor = crud.save_setor_producao(db, payload, usuario.estabelecimento_id, setor_id)
+    except ValueError as exc: raise HTTPException(status_code=400, detail=str(exc))
+    if not setor: raise HTTPException(status_code=404, detail="Setor não encontrado.")
+    return setor
+
+@app.put("/cozinha/produtos/{produto_id}/setor", response_model=schemas.Produto)
+def assign_product_station(produto_id: int, payload: schemas.ProdutoSetorUpdate, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("cozinha.gerenciar"))):
+    try: produto = crud.set_produto_setor(db, produto_id, payload.setor_producao_id, usuario.estabelecimento_id)
+    except ValueError as exc: raise HTTPException(status_code=400, detail=str(exc))
+    if not produto: raise HTTPException(status_code=404, detail="Produto não encontrado.")
+    return produto
+
+@app.get("/cozinha/fila", response_model=List[schemas.CozinhaTicket])
+def kitchen_queue(setor_id: Optional[int] = None, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("cozinha.operar"))):
+    if setor_id and not crud.get_setor_producao(db, setor_id, estabelecimento_id): raise HTTPException(status_code=404, detail="Setor não encontrado.")
+    return crud.get_fila_cozinha(db, estabelecimento_id, setor_id)
+
+@app.put("/cozinha/itens/{origem}/{item_id}/status")
+def update_kitchen_item(origem: str, item_id: int, payload: schemas.CozinhaStatusUpdate, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("cozinha.operar"))):
+    try: item = crud.atualizar_item_cozinha(db, origem, item_id, payload.status, usuario.estabelecimento_id)
+    except ValueError as exc: raise HTTPException(status_code=400, detail=str(exc))
+    if not item: raise HTTPException(status_code=404, detail="Item não encontrado.")
+    return {"id": item.id, "status": item.status if origem == "comanda" else item.status_producao}
+
 # --- Salão e comandas ---
 @app.get("/salao/mesas", response_model=List[schemas.MesaVisao])
 def list_tables(db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("salao.operar"))):
