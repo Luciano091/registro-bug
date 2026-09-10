@@ -103,6 +103,7 @@ const NewOrder = () => {
   const handleSubmitOrder = async () => {
     if (tipoEntrega === 'Delivery') {
       if (!isOnline) return alert('Pedidos para entrega precisam de conexão para validar a taxa.');
+      if (deliveryConfig?.entrega_habilitada === false) return alert('As entregas estão desativadas nas configurações do estabelecimento.');
       if (deliveryConfig?.entrega_modo !== 'distancia' && !deliveryQuote?.atendido) return alert(deliveryQuote?.mensagem || 'Informe uma área de entrega válida.');
       if (deliveryConfig?.entrega_modo === 'distancia' && taxaManual === '') return alert('Informe a taxa combinada para esta entrega.');
     }
