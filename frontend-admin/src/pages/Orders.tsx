@@ -10,20 +10,25 @@ const statusColors: any = {
   'Pronto': 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.15)] backdrop-blur-md',
   'Saiu entrega': 'bg-purple-500/10 text-purple-400 border-purple-500/20 shadow-[0_0_10px_rgba(168,85,247,0.15)] backdrop-blur-md',
   'Finalizado': 'bg-white/5 text-zinc-300 border-white/10 backdrop-blur-md',
+  'Cancelado': 'bg-red-500/10 text-red-400 border-red-500/20 shadow-[0_0_10px_rgba(239,68,68,0.15)] backdrop-blur-md',
 };
 
 const statusIcons: any = {
   'Recebido': <Clock size={16} />,
   'Em preparo': <Loader2 size={16} className="animate-spin" />,
   'Pronto': <CheckCircle2 size={16} />,
-  'Saiu entrega': <Truck size={16} />,
+  'Saiu entrega': <MapPin size={16} />,
   'Finalizado': <CheckCircle2 size={16} />,
+  'Cancelado': <X size={16} />,
 };
 
 const Orders = () => {
   const [filter, setFilter] = useState('Hoje');
   const [search, setSearch] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [cancelModalOrderId, setCancelModalOrderId] = useState<number | null>(null);
+  const [cancelMotivo, setCancelMotivo] = useState('');
+  const [cancelEstornado, setCancelEstornado] = useState(false);
   const { orders: cachedOrders, ordersLoaded, refreshOrders, updateOrderStatus: optimisticUpdateStatus } = useAppData();
   const orders = cachedOrders;
 
@@ -34,6 +39,7 @@ const Orders = () => {
   }, [ordersLoaded, refreshOrders]);
 
   const handleStatusChange = async (id: number, newStatus: string) => {
+    if (newStatus === 'Cancelado') { setCancelModalOrderId(id); setCancelMotivo(''); setCancelEstornado(false); return; }
     try {
       optimisticUpdateStatus(id, newStatus);
       await api.put(`/pedidos/${id}/status?status=${encodeURIComponent(newStatus)}`);
