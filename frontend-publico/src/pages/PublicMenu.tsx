@@ -211,7 +211,7 @@ const PublicMenu = () => {
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <div className="flex min-h-9 items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-3 text-xs font-semibold text-emerald-700">
                   <MapPin size={14} />
-                  {config?.taxa_entrega === 0 || !config?.taxa_entrega ? 'Entrega grátis' : `Taxa ${Number(config.taxa_entrega).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`}
+                  {!config?.entrega_habilitada ? 'Somente retirada' : config?.entrega_modo === 'bairro' ? 'Taxa por bairro' : config?.entrega_modo === 'distancia' ? 'Taxa por distância' : config?.taxa_entrega === 0 || !config?.taxa_entrega ? 'Entrega grátis' : `Taxa ${Number(config.taxa_entrega).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`}
                 </div>
                 <div className="flex min-h-9 items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-600">
                   <Clock size={14} />

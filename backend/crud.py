@@ -4,6 +4,8 @@ import models, schemas
 import datetime
 import uuid as uuid_lib
 import json
+import math
+import unicodedata
 
 # --- Produtos ---
 def get_produtos(db: Session, estabelecimento_id: int, skip: int = 0, limit: int = 100, somente_ativos: bool = False, canal: str = None):
@@ -332,7 +334,7 @@ def get_pedido_by_public_token(db: Session, token: str, estabelecimento_id: int)
 def get_pedidos_by_date_range(db: Session, start_date: datetime.datetime, end_date: datetime.datetime, estabelecimento_id: int):
     return db.query(models.Pedido).filter(models.Pedido.estabelecimento_id == estabelecimento_id, models.Pedido.data >= start_date, models.Pedido.data <= end_date).all()
 
-def create_pedido(db: Session, pedido: schemas.PedidoCreate, estabelecimento_id: int):
+def create_pedido(db: Session, pedido: schemas.PedidoCreate, estabelecimento_id: int, taxa_entrega_manual: float = None):
     if pedido.uuid:
         existing = db.query(models.Pedido).filter(models.Pedido.uuid == pedido.uuid, models.Pedido.estabelecimento_id == estabelecimento_id).first()
         if existing:
@@ -412,6 +414,22 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate, estabelecimento_id:
                 ficha.insumo.estoque -= qtde_necessaria
             
     taxa_entrega = 0.0
+    if pedido.tipo_entrega.lower() in ("delivery", "entrega"):
+        if taxa_entrega_manual is not None:
+            config_entrega = get_configuracao(db, estabelecimento_id)
+            cotacao = {
+                "atendido": bool(config_entrega.entrega_habilitada) and subtotal >= float(config_entrega.pedido_minimo_entrega or 0),
+                "taxa": round(float(taxa_entrega_manual), 2),
+                "mensagem": "Entrega desativada ou abaixo do pedido mínimo geral.",
+            }
+        else:
+            cotacao = calcular_entrega(
+                db, estabelecimento_id, subtotal, pedido.bairro,
+                pedido.latitude_entrega, pedido.longitude_entrega,
+            )
+        if not cotacao["atendido"]:
+            raise ValueError(cotacao["mensagem"])
+        taxa_entrega = cotacao["taxa"]
     
     cupom = None
     desconto = 0.0
@@ -432,6 +450,9 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate, estabelecimento_id:
         cliente=pedido.cliente,
         telefone=pedido.telefone,
         endereco=pedido.endereco,
+        bairro=pedido.bairro,
+        latitude_entrega=pedido.latitude_entrega,
+        longitude_entrega=pedido.longitude_entrega,
         tipo_entrega=pedido.tipo_entrega,
         forma_pagamento=pedido.forma_pagamento,
         observacao=pedido.observacao,
@@ -738,6 +759,120 @@ def atualizar_localizacao_entrega(db: Session, pedido_id: int, latitude: float, 
     db.commit(); db.refresh(pedido); return pedido
 
 # --- Configuracoes ---
+
+def normalizar_bairro(value: str) -> str:
+    normalized = unicodedata.normalize("NFKD", (value or "").strip().lower())
+    return " ".join("".join(char for char in normalized if not unicodedata.combining(char)).split())
+
+def _distancia_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    radius = 6371.0088
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dlat, dlon = math.radians(lat2 - lat1), math.radians(lon2 - lon1)
+    value = math.sin(dlat / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dlon / 2) ** 2
+    return radius * 2 * math.atan2(math.sqrt(value), math.sqrt(1 - value))
+
+def get_areas_entrega(db: Session, estabelecimento_id: int, somente_ativas: bool = False):
+    query = db.query(models.AreaEntrega).filter(models.AreaEntrega.estabelecimento_id == estabelecimento_id)
+    if somente_ativas:
+        query = query.filter(models.AreaEntrega.ativo == True)
+    return query.order_by(models.AreaEntrega.bairro).all()
+
+def get_configuracao_entrega(db: Session, estabelecimento_id: int):
+    config = get_configuracao(db, estabelecimento_id)
+    return {
+        "entrega_habilitada": config.entrega_habilitada,
+        "entrega_modo": config.entrega_modo,
+        "taxa_fixa": config.taxa_entrega or 0,
+        "pedido_minimo": config.pedido_minimo_entrega or 0,
+        "entrega_gratis_acima": config.entrega_gratis_acima,
+        "raio_km": config.raio_entrega_km,
+        "taxa_base": config.taxa_base_entrega or 0,
+        "distancia_base_km": config.distancia_base_km or 0,
+        "taxa_por_km": config.taxa_por_km or 0,
+        "latitude_origem": config.latitude,
+        "longitude_origem": config.longitude,
+        "areas": get_areas_entrega(db, estabelecimento_id),
+    }
+
+def save_configuracao_entrega(db: Session, payload: schemas.EntregaConfiguracaoUpdate, estabelecimento_id: int):
+    if payload.entrega_modo not in ("fixa", "bairro", "distancia"):
+        raise ValueError("Escolha um modo de cobrança válido.")
+    if payload.entrega_modo == "bairro" and not any(area.ativo for area in payload.areas):
+        raise ValueError("Cadastre pelo menos um bairro ativo.")
+    if payload.entrega_modo == "distancia" and (payload.latitude_origem is None or payload.longitude_origem is None or payload.raio_km is None):
+        raise ValueError("Informe a localização do estabelecimento e o raio de atendimento.")
+    normalized_names = [normalizar_bairro(area.bairro) for area in payload.areas]
+    if len(normalized_names) != len(set(normalized_names)):
+        raise ValueError("Existem bairros repetidos na configuração.")
+
+    config = get_configuracao(db, estabelecimento_id)
+    config.entrega_habilitada = payload.entrega_habilitada
+    config.entrega_modo = payload.entrega_modo
+    config.taxa_entrega = payload.taxa_fixa
+    config.pedido_minimo_entrega = payload.pedido_minimo
+    config.entrega_gratis_acima = payload.entrega_gratis_acima
+    config.raio_entrega_km = payload.raio_km
+    config.taxa_base_entrega = payload.taxa_base
+    config.distancia_base_km = payload.distancia_base_km
+    config.taxa_por_km = payload.taxa_por_km
+    config.latitude = payload.latitude_origem
+    config.longitude = payload.longitude_origem
+    db.query(models.AreaEntrega).filter(models.AreaEntrega.estabelecimento_id == estabelecimento_id).delete(synchronize_session=False)
+    for area in payload.areas:
+        db.add(models.AreaEntrega(
+            estabelecimento_id=estabelecimento_id, bairro=area.bairro.strip(),
+            bairro_normalizado=normalizar_bairro(area.bairro), taxa=area.taxa,
+            pedido_minimo=area.pedido_minimo, prazo_adicional_min=area.prazo_adicional_min,
+            ativo=area.ativo,
+        ))
+    db.commit()
+    return get_configuracao_entrega(db, estabelecimento_id)
+
+def calcular_entrega(db: Session, estabelecimento_id: int, subtotal: float, bairro: str = None, latitude: float = None, longitude: float = None):
+    config = get_configuracao(db, estabelecimento_id)
+    minimum = float(config.pedido_minimo_entrega or 0)
+    fee = 0.0
+    distance = None
+    extra_minutes = 0
+    if not config.entrega_habilitada:
+        return {"atendido": False, "taxa": 0, "pedido_minimo": minimum, "faltam_para_minimo": 0, "mensagem": "Este estabelecimento não está realizando entregas no momento."}
+
+    mode = config.entrega_modo or "fixa"
+    if mode == "bairro":
+        normalized = normalizar_bairro(bairro)
+        area = db.query(models.AreaEntrega).filter(
+            models.AreaEntrega.estabelecimento_id == estabelecimento_id,
+            models.AreaEntrega.bairro_normalizado == normalized,
+            models.AreaEntrega.ativo == True,
+        ).first()
+        if not area:
+            return {"atendido": False, "taxa": 0, "pedido_minimo": minimum, "faltam_para_minimo": 0, "mensagem": "O bairro informado está fora da área de entrega."}
+        fee = float(area.taxa or 0)
+        minimum = max(minimum, float(area.pedido_minimo or 0))
+        extra_minutes = area.prazo_adicional_min or 0
+    elif mode == "distancia":
+        if config.latitude is None or config.longitude is None or latitude is None or longitude is None:
+            return {"atendido": False, "taxa": 0, "pedido_minimo": minimum, "faltam_para_minimo": 0, "mensagem": "Compartilhe sua localização para calcular a entrega."}
+        distance = _distancia_km(config.latitude, config.longitude, latitude, longitude)
+        if config.raio_entrega_km and distance > config.raio_entrega_km:
+            return {"atendido": False, "taxa": 0, "pedido_minimo": minimum, "faltam_para_minimo": 0, "distancia_km": round(distance, 2), "mensagem": f"Endereço fora do raio de {config.raio_entrega_km:g} km."}
+        paid_distance = max(0.0, distance - float(config.distancia_base_km or 0))
+        fee = float(config.taxa_base_entrega or 0) + paid_distance * float(config.taxa_por_km or 0)
+        extra_minutes = math.ceil(distance * 3)
+    else:
+        fee = float(config.taxa_entrega or 0)
+
+    missing = max(0.0, minimum - subtotal)
+    if missing > 0:
+        return {"atendido": False, "taxa": round(fee, 2), "pedido_minimo": minimum, "faltam_para_minimo": round(missing, 2), "distancia_km": round(distance, 2) if distance is not None else None, "mensagem": f"Pedido mínimo para entrega: R$ {minimum:.2f}."}
+    if config.entrega_gratis_acima is not None and subtotal >= config.entrega_gratis_acima:
+        fee = 0.0
+    return {
+        "atendido": True, "taxa": round(fee, 2), "pedido_minimo": minimum,
+        "faltam_para_minimo": 0, "distancia_km": round(distance, 2) if distance is not None else None,
+        "prazo_estimado_min": int(config.tempo_medio_preparo or 0) + extra_minutes,
+        "mensagem": "Entrega disponível para este endereço.",
+    }
 
 def get_configuracao(db: Session, estabelecimento_id: int = None):
     import auth

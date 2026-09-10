@@ -241,6 +241,45 @@ class FoundationTests(unittest.TestCase):
         self.assertEqual(order.status, "Finalizado")
         self.assertEqual(driver.status_entrega, "disponivel")
 
+    def test_delivery_areas_quote_and_order_fee_are_tenant_scoped(self):
+        first = self.create_establishment("Entrega Centro", "entrega-centro", "centro@teste.com")
+        second = self.create_establishment("Outra Unidade", "outra-entrega", "outra@teste.com")
+        crud.save_configuracao_entrega(self.db, schemas.EntregaConfiguracaoUpdate(
+            entrega_modo="bairro", taxa_fixa=0, pedido_minimo=20, entrega_gratis_acima=80,
+            areas=[schemas.AreaEntregaBase(bairro="Centro", taxa=7, pedido_minimo=25, prazo_adicional_min=10)],
+        ), first.id)
+        rejected = crud.calcular_entrega(self.db, first.id, 20, bairro="Centro")
+        self.assertFalse(rejected["atendido"])
+        self.assertEqual(rejected["faltam_para_minimo"], 5)
+        accepted = crud.calcular_entrega(self.db, first.id, 40, bairro="centro")
+        self.assertTrue(accepted["atendido"])
+        self.assertEqual(accepted["taxa"], 7)
+        self.assertNotEqual(crud.get_configuracao_entrega(self.db, first.id)["entrega_modo"], crud.get_configuracao_entrega(self.db, second.id)["entrega_modo"])
+
+        product = crud.create_produto(self.db, schemas.ProdutoCreate(nome="Combo", categoria="Combos", preco=20), first.id)
+        order = crud.create_pedido(self.db, schemas.PedidoCreate(
+            cliente="Ana", telefone="82999999999", endereco="Rua A, 10", bairro="Centro",
+            tipo_entrega="Delivery", forma_pagamento="Pix",
+            itens=[schemas.ItemPedidoCreate(produto_id=product.id, quantidade=2)],
+        ), first.id)
+        self.assertEqual(order.subtotal, 40)
+        self.assertEqual(order.taxa_entrega, 7)
+        self.assertEqual(order.total, 47)
+
+    def test_delivery_distance_rejects_address_outside_radius(self):
+        establishment = self.create_establishment("Entrega Raio", "entrega-raio", "raio@teste.com")
+        crud.save_configuracao_entrega(self.db, schemas.EntregaConfiguracaoUpdate(
+            entrega_modo="distancia", taxa_fixa=0, pedido_minimo=0, raio_km=3,
+            taxa_base=4, distancia_base_km=1, taxa_por_km=2,
+            latitude_origem=-9.6658, longitude_origem=-35.7350,
+        ), establishment.id)
+        nearby = crud.calcular_entrega(self.db, establishment.id, 30, latitude=-9.6750, longitude=-35.7350)
+        self.assertTrue(nearby["atendido"])
+        self.assertGreaterEqual(nearby["taxa"], 4)
+        far = crud.calcular_entrega(self.db, establishment.id, 30, latitude=-9.8000, longitude=-35.7350)
+        self.assertFalse(far["atendido"])
+        self.assertIn("fora do raio", far["mensagem"])
+
 
 if __name__ == "__main__":
     unittest.main()

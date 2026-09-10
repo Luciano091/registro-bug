@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Save, Store, Phone, MapPin, Clock, Lock } from 'lucide-react';
+import { Save, Store, Phone, MapPin, Clock, Lock, Truck } from 'lucide-react';
 import api from '../services/api';
 import DriverAppDownload from '../components/DriverAppDownload';
+import DeliverySettingsModal from '../components/DeliverySettingsModal';
+import { can, readSession } from '../services/session';
 
 const Settings = () => {
+  const [deliveryOpen, setDeliveryOpen] = useState(false);
+  const canManage = can(readSession(), 'configuracoes.gerenciar');
   const [config, setConfig] = useState({
     nome_empresa: 'Carregando...',
     telefone: '',
@@ -71,7 +75,7 @@ const Settings = () => {
         <div className="space-y-6 max-w-2xl">
           <div>
             <label className="flex items-center gap-2 text-sm font-medium text-zinc-300 mb-2">
-              <Store className="text-brand-400" size={18} /> Nome da Hamburgueria
+              <Store className="text-brand-400" size={18} /> Nome do estabelecimento
             </label>
             <input 
               type="text" name="nome_empresa"
@@ -152,7 +156,10 @@ const Settings = () => {
         </div>
       </div>
 
+      <section className="mb-8 flex flex-col gap-5 rounded-2xl border border-orange-500/20 bg-gradient-to-r from-orange-500/10 to-transparent p-6 md:flex-row md:items-center md:justify-between"><div className="flex gap-4"><div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-orange-500 text-white"><Truck size={23} /></div><div><h3 className="text-xl font-bold text-white">Áreas e taxas de entrega</h3><p className="mt-1 text-sm text-zinc-300">Configure bairros, pedido mínimo, entrega grátis e raio de atendimento.</p></div></div>{canManage && <button onClick={() => setDeliveryOpen(true)} className="premium-btn rounded-xl px-5 py-3 font-bold">Configurar entregas</button>}</section>
+
       <DriverAppDownload dark />
+      {deliveryOpen && <DeliverySettingsModal onClose={() => setDeliveryOpen(false)} />}
     </div>
   );
 };

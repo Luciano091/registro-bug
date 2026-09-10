@@ -212,6 +212,9 @@ class Pedido(Base):
     cliente = Column(String, index=True)
     telefone = Column(String, nullable=True)
     endereco = Column(String, nullable=True)
+    bairro = Column(String, nullable=True)
+    latitude_entrega = Column(Float, nullable=True)
+    longitude_entrega = Column(Float, nullable=True)
     tipo_entrega = Column(String) # "Delivery" ou "Retirada"
     cliente_id = Column(Integer, ForeignKey("clientes.id"), nullable=True)
     forma_pagamento = Column(String) # "Pix", "Cartão", "Dinheiro"
@@ -363,11 +366,34 @@ class Configuracao(Base):
     endereco = Column(String, nullable=True)
     logo = Column(String, nullable=True)
     taxa_entrega = Column(Float, default=5.0)
+    entrega_habilitada = Column(Boolean, nullable=False, default=True)
+    entrega_modo = Column(String, nullable=False, default="fixa")
+    pedido_minimo_entrega = Column(Float, nullable=False, default=0.0)
+    entrega_gratis_acima = Column(Float, nullable=True)
+    raio_entrega_km = Column(Float, nullable=True)
+    taxa_base_entrega = Column(Float, nullable=False, default=0.0)
+    distancia_base_km = Column(Float, nullable=False, default=0.0)
+    taxa_por_km = Column(Float, nullable=False, default=0.0)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
     tempo_medio_preparo = Column(Integer, default=30)
     whatsapp_auto_reply_enabled = Column(Boolean, default=False)
     whatsapp_auto_reply_text = Column(String, nullable=True)
     whatsapp_phone_number_id = Column(String, nullable=True, index=True)
     senha_admin = Column(String, default="burger123")
+
+class AreaEntrega(Base):
+    __tablename__ = "areas_entrega"
+    __table_args__ = (UniqueConstraint("estabelecimento_id", "bairro_normalizado", name="uq_area_entrega_bairro"),)
+
+    id = Column(Integer, primary_key=True)
+    estabelecimento_id = Column(Integer, ForeignKey("estabelecimentos.id", ondelete="CASCADE"), nullable=False, index=True)
+    bairro = Column(String, nullable=False)
+    bairro_normalizado = Column(String, nullable=False)
+    taxa = Column(Float, nullable=False, default=0.0)
+    pedido_minimo = Column(Float, nullable=False, default=0.0)
+    prazo_adicional_min = Column(Integer, nullable=False, default=0)
+    ativo = Column(Boolean, nullable=False, default=True)
 
 class Caixa(Base):
     __tablename__ = "caixas"

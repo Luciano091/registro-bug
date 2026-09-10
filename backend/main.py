@@ -443,12 +443,13 @@ def create_pedido(slug: str, pedido: schemas.PedidoCreate, db: Session = Depends
     return db_pedido
 
 @app.post("/pedidos", response_model=schemas.Pedido)
-def create_admin_order(pedido: schemas.PedidoCreate, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("pedidos.criar"))):
+def create_admin_order(pedido: schemas.PedidoAdminCreate, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("pedidos.criar"))):
     caixa_aberto = crud.get_caixa_aberto(db, estabelecimento_id)
     if not caixa_aberto:
         raise HTTPException(status_code=400, detail="Não é possível registrar pedido: o Caixa está fechado.")
     try:
-        db_pedido = crud.create_pedido(db, pedido, estabelecimento_id)
+        pedido_base = schemas.PedidoCreate(**pedido.model_dump(exclude={"taxa_entrega_manual"}))
+        db_pedido = crud.create_pedido(db, pedido_base, estabelecimento_id, pedido.taxa_entrega_manual)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     movimento = schemas.MovimentacaoCaixaCreate(
@@ -787,6 +788,35 @@ def update_user(
     return usuario
 
 # --- Configuracoes ---
+@app.get("/public/{slug}/entrega/configuracao", response_model=schemas.EntregaConfiguracao)
+def public_delivery_config(slug: str, db: Session = Depends(get_db)):
+    estabelecimento = require_public_establishment(slug, db)
+    config = crud.get_configuracao_entrega(db, estabelecimento.id)
+    config["areas"] = [area for area in config["areas"] if area.ativo]
+    return config
+
+@app.post("/public/{slug}/entrega/cotar", response_model=schemas.EntregaCotacao)
+def public_delivery_quote(slug: str, payload: schemas.EntregaCotacaoRequest, db: Session = Depends(get_db)):
+    estabelecimento = require_public_establishment(slug, db)
+    return crud.calcular_entrega(db, estabelecimento.id, payload.subtotal, payload.bairro, payload.latitude, payload.longitude)
+
+@app.get("/configuracao/entrega", response_model=schemas.EntregaConfiguracao)
+def read_delivery_config(db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("configuracoes.visualizar"))):
+    return crud.get_configuracao_entrega(db, estabelecimento_id)
+
+@app.put("/configuracao/entrega", response_model=schemas.EntregaConfiguracao)
+def update_delivery_config(payload: schemas.EntregaConfiguracaoUpdate, db: Session = Depends(get_db), atual: auth.UsuarioAutenticado = Depends(auth.require_user_permission("configuracoes.gerenciar"))):
+    try:
+        result = crud.save_configuracao_entrega(db, payload, atual.estabelecimento_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    crud.create_audit_log(db, atual.estabelecimento_id, "entrega.configuracao_atualizada", atual.usuario_id, "configuracao")
+    return result
+
+@app.post("/configuracao/entrega/cotar", response_model=schemas.EntregaCotacao)
+def admin_delivery_quote(payload: schemas.EntregaCotacaoRequest, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("pedidos.criar"))):
+    return crud.calcular_entrega(db, estabelecimento_id, payload.subtotal, payload.bairro, payload.latitude, payload.longitude)
+
 @app.get("/public/{slug}/configuracao", response_model=schemas.ConfiguracaoPublica)
 def public_configuracao(slug: str, db: Session = Depends(get_db)):
     estabelecimento = require_public_establishment(slug, db)

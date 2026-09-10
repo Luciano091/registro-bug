@@ -243,6 +243,9 @@ class PedidoBase(BaseModel):
     cliente: str
     telefone: str
     endereco: Optional[str] = None
+    bairro: Optional[str] = None
+    latitude_entrega: Optional[float] = Field(default=None, ge=-90, le=90)
+    longitude_entrega: Optional[float] = Field(default=None, ge=-180, le=180)
     tipo_entrega: str
     forma_pagamento: str
     observacao: Optional[str] = None
@@ -250,6 +253,9 @@ class PedidoBase(BaseModel):
 
 class PedidoCreate(PedidoBase):
     itens: List[ItemPedidoCreate]
+
+class PedidoAdminCreate(PedidoCreate):
+    taxa_entrega_manual: Optional[float] = Field(default=None, ge=0)
 
 class Pedido(PedidoBase):
     id: int
@@ -401,6 +407,16 @@ class ConfiguracaoBase(BaseModel):
     endereco: Optional[str] = None
     logo: Optional[str] = None
     taxa_entrega: float
+    entrega_habilitada: bool = True
+    entrega_modo: str = "fixa"
+    pedido_minimo_entrega: float = Field(default=0.0, ge=0)
+    entrega_gratis_acima: Optional[float] = Field(default=None, ge=0)
+    raio_entrega_km: Optional[float] = Field(default=None, gt=0)
+    taxa_base_entrega: float = Field(default=0.0, ge=0)
+    distancia_base_km: float = Field(default=0.0, ge=0)
+    taxa_por_km: float = Field(default=0.0, ge=0)
+    latitude: Optional[float] = Field(default=None, ge=-90, le=90)
+    longitude: Optional[float] = Field(default=None, ge=-180, le=180)
     tempo_medio_preparo: int
     whatsapp_auto_reply_enabled: bool = False
     whatsapp_auto_reply_text: Optional[str] = None
@@ -409,6 +425,50 @@ class ConfiguracaoBase(BaseModel):
 
 class ConfiguracaoCreate(ConfiguracaoBase):
     pass
+
+class AreaEntregaBase(BaseModel):
+    bairro: str = Field(min_length=2, max_length=120)
+    taxa: float = Field(default=0.0, ge=0)
+    pedido_minimo: float = Field(default=0.0, ge=0)
+    prazo_adicional_min: int = Field(default=0, ge=0, le=240)
+    ativo: bool = True
+
+class AreaEntrega(AreaEntregaBase):
+    id: int
+    class Config:
+        from_attributes = True
+
+class EntregaConfiguracaoUpdate(BaseModel):
+    entrega_habilitada: bool = True
+    entrega_modo: str = "fixa"
+    taxa_fixa: float = Field(default=0.0, ge=0)
+    pedido_minimo: float = Field(default=0.0, ge=0)
+    entrega_gratis_acima: Optional[float] = Field(default=None, ge=0)
+    raio_km: Optional[float] = Field(default=None, gt=0)
+    taxa_base: float = Field(default=0.0, ge=0)
+    distancia_base_km: float = Field(default=0.0, ge=0)
+    taxa_por_km: float = Field(default=0.0, ge=0)
+    latitude_origem: Optional[float] = Field(default=None, ge=-90, le=90)
+    longitude_origem: Optional[float] = Field(default=None, ge=-180, le=180)
+    areas: List[AreaEntregaBase] = Field(default_factory=list)
+
+class EntregaConfiguracao(EntregaConfiguracaoUpdate):
+    areas: List[AreaEntrega] = Field(default_factory=list)
+
+class EntregaCotacaoRequest(BaseModel):
+    subtotal: float = Field(ge=0)
+    bairro: Optional[str] = Field(default=None, max_length=120)
+    latitude: Optional[float] = Field(default=None, ge=-90, le=90)
+    longitude: Optional[float] = Field(default=None, ge=-180, le=180)
+
+class EntregaCotacao(BaseModel):
+    atendido: bool
+    taxa: float = 0.0
+    pedido_minimo: float = 0.0
+    faltam_para_minimo: float = 0.0
+    distancia_km: Optional[float] = None
+    prazo_estimado_min: Optional[int] = None
+    mensagem: str
 
 class LoginRequest(BaseModel):
     senha: str
@@ -525,6 +585,11 @@ class ConfiguracaoPublica(BaseModel):
     endereco: Optional[str] = None
     logo: Optional[str] = None
     taxa_entrega: float
+    entrega_habilitada: bool = True
+    entrega_modo: str = "fixa"
+    pedido_minimo_entrega: float = 0.0
+    entrega_gratis_acima: Optional[float] = None
+    raio_entrega_km: Optional[float] = None
     tempo_medio_preparo: int
     loja_aberta: Optional[bool] = False
     class Config:

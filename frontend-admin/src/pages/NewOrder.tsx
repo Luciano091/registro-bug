@@ -17,6 +17,10 @@ const NewOrder = () => {
   const [cliente, setCliente] = useState(prefill?.nome || '');
   const [telefone, setTelefone] = useState(prefill?.telefone || '');
   const [endereco, setEndereco] = useState('');
+  const [bairro, setBairro] = useState('');
+  const [deliveryConfig, setDeliveryConfig] = useState<any>(null);
+  const [deliveryQuote, setDeliveryQuote] = useState<any>(null);
+  const [taxaManual, setTaxaManual] = useState('');
   const [tipoEntrega, setTipoEntrega] = useState('Delivery');
   const [formaPagamento, setFormaPagamento] = useState('PIX');
   
@@ -32,6 +36,10 @@ const NewOrder = () => {
   useEffect(() => {
     if (!produtosLoaded) refreshProdutos();
   }, [produtosLoaded, refreshProdutos]);
+
+  useEffect(() => {
+    api.get('/configuracao/entrega').then(({ data }) => setDeliveryConfig(data)).catch(() => undefined);
+  }, []);
 
   const handleAddProduct = (produto: any) => {
     if ((produto.grupos_opcoes || []).some((group: any) => group.ativo)) {
@@ -83,9 +91,21 @@ const NewOrder = () => {
   };
 
   const subtotal = itens.reduce((acc, item) => acc + (item.precoUnitario * item.quantidade), 0);
-  const total = subtotal;
+  const deliveryFee = tipoEntrega === 'Delivery' ? (deliveryConfig?.entrega_modo === 'distancia' ? Number(taxaManual) || 0 : deliveryQuote?.taxa || 0) : 0;
+  const total = subtotal + deliveryFee;
+
+  useEffect(() => {
+    if (tipoEntrega !== 'Delivery' || !deliveryConfig || deliveryConfig.entrega_modo === 'distancia' || (deliveryConfig.entrega_modo === 'bairro' && !bairro)) { setDeliveryQuote(null); return; }
+    const timer = window.setTimeout(() => api.post('/configuracao/entrega/cotar', { subtotal, bairro: bairro || undefined }).then(({ data }) => setDeliveryQuote(data)).catch((error) => setDeliveryQuote({ atendido: false, mensagem: error.response?.data?.detail || 'Não foi possível calcular a entrega.' })), 250);
+    return () => window.clearTimeout(timer);
+  }, [tipoEntrega, deliveryConfig, bairro, subtotal]);
 
   const handleSubmitOrder = async () => {
+    if (tipoEntrega === 'Delivery') {
+      if (!isOnline) return alert('Pedidos para entrega precisam de conexão para validar a taxa.');
+      if (deliveryConfig?.entrega_modo !== 'distancia' && !deliveryQuote?.atendido) return alert(deliveryQuote?.mensagem || 'Informe uma área de entrega válida.');
+      if (deliveryConfig?.entrega_modo === 'distancia' && taxaManual === '') return alert('Informe a taxa combinada para esta entrega.');
+    }
     setIsSubmitting(true);
     try {
       const orderUuid = uuidv4();
@@ -94,6 +114,8 @@ const NewOrder = () => {
         cliente,
         telefone: telefone || undefined,
         endereco: endereco || undefined,
+        bairro: bairro || undefined,
+        taxa_entrega_manual: tipoEntrega === 'Delivery' && deliveryConfig?.entrega_modo === 'distancia' ? Number(taxaManual) : undefined,
         tipo_entrega: tipoEntrega,
         forma_pagamento: formaPagamento,
         itens: itens.map(item => ({
@@ -111,12 +133,13 @@ const NewOrder = () => {
         cliente,
         telefone,
         endereco,
+        bairro,
         tipo_entrega: tipoEntrega,
         forma_pagamento: formaPagamento,
         status: 'Recebido',
         total,
         subtotal,
-        taxa_entrega: 0,
+        taxa_entrega: deliveryFee,
         data: new Date().toISOString(),
         itens: itens.map(item => ({ produto_id: item.produto.id, quantidade: item.quantidade, valor_unitario: item.precoUnitario, subtotal: item.precoUnitario * item.quantidade, produto_nome: item.produto.nome, produto: item.produto, opcoes: item.opcoes }))
       };
@@ -124,7 +147,7 @@ const NewOrder = () => {
       addOptimisticOrder(optimisticOrder);
       
       // 2. Limpar formulário imediatamente para o usuário continuar trabalhando
-      setCliente(''); setTelefone(''); setEndereco(''); setItens([]); setShowCheckout(false);
+      setCliente(''); setTelefone(''); setEndereco(''); setBairro(''); setTaxaManual(''); setItens([]); setShowCheckout(false);
       setIsSubmitting(false);
 
       // 3. Enviar para o servidor em background
@@ -236,7 +259,8 @@ const NewOrder = () => {
                 </div>
 
                 {tipoEntrega === 'Delivery' && (
-                  <div className="animate-in fade-in slide-in-from-top-2">
+                  <div className="animate-in fade-in slide-in-from-top-2 space-y-3">
+                    {deliveryConfig?.entrega_modo === 'bairro' && <div><label className="block text-sm text-zinc-300 mb-1">Bairro *</label><select value={bairro} onChange={event => setBairro(event.target.value)} className="w-full rounded-xl border border-white/10 bg-dark-900 px-4 py-3 text-white outline-none focus:border-brand-500/50"><option value="">Selecione...</option>{deliveryConfig.areas.filter((area:any) => area.ativo).map((area:any) => <option key={area.id} value={area.bairro}>{area.bairro} · {area.taxa.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</option>)}</select></div>}
                     <label className="block text-sm text-zinc-300 mb-1">Endereço de Entrega *</label>
                     <textarea 
                       required
@@ -246,6 +270,8 @@ const NewOrder = () => {
                       rows={3}
                       className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all resize-none text-white placeholder-zinc-600 custom-scrollbar"
                     />
+                    {deliveryConfig?.entrega_modo === 'distancia' && <div><label className="block text-sm text-zinc-300 mb-1">Taxa combinada (R$) *</label><input type="number" min="0" step="0.01" value={taxaManual} onChange={event => setTaxaManual(event.target.value)} className="w-full rounded-xl border border-white/10 bg-dark-900 px-4 py-3 text-white outline-none focus:border-brand-500/50" /><p className="mt-1 text-xs text-zinc-500">Use este campo para pedidos recebidos por telefone, quando o GPS do cliente não está disponível.</p></div>}
+                    {deliveryConfig?.entrega_modo !== 'distancia' && deliveryQuote && <p className={`rounded-xl border p-3 text-sm ${deliveryQuote.atendido ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300' : 'border-red-500/20 bg-red-500/10 text-red-300'}`}>{deliveryQuote.atendido ? `Taxa calculada: ${(deliveryQuote.taxa || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}` : deliveryQuote.mensagem}</p>}
                   </div>
                 )}
               </div>
@@ -272,6 +298,7 @@ const NewOrder = () => {
               </div>
 
               <div className="border-t border-white/10 pt-6 mt-auto">
+                {tipoEntrega === 'Delivery' && <div className="mb-3 flex justify-between text-sm text-zinc-400"><span>Taxa de entrega</span><strong className="text-zinc-200">{deliveryFee.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</strong></div>}
                 <div className="flex justify-between items-end mb-6">
                   <div>
                     <p className="text-zinc-300 text-sm mb-1">Total a Pagar</p>

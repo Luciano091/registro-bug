@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { X, Trash2, MapPin, CreditCard, ChevronRight, ShoppingCart, MessageSquare, TicketPercent } from 'lucide-react';
+import { X, Trash2, MapPin, CreditCard, ChevronRight, ShoppingCart, MessageSquare, TicketPercent, LocateFixed, Loader2 } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useNetwork } from '../contexts/NetworkContext';
 import { saveOfflineOrder } from '../services/db';
@@ -11,6 +11,10 @@ interface CheckoutModalProps {
   lojaAberta?: boolean;
 }
 
+type DeliveryArea = { id: number; bairro: string; taxa: number; pedido_minimo: number; prazo_adicional_min: number };
+type DeliveryConfig = { entrega_habilitada: boolean; entrega_modo: 'fixa' | 'bairro' | 'distancia'; areas: DeliveryArea[] };
+type DeliveryQuote = { atendido: boolean; taxa: number; pedido_minimo: number; faltam_para_minimo: number; distancia_km?: number; prazo_estimado_min?: number; mensagem: string };
+
 export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps) => {
   const { items, cartTotal, removeItem, updateQuantity, updateObservacao, clearCart } = useCart();
   const { isOnline } = useNetwork();
@@ -21,15 +25,55 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
   const [telefone, setTelefone] = useState(localStorage.getItem('user_telefone') || '');
   const [tipoPedido, setTipoPedido] = useState<'entrega' | 'retirada'>('entrega');
   const [endereco, setEndereco] = useState(localStorage.getItem('user_endereco') || '');
+  const [bairro, setBairro] = useState(localStorage.getItem('user_bairro') || '');
+  const [deliveryConfig, setDeliveryConfig] = useState<DeliveryConfig | null>(null);
+  const [deliveryQuote, setDeliveryQuote] = useState<DeliveryQuote | null>(null);
+  const [deliveryLocation, setDeliveryLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [quotingDelivery, setQuotingDelivery] = useState(false);
+  const [locating, setLocating] = useState(false);
   const [pagamento, setPagamento] = useState('');
   const [showObsFor, setShowObsFor] = useState<string | null>(null);
   const [cupomCodigo, setCupomCodigo] = useState(localStorage.getItem('ritmesa_coupon_code') || '');
   const [cupomAplicado, setCupomAplicado] = useState<any | null>(null);
   const [cupomErro, setCupomErro] = useState('');
   const [validandoCupom, setValidandoCupom] = useState(false);
-  const totalFinal = Math.max(0, cartTotal - (cupomAplicado?.desconto || 0));
+  const deliveryFee = tipoPedido === 'entrega' && deliveryQuote?.atendido ? deliveryQuote.taxa : 0;
+  const totalFinal = Math.max(0, cartTotal + deliveryFee - (cupomAplicado?.desconto || 0));
 
   useEffect(() => { setCupomAplicado(null); setCupomErro(''); }, [cartTotal]);
+
+  useEffect(() => {
+    api.get(`/public/${getEstablishmentSlug()}/entrega/configuracao`).then(({ data }) => {
+      setDeliveryConfig(data);
+      if (!data.entrega_habilitada) setTipoPedido('retirada');
+    }).catch(() => setDeliveryConfig(null));
+  }, []);
+
+  useEffect(() => {
+    if (tipoPedido !== 'entrega' || !deliveryConfig?.entrega_habilitada) { setDeliveryQuote(null); return; }
+    if (deliveryConfig.entrega_modo === 'bairro' && !bairro) { setDeliveryQuote(null); return; }
+    if (deliveryConfig.entrega_modo === 'distancia' && !deliveryLocation) { setDeliveryQuote(null); return; }
+    const timer = window.setTimeout(async () => {
+      setQuotingDelivery(true);
+      try {
+        const { data } = await api.post(`/public/${getEstablishmentSlug()}/entrega/cotar`, { subtotal: cartTotal, bairro: bairro || undefined, ...deliveryLocation });
+        setDeliveryQuote(data);
+      } catch (error: any) {
+        setDeliveryQuote({ atendido: false, taxa: 0, pedido_minimo: 0, faltam_para_minimo: 0, mensagem: error.response?.data?.detail || 'Não foi possível calcular a entrega.' });
+      } finally { setQuotingDelivery(false); }
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [tipoPedido, deliveryConfig, bairro, deliveryLocation, cartTotal]);
+
+  const locateDelivery = () => {
+    if (!navigator.geolocation) return setDeliveryQuote({ atendido: false, taxa: 0, pedido_minimo: 0, faltam_para_minimo: 0, mensagem: 'Este aparelho não oferece localização.' });
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => { setDeliveryLocation({ latitude: coords.latitude, longitude: coords.longitude }); setLocating(false); },
+      () => { setLocating(false); setDeliveryQuote({ atendido: false, taxa: 0, pedido_minimo: 0, faltam_para_minimo: 0, mensagem: 'Autorize sua localização para calcular a entrega.' }); },
+      { enableHighAccuracy: true, timeout: 20000 },
+    );
+  };
 
   const validarCupom = async () => {
     if (!cupomCodigo.trim()) return;
@@ -43,6 +87,14 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
   };
 
   const handleFinalizeOrder = async () => {
+    if (tipoPedido === 'entrega' && (!deliveryQuote?.atendido || quotingDelivery)) {
+      alert(deliveryQuote?.mensagem || 'Aguarde o cálculo da entrega.');
+      return;
+    }
+    if (tipoPedido === 'entrega' && !isOnline) {
+      alert('Conecte-se à internet para validar a área e a taxa de entrega.');
+      return;
+    }
     setIsSubmitting(true);
     try {
       const orderUuid = crypto.randomUUID();
@@ -51,6 +103,9 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
         cliente: nome,
         telefone: telefone,
         endereco: tipoPedido === 'entrega' ? endereco : undefined,
+        bairro: tipoPedido === 'entrega' ? bairro || undefined : undefined,
+        latitude_entrega: tipoPedido === 'entrega' ? deliveryLocation?.latitude : undefined,
+        longitude_entrega: tipoPedido === 'entrega' ? deliveryLocation?.longitude : undefined,
         tipo_entrega: tipoPedido === 'entrega' ? 'Delivery' : 'Retirada',
         forma_pagamento: pagamento,
         cupom_codigo: cupomAplicado?.codigo || undefined,
@@ -65,6 +120,7 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
             localStorage.setItem('user_nome', nome);
       localStorage.setItem('user_telefone', telefone);
       if (tipoPedido === 'entrega') localStorage.setItem('user_endereco', endereco);
+      if (tipoPedido === 'entrega' && bairro) localStorage.setItem('user_bairro', bairro);
 
       if (!isOnline) {
         await saveOfflineOrder(orderUuid, pedidoData);
@@ -109,6 +165,7 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
     if (!nome.trim()) return false;
     if (telefone.replace(/\D/g, '').length < 10) return false;
     if (tipoPedido === 'entrega' && !endereco.trim()) return false;
+    if (tipoPedido === 'entrega' && (!deliveryQuote?.atendido || quotingDelivery || !isOnline)) return false;
     if (!pagamento) return false;
     return true;
   };
@@ -274,7 +331,8 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
                 <div className="grid grid-cols-2 gap-3">
                   <button 
                     onClick={() => setTipoPedido('entrega')}
-                    className={`p-3 rounded-xl border flex flex-col items-center gap-2 transition-colors ${tipoPedido === 'entrega' ? 'bg-brand-500/10 border-brand-500 text-brand-500' : 'bg-zinc-50 border-zinc-200 text-zinc-500 hover:border-zinc-200'}`}
+                    disabled={deliveryConfig?.entrega_habilitada === false}
+                    className={`p-3 rounded-xl border flex flex-col items-center gap-2 transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${tipoPedido === 'entrega' ? 'bg-brand-500/10 border-brand-500 text-brand-500' : 'bg-zinc-50 border-zinc-200 text-zinc-500 hover:border-zinc-200'}`}
                   >
                     <MapPin size={20} />
                     <span className="text-sm font-bold">Entrega</span>
@@ -290,7 +348,8 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
               </div>
 
               {tipoPedido === 'entrega' && (
-                <div className="animate-in fade-in slide-in-from-top-2">
+                <div className="animate-in fade-in slide-in-from-top-2 space-y-3">
+                  {deliveryConfig?.entrega_modo === 'bairro' && <div><label className="block text-sm font-bold text-zinc-600 mb-2">Bairro</label><select value={bairro} onChange={event => setBairro(event.target.value)} className="w-full rounded-xl border border-zinc-200 bg-white p-3.5 text-sm text-zinc-900 outline-none focus:border-brand-500"><option value="">Selecione seu bairro</option>{deliveryConfig.areas.map(area => <option key={area.id} value={area.bairro}>{area.bairro} · {area.taxa ? area.taxa.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : 'grátis'}</option>)}</select></div>}
                   <label className="block text-sm font-bold text-zinc-600 mb-2">Endereço de entrega</label>
                   <textarea 
                     value={endereco}
@@ -298,6 +357,9 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
                     placeholder="Rua, número, bairro e ponto de referência"
                     className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-3.5 text-sm text-zinc-900 placeholder:text-zinc-500 focus:outline-none focus:border-brand-500/50 resize-none h-24"
                   />
+                  {deliveryConfig?.entrega_modo === 'distancia' && <button onClick={locateDelivery} disabled={locating} className="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm font-bold text-blue-700">{locating ? <Loader2 size={18} className="animate-spin" /> : <LocateFixed size={18} />}{locating ? 'Obtendo localização...' : deliveryLocation ? 'Atualizar minha localização' : 'Usar minha localização atual'}</button>}
+                  {quotingDelivery && <p className="flex items-center gap-2 rounded-xl bg-zinc-100 p-3 text-sm text-zinc-500"><Loader2 size={16} className="animate-spin" />Calculando taxa e área de atendimento...</p>}
+                  {!quotingDelivery && deliveryQuote && <div className={`rounded-xl border p-3 text-sm ${deliveryQuote.atendido ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'}`}><strong className="block">{deliveryQuote.atendido ? deliveryQuote.taxa ? `Taxa: ${deliveryQuote.taxa.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}` : 'Entrega grátis' : 'Entrega indisponível'}</strong><span>{deliveryQuote.mensagem}{deliveryQuote.distancia_km != null ? ` Distância aproximada: ${deliveryQuote.distancia_km.toLocaleString('pt-BR')} km.` : ''}{deliveryQuote.prazo_estimado_min ? ` Previsão: ${deliveryQuote.prazo_estimado_min} min.` : ''}</span></div>}
                 </div>
               )}
 
@@ -329,6 +391,7 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
                 {totalFinal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
               </span>
             </div>
+            {step === 2 && tipoPedido === 'entrega' && deliveryQuote?.atendido && <div className="-mt-2 mb-4 flex items-center justify-between text-xs text-zinc-500"><span>Taxa de entrega</span><strong className="text-zinc-700">{deliveryFee ? deliveryFee.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : 'Grátis'}</strong></div>}
             
             {step === 1 ? (
               <button 
