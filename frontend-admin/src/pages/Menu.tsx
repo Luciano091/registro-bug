@@ -19,7 +19,7 @@ const Menu = () => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [removerFundo, setRemoverFundo] = useState(false);
-  const [novoProduto, setNovoProduto] = useState({ nome: '', preco: '', preco_compra: '', categoria: '', descricao: '', imagem_url: '', controlar_estoque: false, estoque: '', is_promocao: false, preco_promocao: '' });
+  const [novoProduto, setNovoProduto] = useState({ nome: '', preco: '', preco_compra: '', categoria: '', descricao: '', imagem_url: '', controlar_estoque: false, estoque: '', is_promocao: false, preco_promocao: '', is_combo: false });
 
   const [activeCategory, setActiveCategory] = useState('Todos');
 
@@ -96,6 +96,7 @@ const Menu = () => {
         controlar_estoque: novoProduto.controlar_estoque,
         estoque: parseInt(novoProduto.estoque) || 0,
         is_promocao: novoProduto.is_promocao,
+        is_combo: novoProduto.is_combo,
         preco_promocao: novoProduto.is_promocao && novoProduto.preco_promocao ? parseFloat(novoProduto.preco_promocao) : null,
         categoria_id: existing?.categoria_id ?? null,
         ativo: existing?.ativo ?? true,
@@ -116,7 +117,7 @@ const Menu = () => {
       }
       
       setShowModal(false);
-            setNovoProduto({ nome: '', preco: '', preco_compra: '', categoria: '', descricao: '', imagem_url: '', controlar_estoque: false, estoque: '', is_promocao: false, preco_promocao: '' });
+            setNovoProduto({ nome: '', preco: '', preco_compra: '', categoria: '', descricao: '', imagem_url: '', controlar_estoque: false, estoque: '', is_promocao: false, preco_promocao: '', is_combo: false });
       setEditingId(null);
       refreshProdutos();
     } catch (error) {
@@ -190,7 +191,7 @@ const Menu = () => {
         <button 
           onClick={() => {
             setEditingId(null);
-                  setNovoProduto({ nome: '', preco: '', preco_compra: '', categoria: '', descricao: '', imagem_url: '', controlar_estoque: false, estoque: '', is_promocao: false, preco_promocao: '' });
+                  setNovoProduto({ nome: '', preco: '', preco_compra: '', categoria: '', descricao: '', imagem_url: '', controlar_estoque: false, estoque: '', is_promocao: false, preco_promocao: '', is_combo: false });
             setShowModal(true);
           }}
           className="premium-btn col-span-2 flex flex-1 items-center justify-center gap-2 rounded-xl px-5 py-2.5 font-semibold md:col-auto md:flex-none"
@@ -243,6 +244,11 @@ const Menu = () => {
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-500/10 text-brand-400 border border-brand-500/20">
                       {produto.categoria}
                     </span>
+                    {produto.is_combo && (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-black bg-orange-500/20 text-orange-400 border border-orange-500/30">
+                        COMBO
+                      </span>
+                    )}
                     {produto.controlar_estoque && (
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${produto.estoque <= 3 ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-zinc-500/10 text-zinc-300 border-zinc-500/20'}`}>
                         {produto.estoque <= 3 ? '🔥 ' : '📦 '}{produto.estoque} unid.
@@ -439,6 +445,19 @@ const Menu = () => {
                     className="w-5 h-5 rounded border-white/10 bg-dark-800 text-brand-500 focus:ring-brand-500/50 focus:ring-offset-dark-900"
                   />
                   <span className="text-sm text-white font-medium">Controlar Estoque?</span>
+                </label>
+                
+                <label className="flex items-center gap-3 cursor-pointer mt-4">
+                  <input 
+                    type="checkbox" 
+                    checked={novoProduto.is_combo}
+                    onChange={e => setNovoProduto({...novoProduto, is_combo: e.target.checked})}
+                    className="w-5 h-5 rounded border-white/10 bg-dark-800 text-orange-500 focus:ring-orange-500/50 focus:ring-offset-dark-900"
+                  />
+                  <div>
+                    <span className="text-sm text-white font-medium block">É um Combo?</span>
+                    <span className="text-xs text-zinc-400">Usa grupos de opções para abater estoque dos itens originais.</span>
+                  </div>
                 </label>
                 
                 {novoProduto.controlar_estoque && (

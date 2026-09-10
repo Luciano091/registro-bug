@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { Check, Edit2, Loader2, Plus, Save, Trash2, X } from 'lucide-react';
 import api from '../services/api';
 
-type Option = { id?: number; nome: string; preco_adicional: number; ativo: boolean; ordem: number };
+type Option = { id?: number; nome: string; preco_adicional: number; ativo: boolean; ordem: number; produto_vinculado_id?: number | null };
 type Group = { id: number; nome: string; minimo: number; maximo: number; obrigatorio: boolean; ativo: boolean; ordem: number; opcoes: Option[] };
-const emptyForm = () => ({ id: 0, nome: '', minimo: 0, maximo: 1, obrigatorio: false, ativo: true, ordem: 0, opcoes: [{ nome: '', preco_adicional: 0, ativo: true, ordem: 0 }] });
+const emptyForm = () => ({ id: 0, nome: '', minimo: 0, maximo: 1, obrigatorio: false, ativo: true, ordem: 0, opcoes: [{ nome: '', preco_adicional: 0, ativo: true, ordem: 0, produto_vinculado_id: null }] });
 
 export default function ProductOptionsModal({ product, onClose, onSaved }: { product: any; onClose: () => void; onSaved: () => void }) {
   const [groups, setGroups] = useState<Group[]>([]);
@@ -15,8 +15,10 @@ export default function ProductOptionsModal({ product, onClose, onSaved }: { pro
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  const load = async () => {
+    const [allProducts, setAllProducts] = useState<any[]>([]);
+const load = async () => {
     try { const { data } = await api.get('/grupos-opcoes'); setGroups(data); }
+      const { data: prodData } = await api.get('/produtos'); setAllProducts(prodData);
     catch (err: any) { setError(err.response?.data?.detail || 'Não foi possível carregar os grupos.'); }
     finally { setLoading(false); }
   };
@@ -29,7 +31,7 @@ export default function ProductOptionsModal({ product, onClose, onSaved }: { pro
   const updateOption = (index: number, key: string, value: string | number) => setForm((current: any) => ({ ...current, opcoes: current.opcoes.map((option: Option, idx: number) => idx === index ? { ...option, [key]: value } : option) }));
   const saveGroup = async (event: React.FormEvent) => {
     event.preventDefault(); setSaving(true); setError('');
-    const payload = { ...form, opcoes: form.opcoes.filter((option: Option) => option.nome.trim()).map((option: Option, index: number) => ({ nome: option.nome, preco_adicional: Number(option.preco_adicional) || 0, ativo: option.ativo, ordem: index })) };
+    const payload = { ...form, opcoes: form.opcoes.filter((option: Option) => option.nome.trim()).map((option: Option, index: number) => ({ nome: option.nome, preco_adicional: Number(option.preco_adicional) || 0, ativo: option.ativo, ordem: index, produto_vinculado_id: option.produto_vinculado_id || null })) };
     if (!payload.opcoes.length) { setError('Adicione pelo menos uma opção.'); setSaving(false); return; }
     try {
       if (form.id) await api.put(`/grupos-opcoes/${form.id}`, payload); else await api.post('/grupos-opcoes', payload);
@@ -59,7 +61,23 @@ export default function ProductOptionsModal({ product, onClose, onSaved }: { pro
           <input required value={form.nome} onChange={event => setForm({ ...form, nome: event.target.value })} placeholder="Ex.: Escolha o tamanho" className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-white outline-none focus:border-brand-500" />
           <div className="grid grid-cols-2 gap-3"><label className="text-xs text-slate-400">Mínimo<input type="number" min="0" value={form.minimo} onChange={event => setForm({ ...form, minimo: Number(event.target.value) })} className="mt-1 w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2.5 text-white" /></label><label className="text-xs text-slate-400">Máximo<input type="number" min="1" value={form.maximo} onChange={event => setForm({ ...form, maximo: Number(event.target.value) })} className="mt-1 w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2.5 text-white" /></label></div>
           <label className="flex items-center gap-2 text-sm text-slate-200"><input type="checkbox" checked={form.obrigatorio} onChange={event => setForm({ ...form, obrigatorio: event.target.checked, minimo: event.target.checked && form.minimo === 0 ? 1 : form.minimo })} /> Escolha obrigatória</label>
-          <div className="space-y-2"><span className="text-sm font-semibold text-slate-200">Opções</span>{form.opcoes.map((option: Option, index: number) => <div key={index} className="grid grid-cols-[1fr_110px_36px] gap-2"><input required value={option.nome} onChange={event => updateOption(index, 'nome', event.target.value)} placeholder="Nome" className="min-w-0 rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-white" /><input type="number" min="0" step="0.01" value={option.preco_adicional} onChange={event => updateOption(index, 'preco_adicional', Number(event.target.value))} className="rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-white" /><button type="button" onClick={() => setForm((current: any) => ({ ...current, opcoes: current.opcoes.filter((_: Option, idx: number) => idx !== index) }))} className="text-red-400"><Trash2 size={17} /></button></div>)}</div>
+          <div className="space-y-2"><span className="text-sm font-semibold text-slate-200">Opções</span>{form.opcoes.map((option: Option, index: number) => <div key={index} className="flex flex-col gap-2 rounded-lg border border-white/5 bg-white/5 p-3">
+  <div className="flex gap-2">
+    <input required value={option.nome} onChange={event => updateOption(index, 'nome', event.target.value)} placeholder="Nome" className="min-w-0 rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-white" />
+    <input type="number" min="0" step="0.01" value={option.preco_adicional} onChange={event => updateOption(index, 'preco_adicional', Number(event.target.value))} className="rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-white" />
+    <button type="button" onClick={() => setForm((current: any) => ({ ...current, opcoes: current.opcoes.filter((_: Option, idx: number) => idx !== index) }))} className="text-red-400"><Trash2 size={17} /></button>
+  </div>
+  <select 
+    className="rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-white text-sm" 
+    value={option.produto_vinculado_id || ''} 
+    onChange={e => updateOption(index, 'produto_vinculado_id', e.target.value ? Number(e.target.value) : null)}
+  >
+    <option value="">Nenhum produto vinculado (Texto livre)</option>
+    {allProducts.filter(p => !p.is_combo).map(p => (
+      <option key={p.id} value={p.id}>{p.nome}</option>
+    ))}
+  </select>
+</div>)}</div>
           <button type="button" onClick={() => setForm((current: any) => ({ ...current, opcoes: [...current.opcoes, { nome: '', preco_adicional: 0, ativo: true, ordem: current.opcoes.length }] }))} className="flex items-center gap-2 text-sm font-semibold text-brand-400"><Plus size={16} /> Adicionar opção</button>
           <button disabled={saving} className="premium-btn flex w-full items-center justify-center gap-2 rounded-xl py-3 font-bold">{saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />} Salvar grupo</button>
         </form> : <>
