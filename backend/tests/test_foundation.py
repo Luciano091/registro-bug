@@ -219,6 +219,28 @@ class FoundationTests(unittest.TestCase):
         crud.atualizar_item_cozinha(self.db, "pedido", item.id, "pronto", first.id)
         self.assertEqual(order.status, "Pronto")
 
+    def test_delivery_assignment_location_and_completion_are_tenant_scoped(self):
+        first = self.create_establishment("Delivery A", "delivery-a", "delivery-a@teste.com")
+        second = self.create_establishment("Delivery B", "delivery-b", "delivery-b@teste.com")
+        driver = crud.create_usuario(self.db, schemas.UsuarioCreate(nome="Carlos", email="carlos@teste.com", senha="12345678", perfil="entregador", telefone="82999999999", veiculo="Moto", placa="ABC1D23"), first.id)
+        foreign_driver = crud.create_usuario(self.db, schemas.UsuarioCreate(nome="Outro", email="outro@teste.com", senha="12345678", perfil="entregador"), second.id)
+        product = crud.create_produto(self.db, schemas.ProdutoCreate(nome="Pizza", categoria="Pizzas", preco=40), first.id)
+        order = crud.create_pedido(self.db, schemas.PedidoCreate(cliente="Ana", telefone="", endereco="Rua A, 10", tipo_entrega="Delivery", forma_pagamento="Pix", itens=[schemas.ItemPedidoCreate(produto_id=product.id, quantidade=1)]), first.id)
+        order.status = "Pronto"; self.db.commit()
+        with self.assertRaisesRegex(ValueError, "Entregador inválido"):
+            crud.atribuir_entrega(self.db, order.id, foreign_driver.id, first.id)
+        order = crud.atribuir_entrega(self.db, order.id, driver.id, first.id)
+        self.assertEqual(order.entrega.entregador_id, driver.id)
+        self.assertEqual(crud.get_pedidos_entrega(self.db, second.id), [])
+        driver_session = auth.UsuarioAutenticado(first.id, driver.id, driver.nome, driver.email, "entregador", frozenset(auth.PERMISSOES_POR_PERFIL["entregador"]))
+        order = crud.atualizar_status_entrega(self.db, order.id, "em_rota", driver_session)
+        self.assertEqual(order.status, "Saiu entrega")
+        crud.atualizar_localizacao_entrega(self.db, order.id, -9.39, -36.15, driver_session)
+        self.assertEqual(round(order.entrega.latitude, 2), -9.39)
+        order = crud.atualizar_status_entrega(self.db, order.id, "entregue", driver_session)
+        self.assertEqual(order.status, "Finalizado")
+        self.assertEqual(driver.status_entrega, "disponivel")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -201,6 +201,41 @@ class ItemPedido(ItemPedidoBase):
     class Config:
         from_attributes = True
 
+class EntregadorResumo(BaseModel):
+    id: int
+    nome: str
+    telefone: Optional[str] = None
+    veiculo: Optional[str] = None
+    placa: Optional[str] = None
+    status_entrega: str = "disponivel"
+    class Config:
+        from_attributes = True
+
+class EntregaResumo(BaseModel):
+    id: int
+    status: str
+    observacao: Optional[str] = None
+    atribuido_em: Optional[datetime] = None
+    retirado_em: Optional[datetime] = None
+    entregue_em: Optional[datetime] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    localizacao_atualizada_em: Optional[datetime] = None
+    entregador: Optional[EntregadorResumo] = None
+    class Config:
+        from_attributes = True
+
+class EntregaAtribuir(BaseModel):
+    entregador_id: int
+
+class EntregaStatusUpdate(BaseModel):
+    status: str
+    observacao: Optional[str] = Field(default=None, max_length=500)
+
+class EntregaLocalizacao(BaseModel):
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
+
 # --- Pedido ---
 class PedidoBase(BaseModel):
     uuid: Optional[str] = None
@@ -227,6 +262,7 @@ class Pedido(PedidoBase):
     total: float
     data: datetime
     itens: List[ItemPedido] = Field(default_factory=list)
+    entrega: Optional[EntregaResumo] = None
 
     class Config:
         from_attributes = True
@@ -384,6 +420,9 @@ class UsuarioCreate(BaseModel):
     email: str = Field(min_length=5, max_length=255)
     senha: str = Field(min_length=8, max_length=72)
     perfil: str
+    telefone: Optional[str] = None
+    veiculo: Optional[str] = None
+    placa: Optional[str] = None
 
 class UsuarioUpdate(BaseModel):
     nome: Optional[str] = None
@@ -391,6 +430,10 @@ class UsuarioUpdate(BaseModel):
     senha: Optional[str] = Field(default=None, min_length=8, max_length=72)
     perfil: Optional[str] = None
     ativo: Optional[bool] = None
+    telefone: Optional[str] = None
+    veiculo: Optional[str] = None
+    placa: Optional[str] = None
+    status_entrega: Optional[str] = None
 
 class Usuario(BaseModel):
     id: int
@@ -400,6 +443,10 @@ class Usuario(BaseModel):
     ativo: bool
     criado_em: datetime
     ultimo_acesso_em: Optional[datetime] = None
+    telefone: Optional[str] = None
+    veiculo: Optional[str] = None
+    placa: Optional[str] = None
+    status_entrega: str = "disponivel"
 
     class Config:
         from_attributes = True

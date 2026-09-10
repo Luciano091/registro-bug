@@ -88,7 +88,7 @@ app = FastAPI(title="Ritmesa API")
 
 cors_env = os.getenv("CORS_ORIGINS", "")
 cors_origins = [origin.strip() for origin in cors_env.split(",") if origin.strip()] or [
-    "http://localhost:5173", "http://localhost:5174",
+    "http://localhost:5173", "http://localhost:5174", "http://localhost:5175",
     "https://ritmesa.com.br", "https://www.ritmesa.com.br",
     "https://painel.ritmesa.com.br", "https://admin.ritmesa.com.br",
 ]
@@ -497,6 +497,42 @@ def update_kitchen_item(origem: str, item_id: int, payload: schemas.CozinhaStatu
     except ValueError as exc: raise HTTPException(status_code=400, detail=str(exc))
     if not item: raise HTTPException(status_code=404, detail="Item não encontrado.")
     return {"id": item.id, "status": item.status if origem == "comanda" else item.status_producao}
+
+# --- Expedição e entregadores ---
+@app.get("/entregas/painel", response_model=List[schemas.Pedido])
+def delivery_board(db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("entregas.visualizar"))):
+    entregador_id = usuario.usuario_id if usuario.perfil == "entregador" else None
+    return crud.get_pedidos_entrega(db, usuario.estabelecimento_id, entregador_id)
+
+@app.get("/entregas/entregadores", response_model=List[schemas.Usuario])
+def delivery_drivers(db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("entregas.visualizar"))):
+    return crud.get_entregadores(db, usuario.estabelecimento_id)
+
+@app.post("/entregas/{pedido_id}/atribuir", response_model=schemas.Pedido)
+def assign_delivery(pedido_id: int, payload: schemas.EntregaAtribuir, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("entregas.gerenciar"))):
+    try: pedido = crud.atribuir_entrega(db, pedido_id, payload.entregador_id, usuario.estabelecimento_id)
+    except ValueError as exc: raise HTTPException(status_code=400, detail=str(exc))
+    if not pedido: raise HTTPException(status_code=404, detail="Pedido de entrega não encontrado.")
+    crud.create_audit_log(db, usuario.estabelecimento_id, "entrega.atribuida", usuario.usuario_id, "pedido", pedido.id, {"entregador_id": payload.entregador_id})
+    return pedido
+
+@app.put("/entregas/{pedido_id}/status", response_model=schemas.Pedido)
+def update_delivery_status(pedido_id: int, payload: schemas.EntregaStatusUpdate, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.get_current_user)):
+    if not (usuario.pode("entregas.operar") or usuario.pode("entregas.gerenciar")): raise HTTPException(status_code=403, detail="Você não tem permissão para esta ação.")
+    try:
+        pedido = crud.atualizar_status_entrega(db, pedido_id, payload.status, usuario)
+        if pedido and pedido.entrega: pedido.entrega.observacao = payload.observacao; db.commit(); db.refresh(pedido)
+    except ValueError as exc: raise HTTPException(status_code=400, detail=str(exc))
+    if not pedido: raise HTTPException(status_code=404, detail="Entrega não encontrada.")
+    crud.create_audit_log(db, usuario.estabelecimento_id, f"entrega.{payload.status}", usuario.usuario_id, "pedido", pedido.id)
+    return pedido
+
+@app.put("/entregas/{pedido_id}/localizacao", response_model=schemas.Pedido)
+def update_delivery_location(pedido_id: int, payload: schemas.EntregaLocalizacao, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("entregas.operar"))):
+    try: pedido = crud.atualizar_localizacao_entrega(db, pedido_id, payload.latitude, payload.longitude, usuario)
+    except ValueError as exc: raise HTTPException(status_code=400, detail=str(exc))
+    if not pedido: raise HTTPException(status_code=404, detail="Entrega não encontrada.")
+    return pedido
 
 # --- Salão e comandas ---
 @app.get("/salao/mesas", response_model=List[schemas.MesaVisao])

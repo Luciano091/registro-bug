@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Home, PlusCircle, ListOrdered, Utensils, BarChart3, Settings as SettingsIcon, ChevronLeft, ChevronRight, Wallet, LogOut, Menu as MenuIcon, X, Package, Store, Users, Armchair, ChefHat } from 'lucide-react';
+import { Home, PlusCircle, ListOrdered, Utensils, BarChart3, Settings as SettingsIcon, ChevronLeft, ChevronRight, Wallet, LogOut, Menu as MenuIcon, X, Package, Store, Users, Armchair, ChefHat, Truck } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import NewOrder from './pages/NewOrder';
 import Orders from './pages/Orders';
@@ -14,6 +14,7 @@ import PlatformDashboard from './pages/PlatformDashboard';
 import Team from './pages/Team';
 import Salon from './pages/Salon';
 import Kitchen from './pages/Kitchen';
+import Deliveries from './pages/Deliveries';
 
 import Login from './pages/Login';
 import { Navigate } from 'react-router-dom';
@@ -83,6 +84,7 @@ const ProtectedRoute = ({ children, permission, user }: { children: React.ReactN
 const HomeRoute = ({ user }: { user: SessionUser | null }) => {
   if (can(user, 'dashboard.visualizar')) return <Dashboard />;
   if (can(user, 'cozinha.operar')) return <Navigate to="/cozinha" replace />;
+  if (can(user, 'entregas.operar')) return <Navigate to="/entregas" replace />;
   if (can(user, 'salao.operar')) return <Navigate to="/salao" replace />;
   if (can(user, 'pedidos.visualizar')) return <Navigate to="/pedidos" replace />;
   if (can(user, 'cardapio.visualizar')) return <Navigate to="/cardapio" replace />;
@@ -169,6 +171,7 @@ function AppContent() {
             {can(session, 'pedidos.visualizar') && <NavLink to="/pedidos" icon={ListOrdered} isCollapsed={isCollapsed}>Pedidos</NavLink>}
             {can(session, 'salao.operar') && <NavLink to="/salao" icon={Armchair} isCollapsed={isCollapsed}>Salão</NavLink>}
             {can(session, 'cozinha.operar') && <NavLink to="/cozinha" icon={ChefHat} isCollapsed={isCollapsed}>Cozinha</NavLink>}
+            {can(session, 'entregas.visualizar') && <NavLink to="/entregas" icon={Truck} isCollapsed={isCollapsed}>Entregas</NavLink>}
             {can(session, 'caixa.visualizar') && <NavLink to="/caixa" icon={Wallet} isCollapsed={isCollapsed}>Caixa</NavLink>}
 
             {!isCollapsed && <span className="nav-section-label mt-5">Gestão</span>}
@@ -227,6 +230,7 @@ function AppContent() {
             <Route path="/pedidos" element={<ProtectedRoute permission="pedidos.visualizar" user={session}><Orders /></ProtectedRoute>} />
             <Route path="/salao" element={<ProtectedRoute permission="salao.operar" user={session}><Salon /></ProtectedRoute>} />
             <Route path="/cozinha" element={<ProtectedRoute permission="cozinha.operar" user={session}><Kitchen /></ProtectedRoute>} />
+            <Route path="/entregas" element={<ProtectedRoute permission="entregas.visualizar" user={session}><Deliveries /></ProtectedRoute>} />
 
             <Route path="/caixa" element={<ProtectedRoute permission="caixa.visualizar" user={session}><CashFlow /></ProtectedRoute>} />
             <Route path="/cardapio" element={<ProtectedRoute permission="cardapio.visualizar" user={session}><Menu /></ProtectedRoute>} />
@@ -252,6 +256,7 @@ function AppContent() {
             <nav className="flex flex-col gap-4 overflow-y-auto">
               {can(session, 'salao.operar') && <Link to="/salao" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><Armchair className="text-brand-400" /> Salão e comandas</Link>}
               {can(session, 'cozinha.operar') && <Link to="/cozinha" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><ChefHat className="text-brand-400" /> Painel de cozinha</Link>}
+              {can(session, 'entregas.visualizar') && <Link to="/entregas" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><Truck className="text-brand-400" /> Entregas</Link>}
               {can(session, 'caixa.visualizar') && <Link to="/caixa" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><Wallet className="text-brand-400" /> Caixa</Link>}
               {can(session, 'estoque.visualizar') && <Link to="/insumos" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><Package className="text-brand-400" /> Insumos</Link>}
               {can(session, 'relatorios.visualizar') && <Link to="/relatorios" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><BarChart3 className="text-brand-400" /> Relatórios</Link>}
@@ -279,6 +284,7 @@ function AppContent() {
           {can(session, 'dashboard.visualizar') && <Link to="/" aria-current={location.pathname === '/' ? 'page' : undefined} className={`mobile-nav-item ${location.pathname === '/' ? 'is-active' : ''}`}><Home size={22} /><span>Início</span></Link>}
           {can(session, 'pedidos.visualizar') && <Link to="/pedidos" aria-current={location.pathname === '/pedidos' ? 'page' : undefined} className={`mobile-nav-item ${location.pathname === '/pedidos' ? 'is-active' : ''}`}><ListOrdered size={22} /><span>Pedidos</span></Link>}
           {can(session, 'cozinha.operar') && !can(session, 'dashboard.visualizar') && <Link to="/cozinha" aria-current={location.pathname === '/cozinha' ? 'page' : undefined} className={`mobile-nav-item ${location.pathname === '/cozinha' ? 'is-active' : ''}`}><ChefHat size={22} /><span>Cozinha</span></Link>}
+          {can(session, 'entregas.operar') && !can(session, 'dashboard.visualizar') && <Link to="/entregas" aria-current={location.pathname === '/entregas' ? 'page' : undefined} className={`mobile-nav-item ${location.pathname === '/entregas' ? 'is-active' : ''}`}><Truck size={22} /><span>Entregas</span></Link>}
           
           {can(session, 'pedidos.criar') && <Link to="/novo-pedido" aria-label="Novo pedido" className="relative -top-6 p-4 premium-btn rounded-full shadow-xl shadow-brand-500/20 border-4 border-white">
             <PlusCircle size={28} />

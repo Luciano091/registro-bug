@@ -32,16 +32,17 @@ PERMISSOES_POR_PERFIL = {
         "usuarios.gerenciar", "whatsapp.visualizar", "whatsapp.enviar",
         "salao.operar", "salao.gerenciar",
         "cozinha.operar", "cozinha.gerenciar",
+        "entregas.visualizar", "entregas.gerenciar",
     },
     "caixa": {
         "dashboard.visualizar", "pedidos.visualizar", "pedidos.criar", "pedidos.atualizar",
         "caixa.visualizar", "caixa.operar", "cardapio.visualizar", "relatorios.visualizar",
-        "salao.operar",
+        "salao.operar", "entregas.visualizar", "configuracoes.visualizar",
     },
-    "atendente": {"pedidos.visualizar", "pedidos.criar", "pedidos.atualizar", "cardapio.visualizar", "salao.operar"},
-    "garcom": {"pedidos.visualizar", "pedidos.criar", "cardapio.visualizar", "salao.operar"},
-    "cozinha": {"pedidos.visualizar", "pedidos.atualizar", "cozinha.operar"},
-    "entregador": {"pedidos.visualizar", "entregas.operar"},
+    "atendente": {"pedidos.visualizar", "pedidos.criar", "pedidos.atualizar", "cardapio.visualizar", "salao.operar", "entregas.visualizar", "configuracoes.visualizar"},
+    "garcom": {"pedidos.visualizar", "pedidos.criar", "cardapio.visualizar", "salao.operar", "configuracoes.visualizar"},
+    "cozinha": {"pedidos.visualizar", "pedidos.atualizar", "cozinha.operar", "configuracoes.visualizar"},
+    "entregador": {"pedidos.visualizar", "entregas.visualizar", "entregas.operar", "configuracoes.visualizar"},
 }
 
 @dataclass(frozen=True)

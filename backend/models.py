@@ -38,6 +38,10 @@ class Usuario(Base):
     ativo = Column(Boolean, nullable=False, default=True, index=True)
     criado_em = Column(DateTime, default=get_now, nullable=False)
     ultimo_acesso_em = Column(DateTime, nullable=True)
+    telefone = Column(String, nullable=True)
+    veiculo = Column(String, nullable=True)
+    placa = Column(String, nullable=True)
+    status_entrega = Column(String, nullable=False, default="disponivel", index=True)
 
 class LogAuditoria(Base):
     __tablename__ = "logs_auditoria"
@@ -225,6 +229,25 @@ class Pedido(Base):
 
     itens = relationship("ItemPedido", back_populates="pedido")
     cliente_obj = relationship("Cliente", back_populates="pedidos")
+    entrega = relationship("Entrega", back_populates="pedido", uselist=False, cascade="all, delete-orphan")
+
+class Entrega(Base):
+    __tablename__ = "entregas"
+
+    id = Column(Integer, primary_key=True, index=True)
+    estabelecimento_id = Column(Integer, ForeignKey("estabelecimentos.id"), nullable=False, index=True)
+    pedido_id = Column(Integer, ForeignKey("pedidos.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
+    entregador_id = Column(Integer, ForeignKey("usuarios.id", ondelete="SET NULL"), nullable=True, index=True)
+    status = Column(String, nullable=False, default="aguardando", index=True)
+    observacao = Column(Text, nullable=True)
+    atribuido_em = Column(DateTime, nullable=True)
+    retirado_em = Column(DateTime, nullable=True)
+    entregue_em = Column(DateTime, nullable=True)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+    localizacao_atualizada_em = Column(DateTime, nullable=True)
+    pedido = relationship("Pedido", back_populates="entrega")
+    entregador = relationship("Usuario")
 
 class Mesa(Base):
     __tablename__ = "mesas"

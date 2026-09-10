@@ -680,6 +680,63 @@ def atualizar_item_cozinha(db: Session, origem: str, item_id: int, novo_status: 
     elif any(i.status_producao == "em_preparo" for i in ativos): item.pedido.status = "Em preparo"
     db.commit(); db.refresh(item); return item
 
+# --- Expedição e entregas ---
+def get_entregadores(db: Session, estabelecimento_id: int):
+    return db.query(models.Usuario).filter(models.Usuario.estabelecimento_id == estabelecimento_id, models.Usuario.perfil == "entregador", models.Usuario.ativo == True).order_by(models.Usuario.nome).all()
+
+def get_pedidos_entrega(db: Session, estabelecimento_id: int, entregador_id: int = None):
+    query = db.query(models.Pedido).filter(
+        models.Pedido.estabelecimento_id == estabelecimento_id,
+        func.lower(models.Pedido.tipo_entrega).in_(("delivery", "entrega")),
+        models.Pedido.status != "Cancelado",
+    )
+    if entregador_id:
+        query = query.join(models.Entrega).filter(models.Entrega.entregador_id == entregador_id, models.Entrega.status.in_(("atribuida", "em_rota")))
+    else:
+        query = query.filter(models.Pedido.status != "Finalizado")
+    return query.order_by(models.Pedido.data).all()
+
+def atribuir_entrega(db: Session, pedido_id: int, entregador_id: int, estabelecimento_id: int):
+    pedido = get_pedido(db, pedido_id, estabelecimento_id)
+    if not pedido or (pedido.tipo_entrega or "").lower() not in ("delivery", "entrega"):
+        return None
+    if pedido.status != "Pronto": raise ValueError("O pedido precisa estar pronto antes da expedição.")
+    entregador = db.query(models.Usuario).filter(models.Usuario.id == entregador_id, models.Usuario.estabelecimento_id == estabelecimento_id, models.Usuario.perfil == "entregador", models.Usuario.ativo == True).first()
+    if not entregador: raise ValueError("Entregador inválido para este estabelecimento.")
+    if entregador.status_entrega == "em_rota": raise ValueError("Este entregador já está em uma entrega.")
+    entrega = pedido.entrega or models.Entrega(estabelecimento_id=estabelecimento_id, pedido=pedido)
+    if entrega.entregador and entrega.entregador.id != entregador.id and entrega.entregador.status_entrega != "em_rota": entrega.entregador.status_entrega = "disponivel"
+    entrega.entregador = entregador; entrega.status = "atribuida"; entrega.atribuido_em = models.get_now(); entrega.observacao = None
+    entregador.status_entrega = "atribuido"; db.add(entrega); db.commit(); db.refresh(pedido); return pedido
+
+def atualizar_status_entrega(db: Session, pedido_id: int, novo_status: str, usuario):
+    pedido = get_pedido(db, pedido_id, usuario.estabelecimento_id)
+    if not pedido or not pedido.entrega: return None
+    entrega = pedido.entrega
+    if usuario.perfil == "entregador" and entrega.entregador_id != usuario.usuario_id: return None
+    agora = models.get_now()
+    if novo_status == "em_rota":
+        if entrega.status != "atribuida": raise ValueError("A entrega precisa estar atribuída antes da retirada.")
+        entrega.status = "em_rota"; entrega.retirado_em = agora; pedido.status = "Saiu entrega"; entrega.entregador.status_entrega = "em_rota"
+    elif novo_status == "entregue":
+        if entrega.status != "em_rota": raise ValueError("Confirme a retirada antes de concluir a entrega.")
+        entrega.status = "entregue"; entrega.entregue_em = agora; pedido.status = "Finalizado"; entrega.entregador.status_entrega = "disponivel"
+    elif novo_status == "falha":
+        if entrega.status not in ("atribuida", "em_rota"): raise ValueError("Esta entrega não pode ser devolvida à expedição.")
+        entrega.status = "falha"; pedido.status = "Pronto"; entrega.entregador.status_entrega = "disponivel"; entrega.entregador = None
+    elif novo_status == "aguardando" and usuario.pode("entregas.gerenciar"):
+        if entrega.entregador: entrega.entregador.status_entrega = "disponivel"
+        entrega.entregador = None; entrega.status = "aguardando"; entrega.atribuido_em = None
+    else: raise ValueError("Status de entrega inválido.")
+    db.commit(); db.refresh(pedido); return pedido
+
+def atualizar_localizacao_entrega(db: Session, pedido_id: int, latitude: float, longitude: float, usuario):
+    pedido = get_pedido(db, pedido_id, usuario.estabelecimento_id)
+    if not pedido or not pedido.entrega or pedido.entrega.entregador_id != usuario.usuario_id: return None
+    if pedido.entrega.status not in ("atribuida", "em_rota"): raise ValueError("Esta entrega não está ativa.")
+    pedido.entrega.latitude = latitude; pedido.entrega.longitude = longitude; pedido.entrega.localizacao_atualizada_em = models.get_now()
+    db.commit(); db.refresh(pedido); return pedido
+
 # --- Configuracoes ---
 
 def get_configuracao(db: Session, estabelecimento_id: int = None):
@@ -859,6 +916,7 @@ def create_usuario(db: Session, payload: schemas.UsuarioCreate, estabelecimento_
         senha_hash=auth.get_password_hash(payload.senha),
         perfil=payload.perfil,
         ativo=True,
+        telefone=payload.telefone, veiculo=payload.veiculo, placa=payload.placa,
     )
     db.add(usuario)
     db.commit()
