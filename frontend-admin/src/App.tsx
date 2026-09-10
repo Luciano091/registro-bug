@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Home, PlusCircle, ListOrdered, Utensils, BarChart3, Settings as SettingsIcon, ChevronLeft, ChevronRight, Wallet, LogOut, Menu as MenuIcon, X, Package, Store, Users } from 'lucide-react';
+import { Home, PlusCircle, ListOrdered, Utensils, BarChart3, Settings as SettingsIcon, ChevronLeft, ChevronRight, Wallet, LogOut, Menu as MenuIcon, X, Package, Store, Users, Armchair } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import NewOrder from './pages/NewOrder';
 import Orders from './pages/Orders';
@@ -12,6 +12,7 @@ import Insumos from './pages/Insumos';
 import PlatformLogin from './pages/PlatformLogin';
 import PlatformDashboard from './pages/PlatformDashboard';
 import Team from './pages/Team';
+import Salon from './pages/Salon';
 
 import Login from './pages/Login';
 import { Navigate } from 'react-router-dom';
@@ -80,6 +81,7 @@ const ProtectedRoute = ({ children, permission, user }: { children: React.ReactN
 
 const HomeRoute = ({ user }: { user: SessionUser | null }) => {
   if (can(user, 'dashboard.visualizar')) return <Dashboard />;
+  if (can(user, 'salao.operar')) return <Navigate to="/salao" replace />;
   if (can(user, 'pedidos.visualizar')) return <Navigate to="/pedidos" replace />;
   if (can(user, 'cardapio.visualizar')) return <Navigate to="/cardapio" replace />;
   return <div className="p-10 text-center text-slate-600">Seu acesso ainda não possui uma área operacional disponível.</div>;
@@ -163,6 +165,7 @@ function AppContent() {
             {can(session, 'dashboard.visualizar') && <NavLink to="/" icon={Home} isCollapsed={isCollapsed}>Dashboard</NavLink>}
             {can(session, 'pedidos.criar') && <NavLink to="/novo-pedido" icon={PlusCircle} isCollapsed={isCollapsed}>Novo Pedido</NavLink>}
             {can(session, 'pedidos.visualizar') && <NavLink to="/pedidos" icon={ListOrdered} isCollapsed={isCollapsed}>Pedidos</NavLink>}
+            {can(session, 'salao.operar') && <NavLink to="/salao" icon={Armchair} isCollapsed={isCollapsed}>Salão</NavLink>}
             {can(session, 'caixa.visualizar') && <NavLink to="/caixa" icon={Wallet} isCollapsed={isCollapsed}>Caixa</NavLink>}
 
             {!isCollapsed && <span className="nav-section-label mt-5">Gestão</span>}
@@ -219,6 +222,7 @@ function AppContent() {
             <Route path="/" element={<ProtectedRoute user={session}><HomeRoute user={session} /></ProtectedRoute>} />
             <Route path="/novo-pedido" element={<ProtectedRoute permission="pedidos.criar" user={session}><NewOrder /></ProtectedRoute>} />
             <Route path="/pedidos" element={<ProtectedRoute permission="pedidos.visualizar" user={session}><Orders /></ProtectedRoute>} />
+            <Route path="/salao" element={<ProtectedRoute permission="salao.operar" user={session}><Salon /></ProtectedRoute>} />
 
             <Route path="/caixa" element={<ProtectedRoute permission="caixa.visualizar" user={session}><CashFlow /></ProtectedRoute>} />
             <Route path="/cardapio" element={<ProtectedRoute permission="cardapio.visualizar" user={session}><Menu /></ProtectedRoute>} />
@@ -242,6 +246,7 @@ function AppContent() {
               </button>
             </div>
             <nav className="flex flex-col gap-4 overflow-y-auto">
+              {can(session, 'salao.operar') && <Link to="/salao" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><Armchair className="text-brand-400" /> Salão e comandas</Link>}
               {can(session, 'caixa.visualizar') && <Link to="/caixa" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><Wallet className="text-brand-400" /> Caixa</Link>}
               {can(session, 'estoque.visualizar') && <Link to="/insumos" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><Package className="text-brand-400" /> Insumos</Link>}
               {can(session, 'relatorios.visualizar') && <Link to="/relatorios" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><BarChart3 className="text-brand-400" /> Relatórios</Link>}

@@ -200,14 +200,83 @@ class Pedido(Base):
     status = Column(String, default="Recebido")
     subtotal = Column(Float, default=0.0)
     taxa_entrega = Column(Float, default=0.0)
+    taxa_servico = Column(Float, default=0.0)
     cupom_codigo = Column(String, nullable=True)
     desconto = Column(Float, default=0.0)
     total = Column(Float, default=0.0)
     observacao = Column(String, nullable=True)
+    origem = Column(String, nullable=False, default="balcao")
+    comanda_id = Column(Integer, ForeignKey("comandas.id"), nullable=True, unique=True, index=True)
     data = Column(DateTime, default=get_now)
 
     itens = relationship("ItemPedido", back_populates="pedido")
     cliente_obj = relationship("Cliente", back_populates="pedidos")
+
+class Mesa(Base):
+    __tablename__ = "mesas"
+    __table_args__ = (UniqueConstraint("estabelecimento_id", "numero", name="uq_mesa_estabelecimento_numero"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    estabelecimento_id = Column(Integer, ForeignKey("estabelecimentos.id"), nullable=False, index=True)
+    numero = Column(String, nullable=False)
+    nome = Column(String, nullable=True)
+    capacidade = Column(Integer, nullable=False, default=4)
+    status = Column(String, nullable=False, default="livre", index=True)
+    ativo = Column(Boolean, nullable=False, default=True)
+    ordem = Column(Integer, nullable=False, default=0)
+    comandas = relationship("Comanda", back_populates="mesa")
+
+class Comanda(Base):
+    __tablename__ = "comandas"
+
+    id = Column(Integer, primary_key=True, index=True)
+    estabelecimento_id = Column(Integer, ForeignKey("estabelecimentos.id"), nullable=False, index=True)
+    mesa_id = Column(Integer, ForeignKey("mesas.id"), nullable=False, index=True)
+    numero = Column(String, nullable=False, index=True)
+    cliente = Column(String, nullable=True)
+    pessoas = Column(Integer, nullable=False, default=1)
+    status = Column(String, nullable=False, default="aberta", index=True)
+    observacao = Column(Text, nullable=True)
+    aberta_por_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True)
+    aberta_por_nome = Column(String, nullable=False)
+    aberta_em = Column(DateTime, nullable=False, default=get_now)
+    fechada_em = Column(DateTime, nullable=True)
+    subtotal = Column(Float, nullable=False, default=0.0)
+    desconto = Column(Float, nullable=False, default=0.0)
+    taxa_servico = Column(Float, nullable=False, default=0.0)
+    total = Column(Float, nullable=False, default=0.0)
+    mesa = relationship("Mesa", back_populates="comandas")
+    itens = relationship("ComandaItem", back_populates="comanda", cascade="all, delete-orphan", order_by="ComandaItem.id")
+    pagamentos = relationship("ComandaPagamento", back_populates="comanda", cascade="all, delete-orphan")
+
+class ComandaItem(Base):
+    __tablename__ = "comanda_itens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    comanda_id = Column(Integer, ForeignKey("comandas.id", ondelete="CASCADE"), nullable=False, index=True)
+    produto_id = Column(Integer, ForeignKey("produtos.id"), nullable=False)
+    produto_nome = Column(String, nullable=False)
+    quantidade = Column(Integer, nullable=False, default=1)
+    custo_unitario = Column(Float, nullable=False, default=0.0)
+    valor_unitario = Column(Float, nullable=False)
+    subtotal = Column(Float, nullable=False)
+    observacao = Column(Text, nullable=True)
+    opcoes_json = Column(Text, nullable=True)
+    status = Column(String, nullable=False, default="enviado", index=True)
+    criado_por_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True)
+    criado_em = Column(DateTime, nullable=False, default=get_now)
+    atualizado_em = Column(DateTime, nullable=False, default=get_now)
+    comanda = relationship("Comanda", back_populates="itens")
+
+class ComandaPagamento(Base):
+    __tablename__ = "comanda_pagamentos"
+
+    id = Column(Integer, primary_key=True, index=True)
+    comanda_id = Column(Integer, ForeignKey("comandas.id", ondelete="CASCADE"), nullable=False, index=True)
+    forma_pagamento = Column(String, nullable=False)
+    valor = Column(Float, nullable=False)
+    criado_em = Column(DateTime, nullable=False, default=get_now)
+    comanda = relationship("Comanda", back_populates="pagamentos")
 
 class ItemPedido(Base):
     __tablename__ = "itens_pedido"

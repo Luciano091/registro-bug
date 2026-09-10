@@ -199,6 +199,7 @@ class Pedido(PedidoBase):
     status: str
     subtotal: float
     taxa_entrega: float
+    taxa_servico: float = 0.0
     desconto: float = 0.0
     total: float
     data: datetime
@@ -206,6 +207,99 @@ class Pedido(PedidoBase):
 
     class Config:
         from_attributes = True
+
+# --- Salão, mesas e comandas ---
+class MesaBase(BaseModel):
+    numero: str = Field(min_length=1, max_length=20)
+    nome: Optional[str] = Field(default=None, max_length=80)
+    capacidade: int = Field(default=4, ge=1, le=100)
+    ativo: bool = True
+    ordem: int = 0
+
+class MesaCreate(MesaBase):
+    pass
+
+class Mesa(MesaBase):
+    id: int
+    status: str
+    class Config:
+        from_attributes = True
+
+class ComandaItemAdicionar(BaseModel):
+    produto_id: int
+    quantidade: int = Field(default=1, ge=1, le=100)
+    observacao: Optional[str] = Field(default=None, max_length=500)
+    opcoes: List[ItemPedidoOpcaoCreate] = Field(default_factory=list)
+
+class ComandaItemStatus(BaseModel):
+    status: str
+
+class ComandaItem(BaseModel):
+    id: int
+    produto_id: int
+    produto_nome: str
+    quantidade: int
+    custo_unitario: float
+    valor_unitario: float
+    subtotal: float
+    observacao: Optional[str] = None
+    opcoes_json: Optional[str] = None
+    status: str
+    criado_em: datetime
+    class Config:
+        from_attributes = True
+
+class ComandaPagamentoCreate(BaseModel):
+    forma_pagamento: str = Field(min_length=2, max_length=50)
+    valor: float = Field(gt=0)
+
+class ComandaPagamento(BaseModel):
+    id: int
+    forma_pagamento: str
+    valor: float
+    criado_em: datetime
+    class Config:
+        from_attributes = True
+
+class ComandaAbrir(BaseModel):
+    mesa_id: int
+    cliente: Optional[str] = Field(default=None, max_length=120)
+    pessoas: int = Field(default=1, ge=1, le=100)
+    observacao: Optional[str] = Field(default=None, max_length=500)
+
+class ComandaTransferir(BaseModel):
+    mesa_destino_id: int
+
+class ComandaUnir(BaseModel):
+    comanda_origem_id: int
+
+class ComandaFechar(BaseModel):
+    desconto: float = Field(default=0, ge=0)
+    taxa_servico_percentual: float = Field(default=0, ge=0, le=100)
+    pagamentos: List[ComandaPagamentoCreate] = Field(min_length=1)
+
+class Comanda(BaseModel):
+    id: int
+    mesa_id: int
+    numero: str
+    cliente: Optional[str] = None
+    pessoas: int
+    status: str
+    observacao: Optional[str] = None
+    aberta_por_nome: str
+    aberta_em: datetime
+    fechada_em: Optional[datetime] = None
+    subtotal: float
+    desconto: float
+    taxa_servico: float
+    total: float
+    itens: List[ComandaItem] = Field(default_factory=list)
+    pagamentos: List[ComandaPagamento] = Field(default_factory=list)
+    class Config:
+        from_attributes = True
+
+class MesaVisao(Mesa):
+    comanda: Optional[Comanda] = None
 
 # --- Configuracao ---
 class ConfiguracaoBase(BaseModel):

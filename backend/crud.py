@@ -3,6 +3,7 @@ from sqlalchemy import func
 import models, schemas
 import datetime
 import uuid as uuid_lib
+import json
 
 # --- Produtos ---
 def get_produtos(db: Session, estabelecimento_id: int, skip: int = 0, limit: int = 100, somente_ativos: bool = False, canal: str = None):
@@ -430,6 +431,173 @@ def update_pedido_status(db: Session, pedido_id: int, status: str, estabelecimen
         db.refresh(db_pedido)
     return db_pedido
 
+# --- Salão, mesas e comandas ---
+def get_mesas(db: Session, estabelecimento_id: int):
+    return db.query(models.Mesa).filter(models.Mesa.estabelecimento_id == estabelecimento_id).order_by(models.Mesa.ordem, models.Mesa.numero).all()
+
+def get_mesa(db: Session, mesa_id: int, estabelecimento_id: int):
+    return db.query(models.Mesa).filter(models.Mesa.id == mesa_id, models.Mesa.estabelecimento_id == estabelecimento_id).first()
+
+def save_mesa(db: Session, payload: schemas.MesaCreate, estabelecimento_id: int, mesa_id: int = None):
+    mesa = get_mesa(db, mesa_id, estabelecimento_id) if mesa_id else None
+    if mesa_id and not mesa:
+        return None
+    numero = payload.numero.strip()
+    duplicate = db.query(models.Mesa).filter(models.Mesa.estabelecimento_id == estabelecimento_id, func.lower(models.Mesa.numero) == numero.lower())
+    if mesa_id:
+        duplicate = duplicate.filter(models.Mesa.id != mesa_id)
+    if duplicate.first():
+        raise ValueError("Já existe uma mesa com este número.")
+    values = payload.model_dump(); values["numero"] = numero
+    if mesa:
+        if mesa.status == "ocupada" and not payload.ativo:
+            raise ValueError("Feche ou transfira a comanda antes de desativar a mesa.")
+        for key, value in values.items(): setattr(mesa, key, value)
+        if not mesa.ativo: mesa.status = "inativa"
+        elif mesa.status == "inativa": mesa.status = "livre"
+    else:
+        mesa = models.Mesa(estabelecimento_id=estabelecimento_id, status="livre" if payload.ativo else "inativa", **values)
+        db.add(mesa)
+    db.commit(); db.refresh(mesa)
+    return mesa
+
+def get_comanda(db: Session, comanda_id: int, estabelecimento_id: int):
+    return db.query(models.Comanda).filter(models.Comanda.id == comanda_id, models.Comanda.estabelecimento_id == estabelecimento_id).first()
+
+def get_comanda_aberta_mesa(db: Session, mesa_id: int, estabelecimento_id: int):
+    return db.query(models.Comanda).filter(models.Comanda.mesa_id == mesa_id, models.Comanda.estabelecimento_id == estabelecimento_id, models.Comanda.status.in_(("aberta", "aguardando_pagamento"))).first()
+
+def abrir_comanda(db: Session, payload: schemas.ComandaAbrir, usuario):
+    mesa = get_mesa(db, payload.mesa_id, usuario.estabelecimento_id)
+    if not mesa or not mesa.ativo or mesa.status != "livre":
+        raise ValueError("A mesa não está disponível.")
+    if get_comanda_aberta_mesa(db, mesa.id, usuario.estabelecimento_id):
+        raise ValueError("Esta mesa já possui uma comanda aberta.")
+    sequencia = db.query(models.Comanda).filter(models.Comanda.estabelecimento_id == usuario.estabelecimento_id).count() + 1
+    comanda = models.Comanda(
+        estabelecimento_id=usuario.estabelecimento_id, mesa_id=mesa.id, numero=f"C{sequencia:05d}",
+        cliente=payload.cliente, pessoas=payload.pessoas, observacao=payload.observacao,
+        aberta_por_id=usuario.usuario_id, aberta_por_nome=usuario.nome,
+    )
+    mesa.status = "ocupada"; db.add(comanda); db.commit(); db.refresh(comanda)
+    return comanda
+
+def recalcular_comanda(comanda):
+    comanda.subtotal = round(sum(item.subtotal for item in comanda.itens if item.status != "cancelado"), 2)
+    comanda.total = round(max(0, comanda.subtotal - comanda.desconto + comanda.taxa_servico), 2)
+
+def adicionar_item_comanda(db: Session, comanda_id: int, payload: schemas.ComandaItemAdicionar, usuario):
+    comanda = get_comanda(db, comanda_id, usuario.estabelecimento_id)
+    if not comanda or comanda.status != "aberta":
+        raise ValueError("A comanda não está aberta para lançamentos.")
+    produto = db.query(models.Produto).filter(models.Produto.id == payload.produto_id, models.Produto.estabelecimento_id == usuario.estabelecimento_id).first()
+    if not produto or not produto_disponivel_agora(produto) or not produto.disponivel_salao:
+        raise ValueError("Produto indisponível para o salão neste momento.")
+    grupos = {grupo.id: grupo for grupo in produto.grupos_opcoes if grupo.ativo}
+    ids = [selecao.opcao_id for selecao in payload.opcoes]
+    opcoes = db.query(models.OpcaoProduto).join(models.GrupoOpcao).filter(models.OpcaoProduto.id.in_(ids), models.OpcaoProduto.ativo == True, models.GrupoOpcao.estabelecimento_id == usuario.estabelecimento_id).all() if ids else []
+    por_id = {opcao.id: opcao for opcao in opcoes}
+    if len(por_id) != len(set(ids)):
+        raise ValueError("Uma das opções selecionadas é inválida.")
+    contagem = {grupo_id: 0 for grupo_id in grupos}; extras = 0.0; snapshots = []
+    for selecao in payload.opcoes:
+        opcao = por_id[selecao.opcao_id]
+        if opcao.grupo_id not in grupos:
+            raise ValueError(f"A opção '{opcao.nome}' não pertence ao produto.")
+        contagem[opcao.grupo_id] += selecao.quantidade
+        extras += opcao.preco_adicional * selecao.quantidade
+        snapshots.append({"grupo": opcao.grupo.nome, "opcao": opcao.nome, "quantidade": selecao.quantidade, "preco": opcao.preco_adicional})
+    for grupo_id, grupo in grupos.items():
+        minimo = max(grupo.minimo, 1 if grupo.obrigatorio else 0)
+        if contagem[grupo_id] < minimo or contagem[grupo_id] > grupo.maximo:
+            raise ValueError(f"Revise a quantidade de escolhas em '{grupo.nome}'.")
+    if produto.controlar_estoque and produto.estoque < payload.quantidade:
+        raise ValueError(f"Estoque insuficiente para '{produto.nome}'.")
+    valor = preco_vigente(produto) + extras
+    item = models.ComandaItem(
+        produto_id=produto.id, produto_nome=produto.nome, quantidade=payload.quantidade, custo_unitario=produto.preco_compra or 0,
+        valor_unitario=valor, subtotal=round(valor * payload.quantidade, 2), observacao=payload.observacao,
+        opcoes_json=json.dumps(snapshots, ensure_ascii=False), criado_por_id=usuario.usuario_id,
+    )
+    comanda.itens.append(item)
+    if produto.controlar_estoque: produto.estoque -= payload.quantidade
+    for ficha in produto.fichas_tecnicas:
+        if ficha.insumo and ficha.insumo.controlar_estoque:
+            necessario = payload.quantidade * ficha.quantidade
+            if ficha.insumo.estoque < necessario: raise ValueError(f"Estoque de insumo insuficiente: '{ficha.insumo.nome}'.")
+            ficha.insumo.estoque -= necessario
+    recalcular_comanda(comanda); db.commit(); db.refresh(comanda)
+    return comanda
+
+def atualizar_status_item_comanda(db: Session, item_id: int, status_item: str, estabelecimento_id: int):
+    permitidos = ("enviado", "em_preparo", "pronto", "servido")
+    if status_item not in permitidos: raise ValueError("Status de item inválido.")
+    item = db.query(models.ComandaItem).join(models.Comanda).filter(models.ComandaItem.id == item_id, models.Comanda.estabelecimento_id == estabelecimento_id, models.Comanda.status == "aberta").first()
+    if not item or item.status == "cancelado": return None
+    item.status = status_item; item.atualizado_em = models.get_now(); db.commit(); db.refresh(item)
+    return item
+
+def cancelar_item_comanda(db: Session, item_id: int, estabelecimento_id: int):
+    item = db.query(models.ComandaItem).join(models.Comanda).filter(models.ComandaItem.id == item_id, models.Comanda.estabelecimento_id == estabelecimento_id, models.Comanda.status == "aberta").first()
+    if not item or item.status == "cancelado": return None
+    produto = db.query(models.Produto).filter(models.Produto.id == item.produto_id, models.Produto.estabelecimento_id == estabelecimento_id).first()
+    if produto and produto.controlar_estoque: produto.estoque += item.quantidade
+    if produto:
+        for ficha in produto.fichas_tecnicas:
+            if ficha.insumo and ficha.insumo.controlar_estoque: ficha.insumo.estoque += item.quantidade * ficha.quantidade
+    item.status = "cancelado"; item.atualizado_em = models.get_now(); recalcular_comanda(item.comanda); db.commit(); db.refresh(item.comanda)
+    return item.comanda
+
+def transferir_comanda(db: Session, comanda_id: int, mesa_destino_id: int, estabelecimento_id: int):
+    comanda = get_comanda(db, comanda_id, estabelecimento_id); destino = get_mesa(db, mesa_destino_id, estabelecimento_id)
+    if not comanda or comanda.status != "aberta": raise ValueError("Comanda indisponível para transferência.")
+    if not destino or not destino.ativo or destino.status != "livre": raise ValueError("A mesa de destino não está livre.")
+    origem = comanda.mesa; origem.status = "livre"; destino.status = "ocupada"; comanda.mesa_id = destino.id
+    db.commit(); db.refresh(comanda); return comanda
+
+def unir_comandas(db: Session, destino_id: int, origem_id: int, estabelecimento_id: int):
+    destino = get_comanda(db, destino_id, estabelecimento_id); origem = get_comanda(db, origem_id, estabelecimento_id)
+    if not destino or not origem or destino.id == origem.id or destino.status != "aberta" or origem.status != "aberta": raise ValueError("Selecione duas comandas abertas diferentes.")
+    for item in list(origem.itens): item.comanda = destino
+    origem.status = "unida"; origem.fechada_em = models.get_now(); origem.mesa.status = "livre"
+    recalcular_comanda(destino); db.commit(); db.refresh(destino); return destino
+
+def cancelar_comanda(db: Session, comanda_id: int, estabelecimento_id: int):
+    comanda = get_comanda(db, comanda_id, estabelecimento_id)
+    if not comanda or comanda.status != "aberta": raise ValueError("Comanda indisponível para cancelamento.")
+    for item in comanda.itens:
+        if item.status != "cancelado": cancelar_item_comanda(db, item.id, estabelecimento_id)
+    comanda.status = "cancelada"; comanda.fechada_em = models.get_now(); comanda.mesa.status = "livre"; db.commit(); db.refresh(comanda)
+    return comanda
+
+def fechar_comanda(db: Session, comanda_id: int, payload: schemas.ComandaFechar, estabelecimento_id: int):
+    comanda = get_comanda(db, comanda_id, estabelecimento_id)
+    if not comanda or comanda.status not in ("aberta", "aguardando_pagamento"): raise ValueError("Comanda indisponível para fechamento.")
+    recalcular_comanda(comanda)
+    if comanda.subtotal <= 0: raise ValueError("A comanda não possui itens para cobrança.")
+    if payload.desconto > comanda.subtotal: raise ValueError("O desconto não pode ultrapassar o subtotal.")
+    comanda.desconto = round(payload.desconto, 2)
+    comanda.taxa_servico = round((comanda.subtotal - comanda.desconto) * payload.taxa_servico_percentual / 100, 2)
+    recalcular_comanda(comanda)
+    pago = round(sum(item.valor for item in payload.pagamentos), 2)
+    if abs(pago - comanda.total) > 0.02: raise ValueError(f"Os pagamentos devem somar R$ {comanda.total:.2f}.")
+    caixa = get_caixa_aberto(db, estabelecimento_id)
+    if not caixa: raise ValueError("Abra o caixa antes de fechar a comanda.")
+    hoje = models.get_now().date(); sequencia = db.query(models.Pedido).filter(models.Pedido.estabelecimento_id == estabelecimento_id, func.date(models.Pedido.data) == hoje).count() + 1
+    pedido = models.Pedido(
+        estabelecimento_id=estabelecimento_id, uuid=str(uuid_lib.uuid4()), numero=f"{estabelecimento_id}-{hoje.strftime('%Y%m%d')}-{sequencia:03d}",
+        cliente=comanda.cliente or f"Mesa {comanda.mesa.numero}", telefone="", tipo_entrega="Salão", forma_pagamento="Dividido" if len(payload.pagamentos) > 1 else payload.pagamentos[0].forma_pagamento,
+        status="Concluído", subtotal=comanda.subtotal, desconto=comanda.desconto, taxa_entrega=0, taxa_servico=comanda.taxa_servico,
+        total=comanda.total, origem="salao", comanda_id=comanda.id, observacao=comanda.observacao,
+    )
+    for item in comanda.itens:
+        if item.status != "cancelado": pedido.itens.append(models.ItemPedido(produto_id=item.produto_id, produto_nome=item.produto_nome, quantidade=item.quantidade, custo_unitario=item.custo_unitario, valor_unitario=item.valor_unitario, subtotal=item.subtotal, observacao=item.observacao))
+    for pagamento in payload.pagamentos:
+        comanda.pagamentos.append(models.ComandaPagamento(forma_pagamento=pagamento.forma_pagamento, valor=pagamento.valor))
+        caixa.movimentacoes.append(models.MovimentacaoCaixa(tipo="venda", valor=pagamento.valor, forma_pagamento=pagamento.forma_pagamento, descricao=f"Comanda {comanda.numero} · Mesa {comanda.mesa.numero}"))
+    comanda.status = "fechada"; comanda.fechada_em = models.get_now(); comanda.mesa.status = "livre"; db.add(pedido); db.commit(); db.refresh(comanda)
+    return comanda
+
 # --- Configuracoes ---
 
 def get_configuracao(db: Session, estabelecimento_id: int = None):
@@ -685,7 +853,16 @@ def ensure_initial_establishment(db: Session):
             config.estabelecimento_id = existente.id
             db.commit()
         return existente
-    config = get_configuracao(db)
+    # O estabelecimento legado só deve ser criado quando a base ainda não possui
+    # nenhum tenant. Isso evita reutilizar a configuração de um cliente novo.
+    primeiro = db.query(models.Estabelecimento).order_by(models.Estabelecimento.id).first()
+    if primeiro:
+        return primeiro
+    config = db.query(models.Configuracao).filter(models.Configuracao.estabelecimento_id == None).first()
+    if not config:
+        config = models.Configuracao(nome_empresa="BisBurger")
+        db.add(config)
+        db.flush()
     estabelecimento = models.Estabelecimento(
         nome=config.nome_empresa or "BisBurger",
         slug="bisburger",

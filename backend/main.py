@@ -460,6 +460,81 @@ def create_admin_order(pedido: schemas.PedidoCreate, db: Session = Depends(get_d
     crud.add_movimentacao(db, caixa_aberto.id, movimento)
     return db_pedido
 
+# --- Salão e comandas ---
+@app.get("/salao/mesas", response_model=List[schemas.MesaVisao])
+def list_tables(db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("salao.operar"))):
+    return [{"id": mesa.id, "numero": mesa.numero, "nome": mesa.nome, "capacidade": mesa.capacidade, "ativo": mesa.ativo, "ordem": mesa.ordem, "status": mesa.status, "comanda": crud.get_comanda_aberta_mesa(db, mesa.id, estabelecimento_id)} for mesa in crud.get_mesas(db, estabelecimento_id)]
+
+@app.post("/salao/mesas", response_model=schemas.Mesa, status_code=201)
+def create_table(payload: schemas.MesaCreate, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("salao.gerenciar"))):
+    try: mesa = crud.save_mesa(db, payload, usuario.estabelecimento_id)
+    except ValueError as exc: raise HTTPException(status_code=400, detail=str(exc))
+    crud.create_audit_log(db, usuario.estabelecimento_id, "mesa.criada", usuario.usuario_id, "mesa", mesa.id)
+    return mesa
+
+@app.put("/salao/mesas/{mesa_id}", response_model=schemas.Mesa)
+def update_table(mesa_id: int, payload: schemas.MesaCreate, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("salao.gerenciar"))):
+    try: mesa = crud.save_mesa(db, payload, usuario.estabelecimento_id, mesa_id)
+    except ValueError as exc: raise HTTPException(status_code=400, detail=str(exc))
+    if not mesa: raise HTTPException(status_code=404, detail="Mesa não encontrada.")
+    crud.create_audit_log(db, usuario.estabelecimento_id, "mesa.atualizada", usuario.usuario_id, "mesa", mesa.id)
+    return mesa
+
+@app.post("/salao/comandas", response_model=schemas.Comanda, status_code=201)
+def open_tab(payload: schemas.ComandaAbrir, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("salao.operar"))):
+    try: comanda = crud.abrir_comanda(db, payload, usuario)
+    except ValueError as exc: raise HTTPException(status_code=400, detail=str(exc))
+    crud.create_audit_log(db, usuario.estabelecimento_id, "comanda.aberta", usuario.usuario_id, "comanda", comanda.id)
+    return comanda
+
+@app.get("/salao/comandas/{comanda_id}", response_model=schemas.Comanda)
+def read_tab(comanda_id: int, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("salao.operar"))):
+    comanda = crud.get_comanda(db, comanda_id, estabelecimento_id)
+    if not comanda: raise HTTPException(status_code=404, detail="Comanda não encontrada.")
+    return comanda
+
+@app.post("/salao/comandas/{comanda_id}/itens", response_model=schemas.Comanda)
+def add_tab_item(comanda_id: int, payload: schemas.ComandaItemAdicionar, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("salao.operar"))):
+    try: return crud.adicionar_item_comanda(db, comanda_id, payload, usuario)
+    except ValueError as exc: raise HTTPException(status_code=400, detail=str(exc))
+
+@app.put("/salao/itens/{item_id}/status", response_model=schemas.ComandaItem)
+def update_tab_item_status(item_id: int, payload: schemas.ComandaItemStatus, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("salao.operar"))):
+    try: item = crud.atualizar_status_item_comanda(db, item_id, payload.status, estabelecimento_id)
+    except ValueError as exc: raise HTTPException(status_code=400, detail=str(exc))
+    if not item: raise HTTPException(status_code=404, detail="Item não encontrado.")
+    return item
+
+@app.delete("/salao/itens/{item_id}", response_model=schemas.Comanda)
+def cancel_tab_item(item_id: int, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("salao.operar"))):
+    comanda = crud.cancelar_item_comanda(db, item_id, estabelecimento_id)
+    if not comanda: raise HTTPException(status_code=404, detail="Item não encontrado.")
+    return comanda
+
+@app.post("/salao/comandas/{comanda_id}/transferir", response_model=schemas.Comanda)
+def transfer_tab(comanda_id: int, payload: schemas.ComandaTransferir, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("salao.operar"))):
+    try: return crud.transferir_comanda(db, comanda_id, payload.mesa_destino_id, estabelecimento_id)
+    except ValueError as exc: raise HTTPException(status_code=400, detail=str(exc))
+
+@app.post("/salao/comandas/{comanda_id}/unir", response_model=schemas.Comanda)
+def merge_tabs(comanda_id: int, payload: schemas.ComandaUnir, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("salao.operar"))):
+    try: return crud.unir_comandas(db, comanda_id, payload.comanda_origem_id, estabelecimento_id)
+    except ValueError as exc: raise HTTPException(status_code=400, detail=str(exc))
+
+@app.post("/salao/comandas/{comanda_id}/fechar", response_model=schemas.Comanda)
+def close_tab(comanda_id: int, payload: schemas.ComandaFechar, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("salao.operar"))):
+    try: comanda = crud.fechar_comanda(db, comanda_id, payload, usuario.estabelecimento_id)
+    except ValueError as exc: raise HTTPException(status_code=400, detail=str(exc))
+    crud.create_audit_log(db, usuario.estabelecimento_id, "comanda.fechada", usuario.usuario_id, "comanda", comanda.id)
+    return comanda
+
+@app.post("/salao/comandas/{comanda_id}/cancelar", response_model=schemas.Comanda)
+def cancel_tab(comanda_id: int, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("salao.operar"))):
+    try: comanda = crud.cancelar_comanda(db, comanda_id, usuario.estabelecimento_id)
+    except ValueError as exc: raise HTTPException(status_code=400, detail=str(exc))
+    crud.create_audit_log(db, usuario.estabelecimento_id, "comanda.cancelada", usuario.usuario_id, "comanda", comanda.id)
+    return comanda
+
 @app.get("/public/{slug}/acompanhamento/{codigo}", response_model=schemas.Pedido)
 def public_order(slug: str, codigo: str, db: Session = Depends(get_db)):
     estabelecimento = require_public_establishment(slug, db)

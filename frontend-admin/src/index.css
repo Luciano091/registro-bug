@@ -46,6 +46,12 @@
   }
 }
 
+@layer components {
+  .field {
+    @apply w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20;
+  }
+}
+
 /* Shared presentation for administrative screens. */
 @layer base {
   :root { color-scheme: light; }
@@ -123,6 +129,7 @@
   .login-form input { font-size: 1rem; font-weight: 500; letter-spacing: 0.1em; }
   .login-form input::placeholder { letter-spacing: normal; }
   @media (max-width: 767px) {
+    body.salon-modal-open .mobile-bottom-nav { display: none; }
     .admin-main > div { padding-left: 20px; padding-right: 20px; }
     .admin-main header { padding-bottom: 20px; }
     .dashboard-stats > div { min-height: 136px; padding: 20px; }

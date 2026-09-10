@@ -46,6 +46,14 @@ class FoundationTests(unittest.TestCase):
         self.assertEqual(owner.perfil, "proprietario")
         self.assertTrue(auth.verify_password("senha-forte", owner.senha_hash))
 
+    def test_legacy_bootstrap_does_not_create_or_reuse_another_tenant(self):
+        establishment = self.create_establishment("Restaurante Novo", "restaurante-novo", "novo@teste.com")
+        config_id = establishment.configuracao_id
+        result = crud.ensure_initial_establishment(self.db)
+        self.assertEqual(result.id, establishment.id)
+        self.assertEqual(self.db.query(models.Estabelecimento).count(), 1)
+        self.assertEqual(establishment.configuracao_id, config_id)
+
     def test_same_staff_email_is_isolated_by_establishment(self):
         first = self.create_establishment("Unidade A", "unidade-a", "a@teste.com")
         second = self.create_establishment("Unidade B", "unidade-b", "b@teste.com")
@@ -160,6 +168,38 @@ class FoundationTests(unittest.TestCase):
         other = self.create_establishment("Outra Loja", "outra-oferta", "outra@teste.com")
         with self.assertRaisesRegex(ValueError, "inválido"):
             crud.validar_cupom(self.db, "BEMVINDO", 100, other.id)
+
+    def test_dining_tab_closes_into_order_and_split_cash_payments(self):
+        establishment = self.create_establishment("Bistrô", "bistro", "bistro@teste.com")
+        owner = crud.get_usuario_by_email(self.db, "bistro@teste.com", establishment.id)
+        session = auth.UsuarioAutenticado(establishment.id, owner.id, owner.nome, owner.email, owner.perfil, frozenset({"*"}))
+        table = crud.save_mesa(self.db, schemas.MesaCreate(numero="01", capacidade=4), establishment.id)
+        other = self.create_establishment("Outro", "outro-salao", "outro-salao@teste.com")
+        foreign_table = crud.save_mesa(self.db, schemas.MesaCreate(numero="01"), other.id)
+        product = crud.create_produto(self.db, schemas.ProdutoCreate(nome="Prato", categoria="Almoço", preco=30, preco_compra=12, controlar_estoque=True, estoque=10), establishment.id)
+        tab = crud.abrir_comanda(self.db, schemas.ComandaAbrir(mesa_id=table.id, cliente="Ana", pessoas=2), session)
+        self.assertEqual(table.status, "ocupada")
+        with self.assertRaisesRegex(ValueError, "destino"):
+            crud.transferir_comanda(self.db, tab.id, foreign_table.id, establishment.id)
+        tab = crud.adicionar_item_comanda(self.db, tab.id, schemas.ComandaItemAdicionar(produto_id=product.id, quantidade=2), session)
+        self.assertEqual(tab.subtotal, 60)
+        self.assertEqual(product.estoque, 8)
+        crud.abrir_caixa(self.db, schemas.CaixaCreate(operador="Caixa", saldo_inicial=100), establishment.id)
+        tab = crud.fechar_comanda(self.db, tab.id, schemas.ComandaFechar(
+            desconto=10, taxa_servico_percentual=10,
+            pagamentos=[schemas.ComandaPagamentoCreate(forma_pagamento="PIX", valor=25), schemas.ComandaPagamentoCreate(forma_pagamento="Dinheiro", valor=30)],
+        ), establishment.id)
+        self.assertEqual(tab.status, "fechada")
+        self.assertEqual(tab.total, 55)
+        self.assertEqual(table.status, "livre")
+        order = self.db.query(models.Pedido).filter(models.Pedido.comanda_id == tab.id).one()
+        self.assertEqual(order.origem, "salao")
+        self.assertEqual(order.total, 55)
+        self.assertEqual(order.itens[0].custo_unitario, 12)
+        self.assertEqual(order.taxa_servico, 5)
+        self.assertEqual(order.taxa_entrega, 0)
+        cash = crud.get_caixa_aberto(self.db, establishment.id)
+        self.assertEqual(sum(m.valor for m in cash.movimentacoes), 55)
 
 
 if __name__ == "__main__":
