@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Ritmesa Entregador</string>
+    <string name="title_activity_main">Ritmesa Entregador</string>
+    <string name="package_name">br.com.ritmesa.entregador</string>
+    <string name="custom_url_scheme">br.com.ritmesa.entregador</string>
+    <string name="tracking_channel_name">Entregas em andamento</string>
+    <string name="tracking_notification_title">Ritmesa Entregador</string>
+    <string name="tracking_notification_text">Compartilhando localização da entrega</string>
+    <string name="tracking_notification_stop">Parar</string>
+</resources>

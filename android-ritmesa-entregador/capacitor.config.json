@@ -1,0 +1,15 @@
+{
+  "appId": "br.com.ritmesa.entregador",
+  "appName": "Ritmesa Entregador",
+  "webDir": "www",
+  "server": {
+    "url": "https://painel.ritmesa.com.br/entregas",
+    "cleartext": false,
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#111827",
+    "appendUserAgent": " RitmesaEntregador/1.0.0"
+  }
+}

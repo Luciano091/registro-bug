@@ -1,0 +1,16 @@
+{
+  "name": "ritmesa-entregador-native",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "sync": "cap sync android",
+    "open": "cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "latest",
+    "@capacitor/core": "latest"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "latest"
+  }
+}
