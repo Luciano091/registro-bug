@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Save, Store, Phone, MapPin, Clock, Lock } from 'lucide-react';
 import api from '../services/api';
+import DriverAppDownload from '../components/DriverAppDownload';
 
 const Settings = () => {
   const [config, setConfig] = useState({
@@ -150,6 +151,8 @@ const Settings = () => {
           </div>
         </div>
       </div>
+
+      <DriverAppDownload dark />
     </div>
   );
 };

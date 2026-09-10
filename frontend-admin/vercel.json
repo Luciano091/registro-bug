@@ -1,4 +1,14 @@
 {
+  "headers": [
+    {
+      "source": "/ritmesa-entregador.apk",
+      "headers": [
+        { "key": "Content-Type", "value": "application/vnd.android.package-archive" },
+        { "key": "Content-Disposition", "value": "attachment; filename=Ritmesa-Entregador-v1.0.0.apk" },
+        { "key": "Cache-Control", "value": "public, max-age=300, must-revalidate" }
+      ]
+    }
+  ],
   "rewrites": [
     {
       "source": "/(.*)",

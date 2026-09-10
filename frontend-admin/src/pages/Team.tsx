@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Check, Loader2, Plus, ShieldCheck, UserRound, X } from 'lucide-react';
 import api from '../services/api';
 import { readSession } from '../services/session';
+import DriverAppDownload from '../components/DriverAppDownload';
 
 type TeamUser = {
   id: number;
@@ -90,6 +91,8 @@ export default function Team() {
           <Plus size={19} /> Novo acesso
         </button>
       </header>
+
+      <div className="mt-6"><DriverAppDownload /></div>
 
       {error && <div className="my-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{error}</div>}
 
