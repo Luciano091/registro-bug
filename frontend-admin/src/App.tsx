@@ -168,7 +168,7 @@ function AppContent() {
             {!isCollapsed && <span className="nav-section-label">Operação</span>}
             {can(session, 'dashboard.visualizar') && <NavLink to="/" icon={Home} isCollapsed={isCollapsed}>Dashboard</NavLink>}
             {can(session, 'pedidos.criar') && <NavLink to="/novo-pedido" icon={PlusCircle} isCollapsed={isCollapsed}>Novo Pedido</NavLink>}
-            {can(session, 'pedidos.visualizar') && <NavLink to="/pedidos" icon={ListOrdered} isCollapsed={isCollapsed}>Pedidos</NavLink>}
+            {can(session, 'pedidos.visualizar') && session?.perfil !== 'entregador' && <NavLink to="/pedidos" icon={ListOrdered} isCollapsed={isCollapsed}>Pedidos</NavLink>}
             {can(session, 'salao.operar') && <NavLink to="/salao" icon={Armchair} isCollapsed={isCollapsed}>Salão</NavLink>}
             {can(session, 'cozinha.operar') && <NavLink to="/cozinha" icon={ChefHat} isCollapsed={isCollapsed}>Cozinha</NavLink>}
             {can(session, 'entregas.visualizar') && <NavLink to="/entregas" icon={Truck} isCollapsed={isCollapsed}>Entregas</NavLink>}
@@ -179,7 +179,7 @@ function AppContent() {
             {can(session, 'estoque.visualizar') && <NavLink to="/insumos" icon={Package} isCollapsed={isCollapsed}>Insumos</NavLink>}
             {can(session, 'relatorios.visualizar') && <NavLink to="/relatorios" icon={BarChart3} isCollapsed={isCollapsed}>Relatórios</NavLink>}
             {can(session, 'usuarios.visualizar') && <NavLink to="/equipe" icon={Users} isCollapsed={isCollapsed}>Equipe</NavLink>}
-            {can(session, 'configuracoes.visualizar') && <NavLink to="/configuracoes" icon={SettingsIcon} isCollapsed={isCollapsed}>Configurações</NavLink>}
+            {can(session, 'configuracoes.visualizar') && session?.perfil !== 'entregador' && <NavLink to="/configuracoes" icon={SettingsIcon} isCollapsed={isCollapsed}>Configurações</NavLink>}
           </nav>
           
           <div className="p-3 border-t border-white/5 mt-auto space-y-1">
@@ -261,7 +261,7 @@ function AppContent() {
               {can(session, 'estoque.visualizar') && <Link to="/insumos" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><Package className="text-brand-400" /> Insumos</Link>}
               {can(session, 'relatorios.visualizar') && <Link to="/relatorios" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><BarChart3 className="text-brand-400" /> Relatórios</Link>}
               {can(session, 'usuarios.visualizar') && <Link to="/equipe" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><Users className="text-brand-400" /> Equipe</Link>}
-              {can(session, 'configuracoes.visualizar') && <Link to="/configuracoes" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><SettingsIcon className="text-brand-400" /> Configurações</Link>}
+              {can(session, 'configuracoes.visualizar') && session?.perfil !== 'entregador' && <Link to="/configuracoes" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><SettingsIcon className="text-brand-400" /> Configurações</Link>}
               
               <div className="mt-8">
                 <button 
@@ -282,7 +282,7 @@ function AppContent() {
         {/* Mobile Bottom Nav */}
         <nav className="mobile-bottom-nav fixed bottom-0 z-50 flex w-full justify-between px-2 py-1.5 md:hidden print:hidden pb-[max(0.5rem,env(safe-area-inset-bottom))]">
           {can(session, 'dashboard.visualizar') && <Link to="/" aria-current={location.pathname === '/' ? 'page' : undefined} className={`mobile-nav-item ${location.pathname === '/' ? 'is-active' : ''}`}><Home size={22} /><span>Início</span></Link>}
-          {can(session, 'pedidos.visualizar') && <Link to="/pedidos" aria-current={location.pathname === '/pedidos' ? 'page' : undefined} className={`mobile-nav-item ${location.pathname === '/pedidos' ? 'is-active' : ''}`}><ListOrdered size={22} /><span>Pedidos</span></Link>}
+          {can(session, 'pedidos.visualizar') && session?.perfil !== 'entregador' && <Link to="/pedidos" aria-current={location.pathname === '/pedidos' ? 'page' : undefined} className={`mobile-nav-item ${location.pathname === '/pedidos' ? 'is-active' : ''}`}><ListOrdered size={22} /><span>Pedidos</span></Link>}
           {can(session, 'cozinha.operar') && !can(session, 'dashboard.visualizar') && <Link to="/cozinha" aria-current={location.pathname === '/cozinha' ? 'page' : undefined} className={`mobile-nav-item ${location.pathname === '/cozinha' ? 'is-active' : ''}`}><ChefHat size={22} /><span>Cozinha</span></Link>}
           {can(session, 'entregas.operar') && !can(session, 'dashboard.visualizar') && <Link to="/entregas" aria-current={location.pathname === '/entregas' ? 'page' : undefined} className={`mobile-nav-item ${location.pathname === '/entregas' ? 'is-active' : ''}`}><Truck size={22} /><span>Entregas</span></Link>}
           
