@@ -1,4 +1,5 @@
-from fastapi import FastAPI, Depends, HTTPException, Query, BackgroundTasks, Request, Header
+from jose import JWTError, jwt
+from fastapi import FastAPI, Depends, HTTPException, Body, Query, BackgroundTasks, Request, Header
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any, Optional
@@ -1182,3 +1183,66 @@ def get_ficha_tecnica(produto_id: int, db: Session = Depends(get_db), estabeleci
 @app.put("/produtos/{produto_id}/ficha-tecnica", response_model=List[schemas.ProdutoInsumo])
 def update_ficha_tecnica(produto_id: int, itens: List[schemas.ProdutoInsumoCreate], db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("estoque.gerenciar"))):
     return crud.update_ficha_tecnica(db, produto_id, itens, estabelecimento_id)
+
+
+@app.post("/pedidos/{pedido_id}/cancelar", response_model=schemas.Pedido)
+def cancelar_pedido(pedido_id: int, payload: schemas.PedidoCancelamento, background_tasks: BackgroundTasks, db: Session = Depends(get_db), atual: auth.UsuarioAutenticado = Depends(auth.require_user_permission("pedidos.atualizar"))):
+    pedido = crud.cancelar_pedido(db, pedido_id, payload.motivo, payload.estornado, atual.estabelecimento_id)
+    if not pedido:
+        raise HTTPException(status_code=404, detail="Pedido não encontrado")
+    
+    # Audit log
+    db.add(models.LogAuditoria(
+        estabelecimento_id=atual.estabelecimento_id,
+        acao="PEDIDO_CANCELADO",
+        recurso="pedidos",
+        recurso_id=pedido.id,
+        detalhes=f"Motivo: {payload.motivo}. Estornado: {payload.estornado}",
+        usuario_id=atual.usuario_id
+    ))
+    db.commit()
+    return pedido
+
+
+@app.post("/auth/forgot-password")
+def forgot_password(email: str = Body(..., embed=True), db: Session = Depends(get_db)):
+    usuario = db.query(models.Usuario).filter(models.Usuario.email == email).first()
+    if not usuario:
+        return {"msg": "Se o e-mail existir, um link de recuperação foi enviado."}
+    
+    # Generate token
+    token = auth.create_access_token(data={"sub": str(usuario.id), "type": "reset"}, expires_delta=timedelta(minutes=15))
+    
+    # In a real scenario, we send an email here.
+    # We will log it to the console for now until SMTP is configured.
+    print(f"\n\n=== EMAIL DE RECUPERAÇÃO ===")
+    print(f"Para: {email}")
+    print(f"Link: https://painel.ritmesa.com.br/reset-password?token={token}")
+    print(f"============================\n\n")
+    
+    return {"msg": "Se o e-mail existir, um link de recuperação foi enviado."}
+
+class ResetPasswordPayload(BaseModel):
+    token: str
+    nova_senha: str
+
+@app.post("/auth/reset-password")
+def reset_password(payload: ResetPasswordPayload, db: Session = Depends(get_db)):
+    try:
+        payload_data = jwt.decode(payload.token, auth.SECRET_KEY, algorithms=[auth.ALGORITHM])
+        if payload_data.get("type") != "reset":
+            raise HTTPException(status_code=400, detail="Token inválido")
+        user_id = int(payload_data.get("sub"))
+    except JWTError:
+        raise HTTPException(status_code=400, detail="Token inválido ou expirado")
+        
+    usuario = db.query(models.Usuario).filter(models.Usuario.id == user_id).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+        
+    if len(payload.nova_senha) < 8:
+        raise HTTPException(status_code=400, detail="A senha deve ter pelo menos 8 caracteres")
+        
+    usuario.senha_hash = auth.get_password_hash(payload.nova_senha)
+    db.commit()
+    return {"msg": "Senha alterada com sucesso"}

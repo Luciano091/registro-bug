@@ -17,6 +17,7 @@ import Kitchen from './pages/Kitchen';
 import Deliveries from './pages/Deliveries';
 
 import Login from './pages/Login';
+import ResetPassword from './pages/ResetPassword';
 import { Navigate } from 'react-router-dom';
 import { NetworkProvider, useNetwork } from './contexts/NetworkContext';
 import { AppDataProvider } from './contexts/AppDataContext';
@@ -133,6 +134,7 @@ function AppContent() {
     return (
       <Routes>
         <Route path="/login" element={<Login />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
       </Routes>
     );
   }

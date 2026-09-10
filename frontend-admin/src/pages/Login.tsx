@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Lock, ArrowRight, Eye, EyeOff, CheckCircle2, X, Loader2 } from 'lucide-react';
 import api from '../services/api';
 
 const Login = () => {
@@ -95,8 +95,14 @@ const Login = () => {
               )}
             </div>
 
-            <button 
-              type="submit"
+            
+            <div className="flex justify-end mt-2">
+              <button type="button" onClick={() => setForgotModal(true)} className="text-sm text-brand-400 hover:text-brand-300 font-medium transition-colors">
+                Esqueci minha senha
+              </button>
+            </div>
+            <button
+
               disabled={!senha || loading}
               className="w-full bg-brand-500 hover:bg-brand-400 disabled:opacity-50 disabled:hover:bg-brand-500 text-white font-bold rounded-2xl py-4 flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-brand-500/25"
             >
