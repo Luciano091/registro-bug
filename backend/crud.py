@@ -150,12 +150,13 @@ def save_cupom(db: Session, payload: schemas.CupomCreate, estabelecimento_id: in
     db.refresh(cupom)
     return cupom
 
-def validar_cupom(db: Session, codigo: str, subtotal: float, estabelecimento_id: int):
+def validar_cupom(db: Session, codigo: str, subtotal: float, estabelecimento_id: int, bloquear: bool = False):
     codigo_normalizado = (codigo or "").strip().upper()
-    cupom = db.query(models.Cupom).filter(
+    query = db.query(models.Cupom).filter(
         models.Cupom.estabelecimento_id == estabelecimento_id,
         func.upper(models.Cupom.codigo) == codigo_normalizado,
-    ).first()
+    )
+    cupom = (query.with_for_update() if bloquear else query).first()
     agora = models.get_now()
     if not cupom or not cupom.ativo:
         raise ValueError("Cupom inválido ou inativo.")
@@ -379,7 +380,7 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate, estabelecimento_id:
     cupom = None
     desconto = 0.0
     if pedido.cupom_codigo:
-        cupom, desconto = validar_cupom(db, pedido.cupom_codigo, subtotal, estabelecimento_id)
+        cupom, desconto = validar_cupom(db, pedido.cupom_codigo, subtotal, estabelecimento_id, bloquear=True)
     total = max(0.0, subtotal + taxa_entrega - desconto)
     
     # Gerar numero do pedido baseado na data e id (simplificado: YYYYMMDD-COUNT)

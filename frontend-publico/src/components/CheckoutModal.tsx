@@ -23,7 +23,7 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
   const [endereco, setEndereco] = useState(localStorage.getItem('user_endereco') || '');
   const [pagamento, setPagamento] = useState('');
   const [showObsFor, setShowObsFor] = useState<string | null>(null);
-  const [cupomCodigo, setCupomCodigo] = useState('');
+  const [cupomCodigo, setCupomCodigo] = useState(localStorage.getItem('ritmesa_coupon_code') || '');
   const [cupomAplicado, setCupomAplicado] = useState<any | null>(null);
   const [cupomErro, setCupomErro] = useState('');
   const [validandoCupom, setValidandoCupom] = useState(false);
@@ -36,7 +36,7 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
     setValidandoCupom(true); setCupomErro('');
     try {
       const response = await api.post(`/public/${getEstablishmentSlug()}/cupons/validar`, { codigo: cupomCodigo, subtotal: cartTotal });
-      setCupomAplicado(response.data); setCupomCodigo(response.data.codigo);
+      setCupomAplicado(response.data); setCupomCodigo(response.data.codigo); localStorage.setItem('ritmesa_coupon_code', response.data.codigo);
     } catch (error: any) {
       setCupomAplicado(null); setCupomErro(error.response?.data?.detail || 'Não foi possível validar o cupom.');
     } finally { setValidandoCupom(false); }
@@ -87,8 +87,9 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
         } catch (error: any) {
           console.error("Erro ao salvar pedido na API:", error);
           const detail = error.response?.data?.detail;
-          if (detail && detail.includes("Caixa está fechado")) {
-            alert(`Atenção: Seu pedido não foi salvo no sistema do restaurante pois o caixa está fechado.`);
+          if (error.response) {
+            alert(detail || 'Não foi possível registrar o pedido. Revise os dados e tente novamente.');
+            return;
           } else {
             await saveOfflineOrder(orderUuid, pedidoData);
           }
