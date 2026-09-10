@@ -1,3 +1,4 @@
+from decimal import Decimal
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime
@@ -32,13 +33,13 @@ class ProdutoBase(BaseModel):
     setor_producao_id: Optional[int] = None
     descricao: Optional[str] = None
     imagem_url: Optional[str] = None
-    preco_compra: Optional[float] = 0.0
-    preco: float
+    preco_compra: Optional[Decimal] = 0.0
+    preco: Decimal
     ativo: bool = True
     controlar_estoque: bool = False
     estoque: int = 0
     is_promocao: bool = False
-    preco_promocao: Optional[float] = None
+    preco_promocao: Optional[Decimal] = None
     promocao_inicio: Optional[datetime] = None
     promocao_fim: Optional[datetime] = None
     dias_semana: str = "0,1,2,3,4,5,6"
@@ -47,6 +48,7 @@ class ProdutoBase(BaseModel):
     disponivel_delivery: bool = True
     disponivel_retirada: bool = True
     disponivel_salao: bool = True
+    is_combo: Optional[bool] = False
 
 class ProdutoCreate(ProdutoBase):
     pass
@@ -89,8 +91,8 @@ class CupomBase(BaseModel):
     codigo: str = Field(min_length=2, max_length=40)
     descricao: Optional[str] = Field(default=None, max_length=255)
     tipo: str = "percentual"
-    valor: float = Field(gt=0)
-    pedido_minimo: float = Field(default=0, ge=0)
+    valor: Decimal = Field(gt=0)
+    pedido_minimo: Decimal = Field(default=0, ge=0)
     inicio: Optional[datetime] = None
     fim: Optional[datetime] = None
     limite_usos: Optional[int] = Field(default=None, ge=1)
@@ -107,19 +109,20 @@ class Cupom(CupomBase):
 
 class CupomValidar(BaseModel):
     codigo: str
-    subtotal: float = Field(ge=0)
+    subtotal: Decimal = Field(ge=0)
 
 class CupomValidado(BaseModel):
     codigo: str
-    desconto: float
-    total: float
+    desconto: Decimal
+    total: Decimal
     descricao: Optional[str] = None
 
 class OpcaoProdutoBase(BaseModel):
     nome: str = Field(min_length=1, max_length=120)
-    preco_adicional: float = Field(default=0, ge=0)
+    preco_adicional: Decimal = Field(default=0, ge=0)
     ativo: bool = True
     ordem: int = 0
+    produto_vinculado_id: Optional[int] = None
 
 class OpcaoProdutoCreate(OpcaoProdutoBase):
     pass
@@ -175,18 +178,18 @@ class ItemPedidoOpcao(BaseModel):
     opcao_id: Optional[int] = None
     grupo_nome: str
     opcao_nome: str
-    preco_unitario: float
+    preco_unitario: Decimal
     quantidade: int
-    subtotal: float
+    subtotal: Decimal
     class Config:
         from_attributes = True
 
 class ItemPedido(ItemPedidoBase):
     id: int
     pedido_id: int
-    custo_unitario: float = 0.0
-    valor_unitario: float
-    subtotal: float
+    custo_unitario: Decimal = 0.0
+    valor_unitario: Decimal
+    subtotal: Decimal
     produto_nome: Optional[str] = None
     observacao: Optional[str] = None
     setor_producao_id: Optional[int] = None
@@ -250,6 +253,8 @@ class PedidoBase(BaseModel):
     forma_pagamento: str
     observacao: Optional[str] = None
     cupom_codigo: Optional[str] = None
+    motivo_cancelamento: Optional[str] = None
+    estornado: Optional[bool] = False
 
 class PedidoCreate(PedidoBase):
     itens: List[ItemPedidoCreate]
@@ -261,11 +266,11 @@ class Pedido(PedidoBase):
     id: int
     numero: str
     status: str
-    subtotal: float
-    taxa_entrega: float
-    taxa_servico: float = 0.0
-    desconto: float = 0.0
-    total: float
+    subtotal: Decimal
+    taxa_entrega: Decimal
+    taxa_servico: Decimal = 0.0
+    desconto: Decimal = 0.0
+    total: Decimal
     data: datetime
     itens: List[ItemPedido] = Field(default_factory=list)
     entrega: Optional[EntregaResumo] = None
@@ -304,9 +309,9 @@ class ComandaItem(BaseModel):
     produto_id: int
     produto_nome: str
     quantidade: int
-    custo_unitario: float
-    valor_unitario: float
-    subtotal: float
+    custo_unitario: Decimal
+    valor_unitario: Decimal
+    subtotal: Decimal
     observacao: Optional[str] = None
     opcoes_json: Optional[str] = None
     status: str
@@ -319,12 +324,12 @@ class ComandaItem(BaseModel):
 
 class ComandaPagamentoCreate(BaseModel):
     forma_pagamento: str = Field(min_length=2, max_length=50)
-    valor: float = Field(gt=0)
+    valor: Decimal = Field(gt=0)
 
 class ComandaPagamento(BaseModel):
     id: int
     forma_pagamento: str
-    valor: float
+    valor: Decimal
     criado_em: datetime
     class Config:
         from_attributes = True
@@ -342,7 +347,7 @@ class ComandaUnir(BaseModel):
     comanda_origem_id: int
 
 class ComandaFechar(BaseModel):
-    desconto: float = Field(default=0, ge=0)
+    desconto: Decimal = Field(default=0, ge=0)
     taxa_servico_percentual: float = Field(default=0, ge=0, le=100)
     pagamentos: List[ComandaPagamentoCreate] = Field(min_length=1)
 
@@ -357,10 +362,10 @@ class Comanda(BaseModel):
     aberta_por_nome: str
     aberta_em: datetime
     fechada_em: Optional[datetime] = None
-    subtotal: float
-    desconto: float
-    taxa_servico: float
-    total: float
+    subtotal: Decimal
+    desconto: Decimal
+    taxa_servico: Decimal
+    total: Decimal
     itens: List[ComandaItem] = Field(default_factory=list)
     pagamentos: List[ComandaPagamento] = Field(default_factory=list)
     class Config:
@@ -406,15 +411,15 @@ class ConfiguracaoBase(BaseModel):
     telefone: Optional[str] = None
     endereco: Optional[str] = None
     logo: Optional[str] = None
-    taxa_entrega: float
+    taxa_entrega: Decimal
     entrega_habilitada: bool = True
     entrega_modo: str = "fixa"
-    pedido_minimo_entrega: float = Field(default=0.0, ge=0)
-    entrega_gratis_acima: Optional[float] = Field(default=None, ge=0)
+    pedido_minimo_entrega: Decimal = Field(default=0.0, ge=0)
+    entrega_gratis_acima: Optional[Decimal] = Field(default=None, ge=0)
     raio_entrega_km: Optional[float] = Field(default=None, gt=0)
-    taxa_base_entrega: float = Field(default=0.0, ge=0)
+    taxa_base_entrega: Decimal = Field(default=0.0, ge=0)
     distancia_base_km: float = Field(default=0.0, ge=0)
-    taxa_por_km: float = Field(default=0.0, ge=0)
+    taxa_por_km: Decimal = Field(default=0.0, ge=0)
     latitude: Optional[float] = Field(default=None, ge=-90, le=90)
     longitude: Optional[float] = Field(default=None, ge=-180, le=180)
     tempo_medio_preparo: int
@@ -428,8 +433,8 @@ class ConfiguracaoCreate(ConfiguracaoBase):
 
 class AreaEntregaBase(BaseModel):
     bairro: str = Field(min_length=2, max_length=120)
-    taxa: float = Field(default=0.0, ge=0)
-    pedido_minimo: float = Field(default=0.0, ge=0)
+    taxa: Decimal = Field(default=0.0, ge=0)
+    pedido_minimo: Decimal = Field(default=0.0, ge=0)
     prazo_adicional_min: int = Field(default=0, ge=0, le=240)
     ativo: bool = True
 
@@ -442,12 +447,12 @@ class EntregaConfiguracaoUpdate(BaseModel):
     entrega_habilitada: bool = True
     entrega_modo: str = "fixa"
     taxa_fixa: float = Field(default=0.0, ge=0)
-    pedido_minimo: float = Field(default=0.0, ge=0)
-    entrega_gratis_acima: Optional[float] = Field(default=None, ge=0)
+    pedido_minimo: Decimal = Field(default=0.0, ge=0)
+    entrega_gratis_acima: Optional[Decimal] = Field(default=None, ge=0)
     raio_km: Optional[float] = Field(default=None, gt=0)
     taxa_base: float = Field(default=0.0, ge=0)
     distancia_base_km: float = Field(default=0.0, ge=0)
-    taxa_por_km: float = Field(default=0.0, ge=0)
+    taxa_por_km: Decimal = Field(default=0.0, ge=0)
     latitude_origem: Optional[float] = Field(default=None, ge=-90, le=90)
     longitude_origem: Optional[float] = Field(default=None, ge=-180, le=180)
     areas: List[AreaEntregaBase] = Field(default_factory=list)
@@ -456,15 +461,15 @@ class EntregaConfiguracao(EntregaConfiguracaoUpdate):
     areas: List[AreaEntrega] = Field(default_factory=list)
 
 class EntregaCotacaoRequest(BaseModel):
-    subtotal: float = Field(ge=0)
+    subtotal: Decimal = Field(ge=0)
     bairro: Optional[str] = Field(default=None, max_length=120)
     latitude: Optional[float] = Field(default=None, ge=-90, le=90)
     longitude: Optional[float] = Field(default=None, ge=-180, le=180)
 
 class EntregaCotacao(BaseModel):
     atendido: bool
-    taxa: float = 0.0
-    pedido_minimo: float = 0.0
+    taxa: Decimal = 0.0
+    pedido_minimo: Decimal = 0.0
     faltam_para_minimo: float = 0.0
     distancia_km: Optional[float] = None
     prazo_estimado_min: Optional[int] = None
@@ -584,11 +589,11 @@ class ConfiguracaoPublica(BaseModel):
     telefone: Optional[str] = None
     endereco: Optional[str] = None
     logo: Optional[str] = None
-    taxa_entrega: float
+    taxa_entrega: Decimal
     entrega_habilitada: bool = True
     entrega_modo: str = "fixa"
-    pedido_minimo_entrega: float = 0.0
-    entrega_gratis_acima: Optional[float] = None
+    pedido_minimo_entrega: Decimal = 0.0
+    entrega_gratis_acima: Optional[Decimal] = None
     raio_entrega_km: Optional[float] = None
     tempo_medio_preparo: int
     loja_aberta: Optional[bool] = False
@@ -598,7 +603,7 @@ class ConfiguracaoPublica(BaseModel):
 # --- Caixa ---
 class MovimentacaoCaixaBase(BaseModel):
     tipo: str
-    valor: float
+    valor: Decimal
     forma_pagamento: str
     descricao: Optional[str] = None
 
@@ -615,7 +620,7 @@ class MovimentacaoCaixa(MovimentacaoCaixaBase):
 
 class CaixaBase(BaseModel):
     operador: str
-    saldo_inicial: float
+    saldo_inicial: Decimal
 
 class CaixaCreate(CaixaBase):
     pass
@@ -624,7 +629,7 @@ class Caixa(CaixaBase):
     id: int
     data_abertura: datetime
     data_fechamento: Optional[datetime] = None
-    saldo_final: Optional[float] = None
+    saldo_final: Optional[Decimal] = None
     status: str
     movimentacoes: List[MovimentacaoCaixa] = []
 
@@ -668,7 +673,7 @@ class WhatsAppContato(WhatsAppContatoBase):
 class InsumoCreate(BaseModel):
     nome: str
     unidade_medida: str
-    custo_unitario: float
+    custo_unitario: Decimal
     controlar_estoque: bool = False
     estoque: float = 0.0
 
