@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import func, and_, or_
 import models, schemas
 import datetime
@@ -355,6 +355,13 @@ def _pedidos_query(db: Session):
         selectinload(models.Pedido.entrega).selectinload(models.Entrega.entregador),
     )
 
+def _pedido_detail_query(db: Session):
+    return db.query(models.Pedido).options(
+        joinedload(models.Pedido.itens).joinedload(models.ItemPedido.opcoes),
+        joinedload(models.Pedido.itens).joinedload(models.ItemPedido.produto),
+        joinedload(models.Pedido.entrega).joinedload(models.Entrega.entregador),
+    )
+
 def get_pedidos(db: Session, estabelecimento_id: int, skip: int = 0, limit: int = 100):
     return _pedidos_query(db).filter(models.Pedido.estabelecimento_id == estabelecimento_id).order_by(models.Pedido.id.desc()).offset(skip).limit(limit).all()
 
@@ -364,7 +371,7 @@ def get_pedidos_resumo(db: Session, estabelecimento_id: int, skip: int = 0, limi
     ).order_by(models.Pedido.id.desc()).offset(skip).limit(limit).all()
 
 def get_pedido(db: Session, pedido_id: int, estabelecimento_id: int):
-    return _pedidos_query(db).filter(models.Pedido.id == pedido_id, models.Pedido.estabelecimento_id == estabelecimento_id).first()
+    return _pedido_detail_query(db).filter(models.Pedido.id == pedido_id, models.Pedido.estabelecimento_id == estabelecimento_id).first()
 
 def get_pedido_by_public_token(db: Session, token: str, estabelecimento_id: int):
     return db.query(models.Pedido).filter(
