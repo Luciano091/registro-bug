@@ -7,9 +7,7 @@ from datetime import timedelta
 import os
 import hashlib
 import hmac
-import smtplib
-import ssl
-from email.message import EmailMessage
+import httpx
 import cloudinary
 import cloudinary.uploader
 from fastapi import UploadFile, File, Form
@@ -1202,83 +1200,37 @@ def cancelar_pedido(pedido_id: int, payload: schemas.PedidoCancelamento, db: Ses
 
 
 def _send_password_reset_email(recipient: str, reset_url: str) -> None:
-    host = os.getenv("SMTP_HOST")
-    port = int(os.getenv("SMTP_PORT", "587"))
-    username = os.getenv("SMTP_USERNAME")
-    password = os.getenv("SMTP_PASSWORD")
-    sender = os.getenv("SMTP_FROM_EMAIL", username or "")
-    if not host or not sender:
-        print("Recuperação de senha não enviada: SMTP não configurado.")
+    api_key = os.getenv("RESEND_API_KEY") or os.getenv("SMTP_PASSWORD")
+    sender = os.getenv("SMTP_FROM_EMAIL", "")
+    if not api_key or not sender:
+        print("Recuperação de senha não enviada: Resend não configurado.")
         return
-    message = EmailMessage()
-    message["Subject"] = "Redefina sua senha da Ritmesa"
-    message["From"] = sender
-    message["To"] = recipient
-    message.set_content(f"Use este link para criar uma nova senha. Ele expira em 15 minutos:\n\n{reset_url}")
-    context = ssl.create_default_context()
     try:
-        if port == 465:
-            with smtplib.SMTP_SSL(host, port, context=context, timeout=20) as smtp:
-                if username and password:
-                    smtp.login(username, password)
-                smtp.send_message(message)
-        else:
-            with smtplib.SMTP(host, port, timeout=20) as smtp:
-                smtp.starttls(context=context)
-                if username and password:
-                    smtp.login(username, password)
-                smtp.send_message(message)
-    except (OSError, smtplib.SMTPException) as exc:
-        print(f"Falha ao enviar recuperação de senha: {type(exc).__name__}")
-
-
-
-import os
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-
-def enviar_email_recuperacao(destinatario: str, reset_link: str):
-    smtp_host = os.environ.get("SMTP_HOST")
-    smtp_port = os.environ.get("SMTP_PORT", 587)
-    smtp_user = os.environ.get("SMTP_USERNAME")
-    smtp_pass = os.environ.get("SMTP_PASSWORD")
-    smtp_from = os.environ.get("SMTP_FROM_EMAIL", "suporte@ritmesa.com.br")
-
-    if not all([smtp_host, smtp_user, smtp_pass]):
-        print(f"\n[MOCK EMAIL] Para: {destinatario}\nLink: {reset_link}\nConfigure as variáveis SMTP para enviar e-mails reais.\n")
-        return
-
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = "Recuperação de Senha - Ritmesa"
-    msg["From"] = smtp_from
-    msg["To"] = destinatario
-
-    html = f"""
-    <html>
-      <body style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #f97316;">Ritmesa</h2>
-        <p>Olá,</p>
-        <p>Recebemos uma solicitação para redefinir a senha da sua conta.</p>
-        <p>Clique no botão abaixo para criar uma nova senha. Este link é válido por 15 minutos.</p>
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="{reset_link}" style="background-color: #f97316; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Redefinir Minha Senha</a>
-        </div>
-        <p style="font-size: 12px; color: #999;">Se você não solicitou a redefinição, apenas ignore este e-mail.</p>
-      </body>
-    </html>
-    """
-
-    msg.attach(MIMEText(html, "html"))
-
-    try:
-        server = smtplib.SMTP(smtp_host, int(smtp_port))
-        server.starttls()
-        server.login(smtp_user, smtp_pass)
-        server.sendmail(smtp_from, destinatario, msg.as_string())
-        server.quit()
-    except Exception as e:
-        print(f"Erro ao enviar e-mail SMTP: {e}")
+        response = httpx.post(
+            "https://api.resend.com/emails",
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json={
+                "from": f"Ritmesa <{sender}>",
+                "to": [recipient],
+                "subject": "Redefina sua senha da Ritmesa",
+                "html": f"""
+                    <div style="font-family:Arial,sans-serif;color:#1f2937;max-width:560px;margin:auto;padding:24px">
+                      <h1 style="color:#f97316;font-size:26px">Ritmesa</h1>
+                      <p>Recebemos uma solicitação para redefinir sua senha.</p>
+                      <p>Este link é válido por 15 minutos.</p>
+                      <p style="margin:28px 0"><a href="{reset_url}" style="background:#f97316;color:#fff;padding:13px 22px;border-radius:10px;text-decoration:none;font-weight:700">Criar nova senha</a></p>
+                      <p style="font-size:13px;color:#6b7280">Se você não fez esta solicitação, ignore esta mensagem.</p>
+                    </div>
+                """,
+            },
+            timeout=20,
+        )
+        response.raise_for_status()
+        print("E-mail de recuperação aceito pelo Resend.")
+    except httpx.HTTPStatusError as exc:
+        print(f"Resend recusou o e-mail: HTTP {exc.response.status_code}")
+    except httpx.HTTPError as exc:
+        print(f"Falha ao acessar o Resend: {type(exc).__name__}")
 
 @app.post("/auth/forgot-password")
 def forgot_password(payload: schemas.PasswordResetRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
