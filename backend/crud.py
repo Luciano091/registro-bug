@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from sqlalchemy import func, and_, or_
 import models, schemas
 import datetime
@@ -348,11 +348,18 @@ def update_cliente(db: Session, cliente_id: int, updates: schemas.ClienteUpdate)
 
 # --- Pedidos ---
 
+def _pedidos_query(db: Session):
+    return db.query(models.Pedido).options(
+        selectinload(models.Pedido.itens).selectinload(models.ItemPedido.opcoes),
+        selectinload(models.Pedido.itens).selectinload(models.ItemPedido.produto),
+        selectinload(models.Pedido.entrega).selectinload(models.Entrega.entregador),
+    )
+
 def get_pedidos(db: Session, estabelecimento_id: int, skip: int = 0, limit: int = 100):
-    return db.query(models.Pedido).filter(models.Pedido.estabelecimento_id == estabelecimento_id).order_by(models.Pedido.id.desc()).offset(skip).limit(limit).all()
+    return _pedidos_query(db).filter(models.Pedido.estabelecimento_id == estabelecimento_id).order_by(models.Pedido.id.desc()).offset(skip).limit(limit).all()
 
 def get_pedido(db: Session, pedido_id: int, estabelecimento_id: int):
-    return db.query(models.Pedido).filter(models.Pedido.id == pedido_id, models.Pedido.estabelecimento_id == estabelecimento_id).first()
+    return _pedidos_query(db).filter(models.Pedido.id == pedido_id, models.Pedido.estabelecimento_id == estabelecimento_id).first()
 
 def get_pedido_by_public_token(db: Session, token: str, estabelecimento_id: int):
     return db.query(models.Pedido).filter(
@@ -361,7 +368,7 @@ def get_pedido_by_public_token(db: Session, token: str, estabelecimento_id: int)
     ).first()
 
 def get_pedidos_by_date_range(db: Session, start_date: datetime.datetime, end_date: datetime.datetime, estabelecimento_id: int, incluir_cancelados: bool = False):
-    query = db.query(models.Pedido).filter(
+    query = _pedidos_query(db).filter(
         models.Pedido.estabelecimento_id == estabelecimento_id,
         models.Pedido.data >= start_date,
         models.Pedido.data <= end_date,
