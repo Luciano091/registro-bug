@@ -360,8 +360,15 @@ def get_pedido_by_public_token(db: Session, token: str, estabelecimento_id: int)
         models.Pedido.estabelecimento_id == estabelecimento_id,
     ).first()
 
-def get_pedidos_by_date_range(db: Session, start_date: datetime.datetime, end_date: datetime.datetime, estabelecimento_id: int):
-    return db.query(models.Pedido).filter(models.Pedido.estabelecimento_id == estabelecimento_id, models.Pedido.data >= start_date, models.Pedido.data <= end_date).all()
+def get_pedidos_by_date_range(db: Session, start_date: datetime.datetime, end_date: datetime.datetime, estabelecimento_id: int, incluir_cancelados: bool = False):
+    query = db.query(models.Pedido).filter(
+        models.Pedido.estabelecimento_id == estabelecimento_id,
+        models.Pedido.data >= start_date,
+        models.Pedido.data <= end_date,
+    )
+    if not incluir_cancelados:
+        query = query.filter(models.Pedido.status != "Cancelado")
+    return query.all()
 
 def create_pedido(db: Session, pedido: schemas.PedidoCreate, estabelecimento_id: int, taxa_entrega_manual: float = None):
     if pedido.uuid:

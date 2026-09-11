@@ -98,6 +98,10 @@ class FoundationTests(unittest.TestCase):
         self.db.refresh(drink)
         self.assertEqual(drink.estoque, 10)
         self.assertEqual([item.tipo for item in cash.movimentacoes].count("estorno"), 1)
+        day_start = datetime.datetime.combine(order.data.date(), datetime.time.min)
+        day_end = datetime.datetime.combine(order.data.date(), datetime.time.max)
+        self.assertNotIn(order, crud.get_pedidos_by_date_range(self.db, day_start, day_end, establishment.id))
+        self.assertIn(order, crud.get_pedidos_by_date_range(self.db, day_start, day_end, establishment.id, incluir_cancelados=True))
         regular = crud.create_produto(self.db, schemas.ProdutoCreate(nome="Lanche comum", categoria="Lanches", preco=18), establishment.id)
         crud.set_produto_grupos(self.db, regular.id, [group.id], establishment.id)
         regular_order = crud.create_pedido(self.db, schemas.PedidoCreate(
