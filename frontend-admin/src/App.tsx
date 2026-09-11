@@ -105,22 +105,22 @@ function AppContent() {
   const isPlatformArea = isPlatformHost || isPlatformRoute;
 
   useEffect(() => {
-    if (isLoginRoute || isPlatformArea || !localStorage.getItem('adminToken')) return;
+    if (isLoginRoute || isPasswordResetRoute || isPlatformArea || !localStorage.getItem('adminToken')) return;
     api.get('/configuracao')
       .then(({ data }) => {
         setEstabelecimento(data || {});
         if (data?.nome_empresa) localStorage.setItem('estabelecimentoNome', data.nome_empresa);
       })
       .catch(() => setEstabelecimento({}));
-  }, [isLoginRoute, isPlatformArea]);
+  }, [isLoginRoute, isPasswordResetRoute, isPlatformArea]);
 
   useEffect(() => {
-    if (isLoginRoute || isPlatformArea || !localStorage.getItem('adminToken')) return;
+    if (isLoginRoute || isPasswordResetRoute || isPlatformArea || !localStorage.getItem('adminToken')) return;
     api.get('/auth/me').then(({ data }) => {
       localStorage.setItem('ritmesaSession', JSON.stringify(data));
       setSession(data);
     }).catch(() => undefined);
-  }, [isLoginRoute, isPlatformArea]);
+  }, [isLoginRoute, isPasswordResetRoute, isPlatformArea]);
 
   if (isPlatformArea) {
     return (
