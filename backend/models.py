@@ -43,6 +43,18 @@ class Usuario(Base):
     placa = Column(String, nullable=True)
     status_entrega = Column(String, nullable=False, default="disponivel", index=True)
 
+class DispositivoPush(Base):
+    __tablename__ = "dispositivos_push"
+
+    id = Column(Integer, primary_key=True, index=True)
+    estabelecimento_id = Column(Integer, ForeignKey("estabelecimentos.id", ondelete="CASCADE"), nullable=False, index=True)
+    usuario_id = Column(Integer, ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False, index=True)
+    token = Column(Text, nullable=False, unique=True)
+    plataforma = Column(String, nullable=False, default="android")
+    app_version = Column(String, nullable=True)
+    ativo = Column(Boolean, nullable=False, default=True, index=True)
+    atualizado_em = Column(DateTime, nullable=False, default=get_now)
+
 class LogAuditoria(Base):
     __tablename__ = "logs_auditoria"
 

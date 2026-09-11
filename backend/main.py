@@ -12,7 +12,7 @@ import cloudinary
 import cloudinary.uploader
 from fastapi import UploadFile, File, Form
 
-import models, schemas, crud, whatsapp_api, auth
+import models, schemas, crud, whatsapp_api, auth, push_notifications
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from database import engine, get_db, SessionLocal
@@ -496,10 +496,14 @@ def kitchen_queue(setor_id: Optional[int] = None, db: Session = Depends(get_db),
     return crud.get_fila_cozinha(db, estabelecimento_id, setor_id)
 
 @app.put("/cozinha/itens/{origem}/{item_id}/status")
-def update_kitchen_item(origem: str, item_id: int, payload: schemas.CozinhaStatusUpdate, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("cozinha.operar"))):
+def update_kitchen_item(origem: str, item_id: int, payload: schemas.CozinhaStatusUpdate, background_tasks: BackgroundTasks, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("cozinha.operar"))):
     try: item = crud.atualizar_item_cozinha(db, origem, item_id, payload.status, usuario.estabelecimento_id)
     except ValueError as exc: raise HTTPException(status_code=400, detail=str(exc))
     if not item: raise HTTPException(status_code=404, detail="Item não encontrado.")
+    if origem == "pedido" and item.pedido.status == "Pronto" and (item.pedido.tipo_entrega or "").lower() in ("delivery", "entrega"):
+        tokens = crud.get_push_tokens(db, usuario.estabelecimento_id, perfil="entregador")
+        numero = item.pedido.numero.split("-")[-1]
+        background_tasks.add_task(push_notifications.send_push_notifications, tokens, "Nova entrega disponível", f"Pedido #{numero} está pronto para retirada.", {"tipo": "pedido_pronto", "pedido_id": item.pedido.id})
     return {"id": item.id, "status": item.status if origem == "comanda" else item.status_producao}
 
 # --- Expedição e entregadores ---
@@ -512,12 +516,22 @@ def delivery_board(db: Session = Depends(get_db), usuario: auth.UsuarioAutentica
 def delivery_drivers(db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("entregas.visualizar"))):
     return crud.get_entregadores(db, usuario.estabelecimento_id)
 
+@app.post("/dispositivos/push", response_model=schemas.DispositivoPush)
+def register_push_device(payload: schemas.DispositivoPushCreate, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.get_current_user)):
+    try:
+        return crud.register_push_device(db, payload, usuario)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
 @app.post("/entregas/{pedido_id}/atribuir", response_model=schemas.Pedido)
-def assign_delivery(pedido_id: int, payload: schemas.EntregaAtribuir, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("entregas.gerenciar"))):
+def assign_delivery(pedido_id: int, payload: schemas.EntregaAtribuir, background_tasks: BackgroundTasks, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("entregas.gerenciar"))):
     try: pedido = crud.atribuir_entrega(db, pedido_id, payload.entregador_id, usuario.estabelecimento_id)
     except ValueError as exc: raise HTTPException(status_code=400, detail=str(exc))
     if not pedido: raise HTTPException(status_code=404, detail="Pedido de entrega não encontrado.")
     crud.create_audit_log(db, usuario.estabelecimento_id, "entrega.atribuida", usuario.usuario_id, "pedido", pedido.id, {"entregador_id": payload.entregador_id})
+    tokens = crud.get_push_tokens(db, usuario.estabelecimento_id, usuario_id=payload.entregador_id)
+    numero = pedido.numero.split("-")[-1]
+    background_tasks.add_task(push_notifications.send_push_notifications, tokens, "Entrega atribuída", f"O pedido #{numero} foi atribuído a você.", {"tipo": "pedido_atribuido", "pedido_id": pedido.id})
     return pedido
 
 @app.post("/entregas/{pedido_id}/aceitar", response_model=schemas.Pedido)
@@ -532,7 +546,7 @@ def accept_delivery(pedido_id: int, db: Session = Depends(get_db), usuario: auth
     return pedido
 
 @app.put("/entregas/{pedido_id}/status", response_model=schemas.Pedido)
-def update_delivery_status(pedido_id: int, payload: schemas.EntregaStatusUpdate, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.get_current_user)):
+def update_delivery_status(pedido_id: int, payload: schemas.EntregaStatusUpdate, background_tasks: BackgroundTasks, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.get_current_user)):
     if not (usuario.pode("entregas.operar") or usuario.pode("entregas.gerenciar")): raise HTTPException(status_code=403, detail="Você não tem permissão para esta ação.")
     try:
         pedido = crud.atualizar_status_entrega(db, pedido_id, payload.status, usuario)
@@ -540,6 +554,10 @@ def update_delivery_status(pedido_id: int, payload: schemas.EntregaStatusUpdate,
     except ValueError as exc: raise HTTPException(status_code=400, detail=str(exc))
     if not pedido: raise HTTPException(status_code=404, detail="Entrega não encontrada.")
     crud.create_audit_log(db, usuario.estabelecimento_id, f"entrega.{payload.status}", usuario.usuario_id, "pedido", pedido.id)
+    if payload.status == "falha":
+        tokens = crud.get_push_tokens(db, usuario.estabelecimento_id, perfil="entregador")
+        numero = pedido.numero.split("-")[-1]
+        background_tasks.add_task(push_notifications.send_push_notifications, tokens, "Entrega voltou para a fila", f"Pedido #{numero} está disponível novamente.", {"tipo": "entrega_disponivel", "pedido_id": pedido.id})
     return pedido
 
 @app.put("/entregas/{pedido_id}/localizacao", response_model=schemas.Pedido)
@@ -644,6 +662,10 @@ def update_pedido_status(pedido_id: int, status: str, background_tasks: Backgrou
     db_pedido = crud.update_pedido_status(db, pedido_id=pedido_id, status=status, estabelecimento_id=estabelecimento_id)
     if db_pedido is None:
         raise HTTPException(status_code=404, detail="Pedido não encontrado")
+    if db_pedido.status == "Pronto" and (db_pedido.tipo_entrega or "").lower() in ("delivery", "entrega"):
+        tokens = crud.get_push_tokens(db, estabelecimento_id, perfil="entregador")
+        numero = db_pedido.numero.split("-")[-1]
+        background_tasks.add_task(push_notifications.send_push_notifications, tokens, "Nova entrega disponível", f"Pedido #{numero} está pronto para retirada.", {"tipo": "pedido_pronto", "pedido_id": db_pedido.id})
         
     if db_pedido.telefone:
         formattedTotal = f"R$ {db_pedido.total:.2f}".replace(".", ",")

@@ -8,4 +8,8 @@
     <string name="tracking_notification_title">Ritmesa Entregador</string>
     <string name="tracking_notification_text">Compartilhando localização da entrega</string>
     <string name="tracking_notification_stop">Parar</string>
+    <string name="push_channel_name">Novas entregas</string>
+    <string name="push_channel_description">Avisos de pedidos prontos e entregas atribuídas.</string>
+    <string name="push_default_title">Ritmesa Entregador</string>
+    <string name="push_default_text">Há uma atualização nas suas entregas.</string>
 </resources>

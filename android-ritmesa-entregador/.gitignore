@@ -9,3 +9,5 @@ android/local.properties
 *.keystore
 .keystore-password
 keystore.properties
+google-services.json
+android/app/google-services.json

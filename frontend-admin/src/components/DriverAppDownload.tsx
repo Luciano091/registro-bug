@@ -28,12 +28,12 @@ export default function DriverAppDownload({ dark = false }: { dark?: boolean }) 
         <div className="flex gap-4">
           <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-slate-900 text-orange-400 shadow-lg"><Smartphone size={24} /></div>
           <div>
-            <div className="flex flex-wrap items-center gap-2"><h2 className="font-heading text-xl font-bold">Ritmesa Entregador</h2><span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold text-emerald-700">APK assinado · v1.0.0</span></div>
-            <p className={`mt-1 max-w-2xl text-sm ${dark ? 'text-slate-300' : 'text-slate-600'}`}>Aplicativo para entregadores com GPS ativo durante a rota, acompanhamento do pedido e navegação pelo Google Maps ou Waze.</p>
+            <div className="flex flex-wrap items-center gap-2"><h2 className="font-heading text-xl font-bold">Ritmesa Entregador</h2><span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold text-emerald-700">APK assinado · v1.1.0</span></div>
+            <p className={`mt-1 max-w-2xl text-sm ${dark ? 'text-slate-300' : 'text-slate-600'}`}>Aplicativo para entregadores com alertas de novas entregas, GPS ativo durante a rota e navegação pelo Google Maps ou Waze.</p>
           </div>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
-          <a href={APK_URL} download="Ritmesa-Entregador-v1.0.0.apk" className="flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-sm font-bold text-white shadow-md shadow-orange-500/20 hover:bg-orange-600"><Download size={18} /> Baixar APK</a>
+          <a href={APK_URL} download="Ritmesa-Entregador-v1.1.0.apk" className="flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-sm font-bold text-white shadow-md shadow-orange-500/20 hover:bg-orange-600"><Download size={18} /> Baixar APK</a>
           <button type="button" onClick={share} className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-bold ${dark ? 'border-white/15 bg-white/5 text-white' : 'border-slate-200 bg-white text-slate-700'}`}>{copied ? <Check size={18} className="text-emerald-500" /> : <Share2 size={18} />}{copied ? 'Link copiado' : 'Compartilhar'}</button>
         </div>
       </div>

@@ -746,6 +746,51 @@ def atualizar_item_cozinha(db: Session, origem: str, item_id: int, novo_status: 
 def get_entregadores(db: Session, estabelecimento_id: int):
     return db.query(models.Usuario).filter(models.Usuario.estabelecimento_id == estabelecimento_id, models.Usuario.perfil == "entregador", models.Usuario.ativo == True).order_by(models.Usuario.nome).all()
 
+def register_push_device(db: Session, payload: schemas.DispositivoPushCreate, usuario):
+    if not usuario.usuario_id:
+        raise ValueError("Este acesso não possui um usuário associado.")
+    token = payload.token.strip()
+    device = db.query(models.DispositivoPush).filter(models.DispositivoPush.token == token).first()
+    if not device:
+        device = models.DispositivoPush(token=token)
+    device.estabelecimento_id = usuario.estabelecimento_id
+    device.usuario_id = usuario.usuario_id
+    device.plataforma = payload.plataforma.strip().lower()
+    device.app_version = payload.app_version
+    device.ativo = True
+    device.atualizado_em = models.get_now()
+    db.add(device)
+    db.commit()
+    db.refresh(device)
+    return device
+
+def unregister_push_device(db: Session, token: str, usuario):
+    device = db.query(models.DispositivoPush).filter(
+        models.DispositivoPush.token == token.strip(),
+        models.DispositivoPush.estabelecimento_id == usuario.estabelecimento_id,
+        models.DispositivoPush.usuario_id == usuario.usuario_id,
+    ).first()
+    if device:
+        device.ativo = False
+        device.atualizado_em = models.get_now()
+        db.commit()
+    return device
+
+def get_push_tokens(db: Session, estabelecimento_id: int, usuario_id: int = None, perfil: str = None):
+    query = db.query(models.DispositivoPush.token).join(
+        models.Usuario, models.Usuario.id == models.DispositivoPush.usuario_id,
+    ).filter(
+        models.DispositivoPush.estabelecimento_id == estabelecimento_id,
+        models.DispositivoPush.ativo == True,
+        models.Usuario.estabelecimento_id == estabelecimento_id,
+        models.Usuario.ativo == True,
+    )
+    if usuario_id is not None:
+        query = query.filter(models.DispositivoPush.usuario_id == usuario_id)
+    if perfil:
+        query = query.filter(models.Usuario.perfil == perfil)
+    return [row[0] for row in query.distinct().all()]
+
 def get_pedidos_entrega(db: Session, estabelecimento_id: int, entregador_id: int = None):
     query = db.query(models.Pedido).filter(
         models.Pedido.estabelecimento_id == estabelecimento_id,

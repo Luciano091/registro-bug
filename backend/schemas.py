@@ -239,6 +239,20 @@ class EntregaLocalizacao(BaseModel):
     latitude: float = Field(ge=-90, le=90)
     longitude: float = Field(ge=-180, le=180)
 
+class DispositivoPushCreate(BaseModel):
+    token: str = Field(min_length=20, max_length=4096)
+    plataforma: str = Field(default="android", max_length=30)
+    app_version: Optional[str] = Field(default=None, max_length=30)
+
+class DispositivoPush(BaseModel):
+    id: int
+    plataforma: str
+    app_version: Optional[str] = None
+    ativo: bool
+    atualizado_em: datetime
+    class Config:
+        from_attributes = True
+
 # --- Pedido ---
 class PedidoBase(BaseModel):
     uuid: Optional[str] = None

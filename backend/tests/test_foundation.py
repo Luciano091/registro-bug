@@ -304,6 +304,25 @@ class FoundationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "outro entregador"):
             crud.aceitar_entrega(self.db, order.id, other_session)
 
+    def test_push_device_registration_is_user_and_tenant_scoped(self):
+        first = self.create_establishment("Push A", "push-a", "push-a@teste.com")
+        second = self.create_establishment("Push B", "push-b", "push-b@teste.com")
+        first_driver = crud.create_usuario(self.db, schemas.UsuarioCreate(nome="Carlos", email="push-carlos@teste.com", senha="12345678", perfil="entregador"), first.id)
+        second_driver = crud.create_usuario(self.db, schemas.UsuarioCreate(nome="João", email="push-joao@teste.com", senha="12345678", perfil="entregador"), second.id)
+        first_session = auth.UsuarioAutenticado(first.id, first_driver.id, first_driver.nome, first_driver.email, "entregador", frozenset(auth.PERMISSOES_POR_PERFIL["entregador"]))
+        second_session = auth.UsuarioAutenticado(second.id, second_driver.id, second_driver.nome, second_driver.email, "entregador", frozenset(auth.PERMISSOES_POR_PERFIL["entregador"]))
+        token = "fcm-token-abcdefghijklmnopqrstuvwxyz"
+
+        device = crud.register_push_device(self.db, schemas.DispositivoPushCreate(token=token, app_version="1.1.0"), first_session)
+        self.assertEqual(device.usuario_id, first_driver.id)
+        self.assertEqual(crud.get_push_tokens(self.db, first.id, perfil="entregador"), [token])
+        self.assertEqual(crud.get_push_tokens(self.db, second.id, perfil="entregador"), [])
+
+        moved = crud.register_push_device(self.db, schemas.DispositivoPushCreate(token=token, app_version="1.1.0"), second_session)
+        self.assertEqual(moved.usuario_id, second_driver.id)
+        self.assertEqual(crud.get_push_tokens(self.db, first.id, perfil="entregador"), [])
+        self.assertEqual(crud.get_push_tokens(self.db, second.id, perfil="entregador"), [token])
+
     def test_delivery_areas_quote_and_order_fee_are_tenant_scoped(self):
         first = self.create_establishment("Entrega Centro", "entrega-centro", "centro@teste.com")
         second = self.create_establishment("Outra Unidade", "outra-entrega", "outra@teste.com")
