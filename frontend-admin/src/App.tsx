@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Home, PlusCircle, ListOrdered, Utensils, BarChart3, Settings as SettingsIcon, ChevronLeft, ChevronRight, Wallet, LogOut, Menu as MenuIcon, X, Package, Store, Users, Armchair, ChefHat, Truck, BellRing, BellOff } from 'lucide-react';
+import { Home, PlusCircle, ListOrdered, Utensils, BarChart3, Settings as SettingsIcon, ChevronLeft, ChevronRight, Wallet, LogOut, Menu as MenuIcon, X, Package, Store, Users, Armchair, ChefHat, Truck, BellOff } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import NewOrder from './pages/NewOrder';
 import Orders from './pages/Orders';
@@ -97,7 +97,7 @@ function AppContent() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [estabelecimento, setEstabelecimento] = useState<{ nome_empresa?: string; logo?: string }>({});
   const [session, setSession] = useState<SessionUser | null>(readSession());
-  const { orderSoundEnabled, orderSoundReady, enableOrderSound, disableOrderSound } = useAppData();
+  const { orderSoundEnabled, orderSoundReady, enableOrderSound } = useAppData();
   const location = useLocation();
   const isLoginRoute = location.pathname === '/login';
   const isPasswordResetRoute = location.pathname === '/reset-password';
@@ -190,15 +190,16 @@ function AppContent() {
           </nav>
           
           <div className="p-3 border-t border-white/5 mt-auto space-y-1">
-            <button
-              onClick={orderSoundEnabled && orderSoundReady ? disableOrderSound : enableOrderSound}
-              className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 px-4'} py-2.5 rounded-lg transition-all duration-200 font-semibold ${orderSoundEnabled && orderSoundReady ? 'bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/15' : 'bg-amber-500/10 text-amber-300 hover:bg-amber-500/15'}`}
-              title={orderSoundEnabled && orderSoundReady ? 'Som de novos pedidos ativo' : 'Ativar som de novos pedidos'}
-              aria-pressed={orderSoundEnabled && orderSoundReady}
-            >
-              {orderSoundEnabled && orderSoundReady ? <BellRing size={20} className="flex-shrink-0" /> : <BellOff size={20} className="flex-shrink-0" />}
-              {!isCollapsed && <span>{orderSoundEnabled && orderSoundReady ? 'Som de pedidos ativo' : 'Ativar som de pedidos'}</span>}
-            </button>
+            {!(orderSoundEnabled && orderSoundReady) && (
+              <button
+                onClick={enableOrderSound}
+                className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 px-4'} py-2.5 rounded-lg bg-amber-500/10 text-amber-300 transition-all duration-200 font-semibold hover:bg-amber-500/15`}
+                title="Ativar som de novos pedidos"
+              >
+                <BellOff size={20} className="flex-shrink-0" />
+                {!isCollapsed && <span>Ativar som de pedidos</span>}
+              </button>
+            )}
             {!isCollapsed && (
               <div className="tenant-card mb-3">
                 {estabelecimento.logo ? (
@@ -239,15 +240,16 @@ function AppContent() {
               <strong className="truncate">{estabelecimento.nome_empresa || 'Meu estabelecimento'}</strong>
               <span className="flex items-center gap-1.5"><img src="/brand/ritmesa-mark.png" alt="" /> Gestão por Ritmesa</span>
             </div>
-            <button
-              onClick={orderSoundEnabled && orderSoundReady ? disableOrderSound : enableOrderSound}
-              className={`ml-auto grid h-10 w-10 flex-shrink-0 place-items-center rounded-xl border ${orderSoundEnabled && orderSoundReady ? 'border-emerald-200 bg-emerald-50 text-emerald-600' : 'border-amber-200 bg-amber-50 text-amber-700'}`}
-              title={orderSoundEnabled && orderSoundReady ? 'Som de novos pedidos ativo' : 'Ativar som de novos pedidos'}
-              aria-label={orderSoundEnabled && orderSoundReady ? 'Desativar som de novos pedidos' : 'Ativar som de novos pedidos'}
-              aria-pressed={orderSoundEnabled && orderSoundReady}
-            >
-              {orderSoundEnabled && orderSoundReady ? <BellRing size={19} /> : <BellOff size={19} />}
-            </button>
+            {!(orderSoundEnabled && orderSoundReady) && (
+              <button
+                onClick={enableOrderSound}
+                className="ml-auto grid h-10 w-10 flex-shrink-0 place-items-center rounded-xl border border-amber-200 bg-amber-50 text-amber-700"
+                title="Ativar som de novos pedidos"
+                aria-label="Ativar som de novos pedidos"
+              >
+                <BellOff size={19} />
+              </button>
+            )}
           </div>
           <Routes>
             <Route path="/" element={<ProtectedRoute user={session}><HomeRoute user={session} /></ProtectedRoute>} />
