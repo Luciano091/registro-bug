@@ -305,6 +305,10 @@ def update_product_option_groups(produto_id: int, payload: schemas.ProdutoGrupos
 def read_pedidos(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("pedidos.visualizar"))):
     return crud.get_pedidos(db, estabelecimento_id, skip=skip, limit=limit)
 
+@app.get("/pedidos/resumo", response_model=List[schemas.PedidoResumo])
+def read_pedidos_resumo(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("pedidos.visualizar"))):
+    return crud.get_pedidos_resumo(db, estabelecimento_id, skip=skip, limit=limit)
+
 @app.get("/pedidos/{pedido_id}", response_model=schemas.Pedido)
 def read_pedido(pedido_id: int, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("pedidos.visualizar"))):
     db_pedido = crud.get_pedido(db, pedido_id=pedido_id, estabelecimento_id=estabelecimento_id)

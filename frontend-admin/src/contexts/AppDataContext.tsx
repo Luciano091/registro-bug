@@ -126,7 +126,7 @@ const showBrowserNotification = (title: string, body: string) => {
     if (!localStorage.getItem('adminToken')) return;
     const requestId = ++ordersRequestId.current;
     try {
-      const response = await api.get('/pedidos');
+      const response = await api.get('/pedidos/resumo');
       if (requestId !== ordersRequestId.current) return;
       const incomingOrders: any[] = response.data;
       const incomingIds = new Set<number>(incomingOrders.filter(order => order.id < 1000000000).map(order => order.id));

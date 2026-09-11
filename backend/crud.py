@@ -358,6 +358,11 @@ def _pedidos_query(db: Session):
 def get_pedidos(db: Session, estabelecimento_id: int, skip: int = 0, limit: int = 100):
     return _pedidos_query(db).filter(models.Pedido.estabelecimento_id == estabelecimento_id).order_by(models.Pedido.id.desc()).offset(skip).limit(limit).all()
 
+def get_pedidos_resumo(db: Session, estabelecimento_id: int, skip: int = 0, limit: int = 100):
+    return db.query(models.Pedido).filter(
+        models.Pedido.estabelecimento_id == estabelecimento_id,
+    ).order_by(models.Pedido.id.desc()).offset(skip).limit(limit).all()
+
 def get_pedido(db: Session, pedido_id: int, estabelecimento_id: int):
     return _pedidos_query(db).filter(models.Pedido.id == pedido_id, models.Pedido.estabelecimento_id == estabelecimento_id).first()
 

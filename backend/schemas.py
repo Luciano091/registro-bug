@@ -276,7 +276,7 @@ class PedidoCreate(PedidoBase):
 class PedidoAdminCreate(PedidoCreate):
     taxa_entrega_manual: Optional[float] = Field(default=None, ge=0)
 
-class Pedido(PedidoBase):
+class PedidoResumo(PedidoBase):
     id: int
     numero: str
     status: str
@@ -286,6 +286,11 @@ class Pedido(PedidoBase):
     desconto: float = 0.0
     total: float
     data: datetime
+
+    class Config:
+        from_attributes = True
+
+class Pedido(PedidoResumo):
     itens: List[ItemPedido] = Field(default_factory=list)
     entrega: Optional[EntregaResumo] = None
 

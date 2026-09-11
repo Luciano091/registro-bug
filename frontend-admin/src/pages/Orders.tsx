@@ -28,6 +28,7 @@ const Orders = () => {
   const [filter, setFilter] = useState('Hoje');
   const [search, setSearch] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [detailLoading, setDetailLoading] = useState<number | null>(null);
   const [cancelModalOrderId, setCancelModalOrderId] = useState<number | null>(null);
   const [cancelMotivo, setCancelMotivo] = useState('');
   const [cancelEstornado, setCancelEstornado] = useState(false);
@@ -66,11 +67,36 @@ const Orders = () => {
     }
   };
 
-  const handleWhatsApp = (passedOrder: any) => {
-    if (!passedOrder.telefone) {
+  const getOrderDetails = async (order: any) => {
+    const { data } = await api.get(`/pedidos/${order.id}`);
+    return data;
+  };
+
+  const openOrderDetails = async (order: any) => {
+    setDetailLoading(order.id);
+    try {
+      setSelectedOrder(await getOrderDetails(order));
+    } catch (error) {
+      console.error(error);
+      alert('Não foi possível carregar os detalhes do pedido.');
+    } finally {
+      setDetailLoading(null);
+    }
+  };
+
+  const handleWhatsApp = async (summaryOrder: any) => {
+    if (!summaryOrder.telefone) {
       alert('Este pedido não possui telefone cadastrado.');
       return;
     }
+    const whatsappWindow = window.open('', 'whatsapp_admin_tab');
+    const passedOrder = await getOrderDetails(summaryOrder).catch(error => {
+      console.error(error);
+      whatsappWindow?.close();
+      alert('Não foi possível carregar os itens do pedido.');
+      return null;
+    });
+    if (!passedOrder) return;
 
     const orderNumber = shortOrderNumber(passedOrder.numero);
     
@@ -107,7 +133,9 @@ const Orders = () => {
     const phone = `55${passedOrder.telefone.replace(/\D/g, '')}`;
     
     // O web.whatsapp.com direto permite reutilizar a aba de forma muito mais confiável no computador
-    window.open(`${baseUrl}?phone=${phone}&text=${encodedText}`, 'whatsapp_admin_tab');
+    const whatsappUrl = `${baseUrl}?phone=${phone}&text=${encodedText}`;
+    if (whatsappWindow) whatsappWindow.location.href = whatsappUrl;
+    else window.open(whatsappUrl, 'whatsapp_admin_tab');
   };
 
   const filteredOrders = orders.filter(order => {
@@ -225,13 +253,13 @@ const Orders = () => {
                     
                     <td className="px-6 py-4">
                       <button 
-                        onClick={() => setSelectedOrder(order)}
+                        onClick={() => void openOrderDetails(order)}
                         className="group/name flex items-center gap-2 text-left w-full focus:outline-none"
                       >
                         <div className="font-medium text-zinc-200 group-hover/name:text-brand-400 group-hover/name:underline transition-all">
                           {order.cliente}
                         </div>
-                        <Eye size={14} className="text-zinc-600 group-hover/name:text-brand-400 opacity-0 group-hover/name:opacity-100 transition-opacity" />
+                        {detailLoading === order.id ? <Loader2 size={14} className="animate-spin text-brand-400" /> : <Eye size={14} className="text-zinc-600 group-hover/name:text-brand-400 opacity-0 group-hover/name:opacity-100 transition-opacity" />}
                       </button>
                       {order.telefone && (
                         <div className="text-xs text-zinc-400 mt-0.5">{order.telefone}</div>
@@ -282,7 +310,7 @@ const Orders = () => {
                         </div>
                         
                         <button 
-                          onClick={() => handleWhatsApp(order)}
+                          onClick={() => void handleWhatsApp(order)}
                           className="opacity-0 group-hover:opacity-100 transition-all text-[#25D366] hover:text-[#128C7E] bg-[#25D366]/10 p-1.5 rounded-full hover:bg-[#25D366]/20 border border-[#25D366]/20"
                           title="Enviar Mensagem no WhatsApp"
                         >
