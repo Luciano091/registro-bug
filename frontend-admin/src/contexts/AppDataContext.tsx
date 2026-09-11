@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import api from '../services/api';
+import { connectOperationStream } from '../services/realtime';
 import { notificationSoundBase64 } from '../notificationSound';
 
 interface AppDataContextType {
@@ -9,6 +10,7 @@ interface AppDataContextType {
   produtos: any[];
   dashboardResumo: any;
   caixa: any;
+  realtimeConnected: boolean;
 
   // Loading states (only for first load)
   ordersLoaded: boolean;
@@ -56,6 +58,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
   const [orderSoundReady, setOrderSoundReady] = useState(false);
   const orderAudio = useRef<HTMLAudioElement | null>(null);
   const knownOrderIds = useRef<Set<number> | null>(null);
+  const ordersRequestId = useRef(0);
+  const [realtimeConnected, setRealtimeConnected] = useState(false);
 
 
   // Track whether first load happened
@@ -120,8 +124,10 @@ const showBrowserNotification = (title: string, body: string) => {
   // ========== Refresh Functions ==========
   const refreshOrders = useCallback(async () => {
     if (!localStorage.getItem('adminToken')) return;
+    const requestId = ++ordersRequestId.current;
     try {
       const response = await api.get('/pedidos');
+      if (requestId !== ordersRequestId.current) return;
       const incomingOrders: any[] = response.data;
       const incomingIds = new Set<number>(incomingOrders.filter(order => order.id < 1000000000).map(order => order.id));
       const hasNewOrder = knownOrderIds.current !== null && [...incomingIds].some(id => !knownOrderIds.current?.has(id));
@@ -219,16 +225,31 @@ const showBrowserNotification = (title: string, body: string) => {
     const isPlatformArea = window.location.hostname.toLowerCase().startsWith('admin.') || path.startsWith('/ritmesa-admin');
     if (isPublicRoute || isPlatformArea || !localStorage.getItem('adminToken')) return;
 
-    refreshProdutos();
-    refreshOrders();
-    
-    // Polling global
-    const intervalOrders = setInterval(refreshOrders, 10000);
+    void refreshProdutos();
+    void refreshOrders();
+    const stopRealtime = connectOperationStream(event => {
+      void refreshOrders();
+      void refreshDashboard();
+      window.dispatchEvent(new CustomEvent('ritmesa:operation-update', { detail: event }));
+    }, connected => {
+      setRealtimeConnected(connected);
+      if (connected) {
+        void refreshOrders();
+        void refreshDashboard();
+      }
+    });
+    const intervalOrders = window.setInterval(() => void refreshOrders(), 30000);
+    const refreshVisible = () => {
+      if (document.visibilityState === 'visible') void refreshOrders();
+    };
+    document.addEventListener('visibilitychange', refreshVisible);
     
     return () => {
-      clearInterval(intervalOrders);
+      stopRealtime();
+      window.clearInterval(intervalOrders);
+      document.removeEventListener('visibilitychange', refreshVisible);
     };
-  }, [refreshProdutos, refreshOrders]);
+  }, [refreshProdutos, refreshOrders, refreshDashboard]);
 
   return (
     <AppDataContext.Provider value={{
@@ -236,6 +257,7 @@ const showBrowserNotification = (title: string, body: string) => {
       produtos,
       dashboardResumo,
       caixa,
+      realtimeConnected,
 
       ordersLoaded,
       produtosLoaded,

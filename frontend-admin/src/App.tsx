@@ -20,7 +20,7 @@ import Login from './pages/Login';
 import ResetPassword from './pages/ResetPassword';
 import { Navigate } from 'react-router-dom';
 import { NetworkProvider, useNetwork } from './contexts/NetworkContext';
-import { AppDataProvider } from './contexts/AppDataContext';
+import { AppDataProvider, useAppData } from './contexts/AppDataContext';
 import { WifiOff, RefreshCcw } from 'lucide-react';
 import api from './services/api';
 import { can, readSession, type SessionUser } from './services/session';
@@ -93,6 +93,7 @@ const HomeRoute = ({ user }: { user: SessionUser | null }) => {
 };
 
 function AppContent() {
+  const { realtimeConnected } = useAppData();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [estabelecimento, setEstabelecimento] = useState<{ nome_empresa?: string; logo?: string }>({});
@@ -198,7 +199,7 @@ function AppContent() {
                 )}
                 <div className="min-w-0 flex-1">
                   <strong className="block text-sm text-white truncate">{estabelecimento.nome_empresa || 'Meu estabelecimento'}</strong>
-                  <span className="text-[11px] text-slate-400">Unidade atual</span>
+                  <span className={`flex items-center gap-1.5 text-[11px] ${realtimeConnected ? 'text-emerald-400' : 'text-amber-400'}`}><i className={`h-1.5 w-1.5 rounded-full ${realtimeConnected ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />{realtimeConnected ? 'Operação em tempo real' : 'Reconectando operação'}</span>
                 </div>
               </div>
             )}

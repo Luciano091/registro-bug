@@ -38,7 +38,7 @@ export default function Salon() {
     } catch (error: any) { if (!silent) alert(error.response?.data?.detail || 'Não foi possível carregar o salão.'); }
     finally { setLoading(false); }
   }, []);
-  useEffect(() => { load(); const timer = window.setInterval(() => load(true), 15000); return () => window.clearInterval(timer); }, [load]);
+  useEffect(() => { void load(); const update=()=>void load(true); window.addEventListener('ritmesa:operation-update',update); const timer=window.setInterval(update,30000); return()=>{window.removeEventListener('ritmesa:operation-update',update);window.clearInterval(timer);}; }, [load]);
   const modalOpen = Boolean(openingMesa || showTables || selectedMesaId || showProducts || optionProduct || pendingItem || showClose);
   useEffect(() => {
     document.body.classList.toggle('salon-modal-open', modalOpen);

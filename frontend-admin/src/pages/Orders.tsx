@@ -35,9 +35,7 @@ const Orders = () => {
   const orders = cachedOrders;
 
   useEffect(() => {
-    if (!ordersLoaded) refreshOrders();
-    const interval = setInterval(refreshOrders, 10000);
-    return () => clearInterval(interval);
+    if (!ordersLoaded) void refreshOrders();
   }, [ordersLoaded, refreshOrders]);
 
   const handleStatusChange = async (id: number, newStatus: string) => {
@@ -202,7 +200,13 @@ const Orders = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {filteredOrders.length === 0 ? (
+              {!ordersLoaded ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-8 text-center text-zinc-400">
+                    <Loader2 className="mx-auto mb-2 animate-spin" size={20} /> Carregando pedidos...
+                  </td>
+                </tr>
+              ) : filteredOrders.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-8 text-center text-zinc-400">
                     Nenhum pedido encontrado.

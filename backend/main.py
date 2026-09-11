@@ -1,7 +1,8 @@
-from fastapi import FastAPI, Depends, HTTPException, Query, BackgroundTasks, Request, Header
+from fastapi import FastAPI, Depends, HTTPException, Query, BackgroundTasks, Request, Header, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any, Optional
+import asyncio
 import datetime
 from datetime import timedelta
 import os
@@ -12,7 +13,7 @@ import cloudinary
 import cloudinary.uploader
 from fastapi import UploadFile, File, Form
 
-import models, schemas, crud, whatsapp_api, auth, push_notifications
+import models, schemas, crud, whatsapp_api, auth, push_notifications, realtime
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from database import engine, get_db, SessionLocal
@@ -103,6 +104,33 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.websocket("/ws/operacao")
+async def operation_events(websocket: WebSocket):
+    await websocket.accept()
+    db = SessionLocal()
+    estabelecimento_id = None
+    try:
+        credentials = await asyncio.wait_for(websocket.receive_json(), timeout=10)
+        usuario = auth.get_current_user(token=str(credentials.get("token") or ""), db=db)
+        estabelecimento_id = usuario.estabelecimento_id
+        db.close()
+        db = None
+        await realtime.operation_hub.connect(estabelecimento_id, websocket)
+        await websocket.send_json({"tipo": "conectado"})
+        while True:
+            message = await websocket.receive_text()
+            if message == "ping":
+                await websocket.send_text("pong")
+    except (WebSocketDisconnect, asyncio.TimeoutError):
+        pass
+    except Exception:
+        await websocket.close(code=1008)
+    finally:
+        if estabelecimento_id is not None:
+            await realtime.operation_hub.disconnect(estabelecimento_id, websocket)
+        if db is not None:
+            db.close()
 
 @app.post("/upload")
 def upload_image(
@@ -420,7 +448,7 @@ def platform_update_lead(lead_id: int, payload: schemas.LeadComercialUpdate, db:
     return lead
 
 @app.post("/public/{slug}/pedidos", response_model=schemas.Pedido)
-def create_pedido(slug: str, pedido: schemas.PedidoCreate, db: Session = Depends(get_db), cliente_id: Optional[str] = Depends(auth.get_current_cliente_optional)):
+def create_pedido(slug: str, pedido: schemas.PedidoCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db), cliente_id: Optional[str] = Depends(auth.get_current_cliente_optional)):
     estabelecimento = require_public_establishment(slug, db)
     if cliente_id:
         pedido.cliente_id = int(cliente_id)
@@ -442,11 +470,11 @@ def create_pedido(slug: str, pedido: schemas.PedidoCreate, db: Session = Depends
         descricao=f"Pedido #{db_pedido.numero}"
     )
     crud.add_movimentacao(db, caixa_aberto.id, mov)
-    
+    background_tasks.add_task(realtime.operation_hub.publish, estabelecimento.id, "pedido.criado", db_pedido.id)
     return db_pedido
 
 @app.post("/pedidos", response_model=schemas.Pedido)
-def create_admin_order(pedido: schemas.PedidoAdminCreate, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("pedidos.criar"))):
+def create_admin_order(pedido: schemas.PedidoAdminCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("pedidos.criar"))):
     caixa_aberto = crud.get_caixa_aberto(db, estabelecimento_id)
     if not caixa_aberto:
         raise HTTPException(status_code=400, detail="Não é possível registrar pedido: o Caixa está fechado.")
@@ -462,6 +490,7 @@ def create_admin_order(pedido: schemas.PedidoAdminCreate, db: Session = Depends(
         descricao=f"Pedido #{db_pedido.numero}",
     )
     crud.add_movimentacao(db, caixa_aberto.id, movimento)
+    background_tasks.add_task(realtime.operation_hub.publish, estabelecimento_id, "pedido.criado", db_pedido.id)
     return db_pedido
 
 # --- Painel de cozinha (KDS) ---
@@ -504,6 +533,8 @@ def update_kitchen_item(origem: str, item_id: int, payload: schemas.CozinhaStatu
         tokens = crud.get_push_tokens(db, usuario.estabelecimento_id, perfil="entregador")
         numero = item.pedido.numero.split("-")[-1]
         background_tasks.add_task(push_notifications.send_push_notifications, tokens, "Nova entrega disponível", f"Pedido #{numero} está pronto para retirada.", {"tipo": "pedido_pronto", "pedido_id": item.pedido.id})
+    if origem == "pedido":
+        background_tasks.add_task(realtime.operation_hub.publish, usuario.estabelecimento_id, "pedido.atualizado", item.pedido.id)
     return {"id": item.id, "status": item.status if origem == "comanda" else item.status_producao}
 
 # --- Expedição e entregadores ---
@@ -543,10 +574,11 @@ def assign_delivery(pedido_id: int, payload: schemas.EntregaAtribuir, background
     tokens = crud.get_push_tokens(db, usuario.estabelecimento_id, usuario_id=payload.entregador_id)
     numero = pedido.numero.split("-")[-1]
     background_tasks.add_task(push_notifications.send_push_notifications, tokens, "Entrega atribuída", f"O pedido #{numero} foi atribuído a você.", {"tipo": "pedido_atribuido", "pedido_id": pedido.id})
+    background_tasks.add_task(realtime.operation_hub.publish, usuario.estabelecimento_id, "entrega.atualizada", pedido.id)
     return pedido
 
 @app.post("/entregas/{pedido_id}/aceitar", response_model=schemas.Pedido)
-def accept_delivery(pedido_id: int, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("entregas.operar"))):
+def accept_delivery(pedido_id: int, background_tasks: BackgroundTasks, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("entregas.operar"))):
     try:
         pedido = crud.aceitar_entrega(db, pedido_id, usuario)
     except ValueError as exc:
@@ -554,6 +586,7 @@ def accept_delivery(pedido_id: int, db: Session = Depends(get_db), usuario: auth
     if not pedido:
         raise HTTPException(status_code=404, detail="Pedido de entrega não encontrado.")
     crud.create_audit_log(db, usuario.estabelecimento_id, "entrega.aceita", usuario.usuario_id, "pedido", pedido.id)
+    background_tasks.add_task(realtime.operation_hub.publish, usuario.estabelecimento_id, "entrega.atualizada", pedido.id)
     return pedido
 
 @app.put("/entregas/{pedido_id}/status", response_model=schemas.Pedido)
@@ -565,6 +598,7 @@ def update_delivery_status(pedido_id: int, payload: schemas.EntregaStatusUpdate,
     except ValueError as exc: raise HTTPException(status_code=400, detail=str(exc))
     if not pedido: raise HTTPException(status_code=404, detail="Entrega não encontrada.")
     crud.create_audit_log(db, usuario.estabelecimento_id, f"entrega.{payload.status}", usuario.usuario_id, "pedido", pedido.id)
+    background_tasks.add_task(realtime.operation_hub.publish, usuario.estabelecimento_id, "entrega.atualizada", pedido.id)
     if payload.status == "falha":
         tokens = crud.get_push_tokens(db, usuario.estabelecimento_id, perfil="entregador")
         numero = pedido.numero.split("-")[-1]
@@ -599,10 +633,11 @@ def update_table(mesa_id: int, payload: schemas.MesaCreate, db: Session = Depend
     return mesa
 
 @app.post("/salao/comandas", response_model=schemas.Comanda, status_code=201)
-def open_tab(payload: schemas.ComandaAbrir, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("salao.operar"))):
+def open_tab(payload: schemas.ComandaAbrir, background_tasks: BackgroundTasks, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("salao.operar"))):
     try: comanda = crud.abrir_comanda(db, payload, usuario)
     except ValueError as exc: raise HTTPException(status_code=400, detail=str(exc))
     crud.create_audit_log(db, usuario.estabelecimento_id, "comanda.aberta", usuario.usuario_id, "comanda", comanda.id)
+    background_tasks.add_task(realtime.operation_hub.publish, usuario.estabelecimento_id, "salao.atualizado")
     return comanda
 
 @app.get("/salao/comandas/{comanda_id}", response_model=schemas.Comanda)
@@ -612,45 +647,56 @@ def read_tab(comanda_id: int, db: Session = Depends(get_db), estabelecimento_id:
     return comanda
 
 @app.post("/salao/comandas/{comanda_id}/itens", response_model=schemas.Comanda)
-def add_tab_item(comanda_id: int, payload: schemas.ComandaItemAdicionar, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("salao.operar"))):
-    try: return crud.adicionar_item_comanda(db, comanda_id, payload, usuario)
+def add_tab_item(comanda_id: int, payload: schemas.ComandaItemAdicionar, background_tasks: BackgroundTasks, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("salao.operar"))):
+    try: comanda = crud.adicionar_item_comanda(db, comanda_id, payload, usuario)
     except ValueError as exc: raise HTTPException(status_code=400, detail=str(exc))
+    background_tasks.add_task(realtime.operation_hub.publish, usuario.estabelecimento_id, "salao.atualizado")
+    return comanda
 
 @app.put("/salao/itens/{item_id}/status", response_model=schemas.ComandaItem)
-def update_tab_item_status(item_id: int, payload: schemas.ComandaItemStatus, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("salao.operar"))):
+def update_tab_item_status(item_id: int, payload: schemas.ComandaItemStatus, background_tasks: BackgroundTasks, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("salao.operar"))):
     try: item = crud.atualizar_status_item_comanda(db, item_id, payload.status, estabelecimento_id)
     except ValueError as exc: raise HTTPException(status_code=400, detail=str(exc))
     if not item: raise HTTPException(status_code=404, detail="Item não encontrado.")
+    background_tasks.add_task(realtime.operation_hub.publish, estabelecimento_id, "salao.atualizado")
     return item
 
 @app.delete("/salao/itens/{item_id}", response_model=schemas.Comanda)
-def cancel_tab_item(item_id: int, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("salao.operar"))):
+def cancel_tab_item(item_id: int, background_tasks: BackgroundTasks, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("salao.operar"))):
     comanda = crud.cancelar_item_comanda(db, item_id, estabelecimento_id)
     if not comanda: raise HTTPException(status_code=404, detail="Item não encontrado.")
+    background_tasks.add_task(realtime.operation_hub.publish, estabelecimento_id, "salao.atualizado")
     return comanda
 
 @app.post("/salao/comandas/{comanda_id}/transferir", response_model=schemas.Comanda)
-def transfer_tab(comanda_id: int, payload: schemas.ComandaTransferir, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("salao.operar"))):
-    try: return crud.transferir_comanda(db, comanda_id, payload.mesa_destino_id, estabelecimento_id)
+def transfer_tab(comanda_id: int, payload: schemas.ComandaTransferir, background_tasks: BackgroundTasks, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("salao.operar"))):
+    try: comanda = crud.transferir_comanda(db, comanda_id, payload.mesa_destino_id, estabelecimento_id)
     except ValueError as exc: raise HTTPException(status_code=400, detail=str(exc))
+    background_tasks.add_task(realtime.operation_hub.publish, estabelecimento_id, "salao.atualizado")
+    return comanda
 
 @app.post("/salao/comandas/{comanda_id}/unir", response_model=schemas.Comanda)
-def merge_tabs(comanda_id: int, payload: schemas.ComandaUnir, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("salao.operar"))):
-    try: return crud.unir_comandas(db, comanda_id, payload.comanda_origem_id, estabelecimento_id)
+def merge_tabs(comanda_id: int, payload: schemas.ComandaUnir, background_tasks: BackgroundTasks, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("salao.operar"))):
+    try: comanda = crud.unir_comandas(db, comanda_id, payload.comanda_origem_id, estabelecimento_id)
     except ValueError as exc: raise HTTPException(status_code=400, detail=str(exc))
+    background_tasks.add_task(realtime.operation_hub.publish, estabelecimento_id, "salao.atualizado")
+    return comanda
 
 @app.post("/salao/comandas/{comanda_id}/fechar", response_model=schemas.Comanda)
-def close_tab(comanda_id: int, payload: schemas.ComandaFechar, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("salao.operar"))):
+def close_tab(comanda_id: int, payload: schemas.ComandaFechar, background_tasks: BackgroundTasks, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("salao.operar"))):
     try: comanda = crud.fechar_comanda(db, comanda_id, payload, usuario.estabelecimento_id)
     except ValueError as exc: raise HTTPException(status_code=400, detail=str(exc))
     crud.create_audit_log(db, usuario.estabelecimento_id, "comanda.fechada", usuario.usuario_id, "comanda", comanda.id)
+    pedido = db.query(models.Pedido).filter(models.Pedido.comanda_id == comanda.id, models.Pedido.estabelecimento_id == usuario.estabelecimento_id).first()
+    background_tasks.add_task(realtime.operation_hub.publish, usuario.estabelecimento_id, "pedido.criado", pedido.id if pedido else None)
     return comanda
 
 @app.post("/salao/comandas/{comanda_id}/cancelar", response_model=schemas.Comanda)
-def cancel_tab(comanda_id: int, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("salao.operar"))):
+def cancel_tab(comanda_id: int, background_tasks: BackgroundTasks, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("salao.operar"))):
     try: comanda = crud.cancelar_comanda(db, comanda_id, usuario.estabelecimento_id)
     except ValueError as exc: raise HTTPException(status_code=400, detail=str(exc))
     crud.create_audit_log(db, usuario.estabelecimento_id, "comanda.cancelada", usuario.usuario_id, "comanda", comanda.id)
+    background_tasks.add_task(realtime.operation_hub.publish, usuario.estabelecimento_id, "salao.atualizado")
     return comanda
 
 @app.get("/public/{slug}/acompanhamento/{codigo}", response_model=schemas.Pedido)
@@ -677,6 +723,7 @@ def update_pedido_status(pedido_id: int, status: str, background_tasks: Backgrou
         tokens = crud.get_push_tokens(db, estabelecimento_id, perfil="entregador")
         numero = db_pedido.numero.split("-")[-1]
         background_tasks.add_task(push_notifications.send_push_notifications, tokens, "Nova entrega disponível", f"Pedido #{numero} está pronto para retirada.", {"tipo": "pedido_pronto", "pedido_id": db_pedido.id})
+    background_tasks.add_task(realtime.operation_hub.publish, estabelecimento_id, "pedido.atualizado", db_pedido.id)
         
     if db_pedido.telefone:
         formattedTotal = f"R$ {db_pedido.total:.2f}".replace(".", ",")
@@ -1232,7 +1279,7 @@ def update_ficha_tecnica(produto_id: int, itens: List[schemas.ProdutoInsumoCreat
 
 
 @app.post("/pedidos/{pedido_id}/cancelar", response_model=schemas.Pedido)
-def cancelar_pedido(pedido_id: int, payload: schemas.PedidoCancelamento, db: Session = Depends(get_db), atual: auth.UsuarioAutenticado = Depends(auth.require_user_permission("pedidos.atualizar"))):
+def cancelar_pedido(pedido_id: int, payload: schemas.PedidoCancelamento, background_tasks: BackgroundTasks, db: Session = Depends(get_db), atual: auth.UsuarioAutenticado = Depends(auth.require_user_permission("pedidos.atualizar"))):
     pedido = crud.cancelar_pedido(db, pedido_id, payload.motivo, payload.estornado, atual.estabelecimento_id)
     if not pedido:
         raise HTTPException(status_code=404, detail="Pedido não encontrado")
@@ -1240,6 +1287,7 @@ def cancelar_pedido(pedido_id: int, payload: schemas.PedidoCancelamento, db: Ses
         db, atual.estabelecimento_id, "pedido.cancelado", atual.usuario_id,
         "pedido", pedido.id, {"motivo": payload.motivo, "estornado": payload.estornado},
     )
+    background_tasks.add_task(realtime.operation_hub.publish, atual.estabelecimento_id, "pedido.cancelado", pedido.id)
     return pedido
 
 

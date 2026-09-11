@@ -4,14 +4,13 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { useAppData } from '../contexts/AppDataContext';
 
 const Dashboard = () => {
-  const { dashboardResumo: resumo, dashboardLoaded, refreshDashboard } = useAppData();
+  const { dashboardResumo: resumo, refreshDashboard } = useAppData();
 
 
 
   useEffect(() => {
-    if (!dashboardLoaded) refreshDashboard();
-    else refreshDashboard(); // Always refresh in background
-  }, [dashboardLoaded, refreshDashboard]);
+    void refreshDashboard();
+  }, [refreshDashboard]);
 
 
   const data = resumo.vendas_semana || [

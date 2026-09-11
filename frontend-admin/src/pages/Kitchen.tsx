@@ -52,7 +52,13 @@ export default function Kitchen() {
     } finally { if (!quiet) setLoading(false); }
   }, [stationId, soundEnabled]);
 
-  useEffect(() => { load(); const poll = window.setInterval(() => load(true), 5000); return () => clearInterval(poll); }, [load]);
+  useEffect(() => {
+    void load();
+    const update = () => void load(true);
+    window.addEventListener('ritmesa:operation-update', update);
+    const poll = window.setInterval(update, 30000);
+    return () => { window.removeEventListener('ritmesa:operation-update', update); window.clearInterval(poll); };
+  }, [load]);
   useEffect(() => { const timer = window.setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(timer); }, []);
 
   const counts = useMemo(() => ({
