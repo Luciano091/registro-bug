@@ -54,6 +54,7 @@ def _disable_invalid_tokens(tokens: list[str]):
 def send_push_notifications(tokens: Iterable[str], title: str, body: str, data: dict | None = None):
     unique_tokens = list(dict.fromkeys(token for token in tokens if token))
     if not unique_tokens:
+        logger.info("Push não enviado: nenhum dispositivo ativo foi encontrado.")
         return {"sent": 0, "failed": 0, "configured": True}
     credentials, project_id = _configuration()
     if not credentials or not project_id:
@@ -99,4 +100,6 @@ def send_push_notifications(tokens: Iterable[str], title: str, body: str, data: 
         except Exception:
             logger.exception("Falha de rede ao enviar uma notificação FCM.")
     _disable_invalid_tokens(invalid_tokens)
-    return {"sent": sent, "failed": len(unique_tokens) - sent, "configured": True}
+    result = {"sent": sent, "failed": len(unique_tokens) - sent, "configured": True}
+    logger.info("Resultado do envio push: destinatarios=%s enviados=%s falhas=%s", len(unique_tokens), result["sent"], result["failed"])
+    return result

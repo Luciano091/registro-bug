@@ -523,6 +523,17 @@ def register_push_device(payload: schemas.DispositivoPushCreate, db: Session = D
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
+@app.post("/dispositivos/push/teste")
+def test_push_devices(db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("entregas.gerenciar"))):
+    tokens = crud.get_push_tokens(db, usuario.estabelecimento_id, perfil="entregador")
+    result = push_notifications.send_push_notifications(
+        tokens,
+        "Teste de notificações Ritmesa",
+        "Seu aparelho está pronto para receber novas entregas.",
+        {"tipo": "teste"},
+    )
+    return {"dispositivos": len(tokens), **result}
+
 @app.post("/entregas/{pedido_id}/atribuir", response_model=schemas.Pedido)
 def assign_delivery(pedido_id: int, payload: schemas.EntregaAtribuir, background_tasks: BackgroundTasks, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("entregas.gerenciar"))):
     try: pedido = crud.atribuir_entrega(db, pedido_id, payload.entregador_id, usuario.estabelecimento_id)
