@@ -17,3 +17,15 @@ services:
         value: production
       - key: CORS_ORIGINS
         sync: false
+      - key: PANEL_URL
+        value: https://painel.ritmesa.com.br
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_USERNAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM_EMAIL
+        sync: false

@@ -95,7 +95,8 @@ const showBrowserNotification = (title: string, body: string) => {
               if (playPromise !== undefined) {
                 playPromise.catch(e => console.log('Autoplay blocked:', e));
               }
-              showBrowserNotification("Novo Pedido!", "Um novo pedido acabou de chegar no BisBurger.");
+              const businessName = localStorage.getItem('estabelecimentoNome') || 'seu estabelecimento';
+              showBrowserNotification("Novo pedido!", `Um novo pedido acabou de chegar em ${businessName}.`);
             } catch (e) {
               console.error('Audio/Notification error', e);
             }

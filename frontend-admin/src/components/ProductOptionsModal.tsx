@@ -14,11 +14,17 @@ export default function ProductOptionsModal({ product, onClose, onSaved }: { pro
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [allProducts, setAllProducts] = useState<any[]>([]);
 
-    const [allProducts, setAllProducts] = useState<any[]>([]);
-const load = async () => {
-    try { const { data } = await api.get('/grupos-opcoes'); setGroups(data); }
-      const { data: prodData } = await api.get('/produtos'); setAllProducts(prodData);
+  const load = async () => {
+    try {
+      const [{ data: groupData }, { data: productData }] = await Promise.all([
+        api.get('/grupos-opcoes'),
+        api.get('/produtos'),
+      ]);
+      setGroups(groupData);
+      setAllProducts(productData);
+    }
     catch (err: any) { setError(err.response?.data?.detail || 'Não foi possível carregar os grupos.'); }
     finally { setLoading(false); }
   };
@@ -28,7 +34,7 @@ const load = async () => {
     setForm(group ? { ...group, opcoes: group.opcoes.map(option => ({ ...option })) } : emptyForm());
     setEditing(true); setError('');
   };
-  const updateOption = (index: number, key: string, value: string | number) => setForm((current: any) => ({ ...current, opcoes: current.opcoes.map((option: Option, idx: number) => idx === index ? { ...option, [key]: value } : option) }));
+  const updateOption = (index: number, key: string, value: string | number | null) => setForm((current: any) => ({ ...current, opcoes: current.opcoes.map((option: Option, idx: number) => idx === index ? { ...option, [key]: value } : option) }));
   const saveGroup = async (event: React.FormEvent) => {
     event.preventDefault(); setSaving(true); setError('');
     const payload = { ...form, opcoes: form.opcoes.filter((option: Option) => option.nome.trim()).map((option: Option, index: number) => ({ nome: option.nome, preco_adicional: Number(option.preco_adicional) || 0, ativo: option.ativo, ordem: index, produto_vinculado_id: option.produto_vinculado_id || null })) };
@@ -78,7 +84,7 @@ const load = async () => {
     ))}
   </select>
 </div>)}</div>
-          <button type="button" onClick={() => setForm((current: any) => ({ ...current, opcoes: [...current.opcoes, { nome: '', preco_adicional: 0, ativo: true, ordem: current.opcoes.length }] }))} className="flex items-center gap-2 text-sm font-semibold text-brand-400"><Plus size={16} /> Adicionar opção</button>
+          <button type="button" onClick={() => setForm((current: any) => ({ ...current, opcoes: [...current.opcoes, { nome: '', preco_adicional: 0, ativo: true, ordem: current.opcoes.length, produto_vinculado_id: null }] }))} className="flex items-center gap-2 text-sm font-semibold text-brand-400"><Plus size={16} /> Adicionar opção</button>
           <button disabled={saving} className="premium-btn flex w-full items-center justify-center gap-2 rounded-xl py-3 font-bold">{saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />} Salvar grupo</button>
         </form> : <>
           <div className="mb-4 flex items-center justify-between"><h3 className="font-bold text-white">Grupos disponíveis</h3><button onClick={() => edit()} className="flex items-center gap-2 rounded-xl bg-white/5 px-3 py-2 text-sm font-semibold text-brand-400"><Plus size={16} /> Criar grupo</button></div>

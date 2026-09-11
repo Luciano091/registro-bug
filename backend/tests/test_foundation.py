@@ -68,7 +68,51 @@ class FoundationTests(unittest.TestCase):
         self.assertIn("usuarios.gerenciar", auth.PERMISSOES_POR_PERFIL["gerente"])
         self.assertNotIn("usuarios.gerenciar", auth.PERMISSOES_POR_PERFIL["caixa"])
         self.assertNotIn("caixa.operar", auth.PERMISSOES_POR_PERFIL["garcom"])
+        self.assertNotIn("pedidos.visualizar", auth.PERMISSOES_POR_PERFIL["entregador"])
+        self.assertNotIn("configuracoes.visualizar", auth.PERMISSOES_POR_PERFIL["entregador"])
         self.assertEqual(auth.PERMISSOES_POR_PERFIL["proprietario"], {"*"})
+
+    def test_combo_deducts_linked_stock_and_cancellation_restores_it_once(self):
+        establishment = self.create_establishment("Combo", "combo", "combo@teste.com")
+        other = self.create_establishment("Outro Combo", "outro-combo", "outro-combo@teste.com")
+        drink = crud.create_produto(self.db, schemas.ProdutoCreate(nome="Refrigerante", categoria="Bebidas", preco=6, controlar_estoque=True, estoque=10), establishment.id)
+        foreign = crud.create_produto(self.db, schemas.ProdutoCreate(nome="Produto externo", categoria="Teste", preco=1), other.id)
+        with self.assertRaisesRegex(ValueError, "não pertence"):
+            crud.save_grupo_opcao(self.db, schemas.GrupoOpcaoCreate(nome="Inválido", opcoes=[schemas.OpcaoProdutoCreate(nome="Externo", produto_vinculado_id=foreign.id)]), establishment.id)
+        combo = crud.create_produto(self.db, schemas.ProdutoCreate(nome="Combo almoço", categoria="Combos", preco=25, is_combo=True), establishment.id)
+        group = crud.save_grupo_opcao(self.db, schemas.GrupoOpcaoCreate(
+            nome="Bebida", minimo=1, maximo=1, obrigatorio=True,
+            opcoes=[schemas.OpcaoProdutoCreate(nome="Refrigerante", produto_vinculado_id=drink.id)],
+        ), establishment.id)
+        crud.set_produto_grupos(self.db, combo.id, [group.id], establishment.id)
+        order = crud.create_pedido(self.db, schemas.PedidoCreate(
+            cliente="Ana", telefone="", tipo_entrega="Retirada", forma_pagamento="PIX",
+            itens=[schemas.ItemPedidoCreate(produto_id=combo.id, quantidade=2, opcoes=[schemas.ItemPedidoOpcaoCreate(opcao_id=group.opcoes[0].id)])],
+        ), establishment.id)
+        self.db.refresh(drink)
+        self.assertEqual(drink.estoque, 8)
+        self.assertEqual(order.itens[0].opcoes[0].produto_vinculado_id, drink.id)
+        cash = crud.abrir_caixa(self.db, schemas.CaixaCreate(operador="Caixa", saldo_inicial=0), establishment.id)
+        crud.add_movimentacao(self.db, cash.id, schemas.MovimentacaoCaixaCreate(tipo="venda", valor=order.total, forma_pagamento="PIX", descricao=f"Pedido #{order.numero}"))
+        crud.cancelar_pedido(self.db, order.id, "Cliente desistiu", True, establishment.id)
+        self.db.refresh(drink)
+        self.assertEqual(drink.estoque, 10)
+        self.assertEqual([item.tipo for item in cash.movimentacoes].count("estorno"), 1)
+        regular = crud.create_produto(self.db, schemas.ProdutoCreate(nome="Lanche comum", categoria="Lanches", preco=18), establishment.id)
+        crud.set_produto_grupos(self.db, regular.id, [group.id], establishment.id)
+        regular_order = crud.create_pedido(self.db, schemas.PedidoCreate(
+            cliente="Bia", telefone="", tipo_entrega="Retirada", forma_pagamento="PIX",
+            itens=[schemas.ItemPedidoCreate(produto_id=regular.id, quantidade=1, opcoes=[schemas.ItemPedidoOpcaoCreate(opcao_id=group.opcoes[0].id)])],
+        ), establishment.id)
+        self.db.refresh(drink)
+        self.assertEqual(drink.estoque, 10)
+        crud.cancelar_pedido(self.db, regular_order.id, "Pedido duplicado", False, establishment.id)
+        self.db.refresh(drink)
+        self.assertEqual(drink.estoque, 10)
+        crud.cancelar_pedido(self.db, order.id, "Cliente desistiu", True, establishment.id)
+        self.db.refresh(drink)
+        self.assertEqual(drink.estoque, 10)
+        self.assertEqual([item.tipo for item in cash.movimentacoes].count("estorno"), 1)
 
     def test_public_order_token_is_not_sequential_and_is_tenant_scoped(self):
         first = self.create_establishment("Unidade A", "token-a", "token-a@teste.com")

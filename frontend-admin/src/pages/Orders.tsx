@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-import { Search, Clock, CheckCircle2, Truck, Loader2, MessageCircle, X, Eye } from 'lucide-react';
+import { Search, Clock, CheckCircle2, Loader2, MessageCircle, X, Eye, MapPin, RotateCcw } from 'lucide-react';
 import api from '../services/api';
 import { useAppData } from '../contexts/AppDataContext';
 
@@ -51,6 +51,21 @@ const Orders = () => {
     }
   };
 
+  const confirmCancellation = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!cancelModalOrderId || cancelMotivo.trim().length < 3) return;
+    try {
+      await api.post(`/pedidos/${cancelModalOrderId}/cancelar`, {
+        motivo: cancelMotivo.trim(),
+        estornado: cancelEstornado,
+      });
+      setCancelModalOrderId(null);
+      await refreshOrders();
+    } catch (error: any) {
+      alert(error.response?.data?.detail || 'Não foi possível cancelar o pedido.');
+    }
+  };
+
   const handleWhatsApp = (passedOrder: any) => {
     if (!passedOrder.telefone) {
       alert('Este pedido não possui telefone cadastrado.');
@@ -59,7 +74,8 @@ const Orders = () => {
 
     const orderNumber = passedOrder.numero.split('-')[1] || passedOrder.numero;
     
-    let text = `Olá ${passedOrder.cliente}! Aqui é do *BisBurger*. 🍔\n\n`;
+    const businessName = localStorage.getItem('estabelecimentoNome') || 'nosso estabelecimento';
+    let text = `Olá ${passedOrder.cliente}! Aqui é do *${businessName}*. 🍽️\n\n`;
     text += `Recebemos o seu Pedido #${orderNumber}.\n\n`;
     
     text += `*Resumo do Pedido:*\n`;
@@ -337,6 +353,18 @@ const Orders = () => {
               </span>
             </div>
           </div>
+        </div>
+      )}
+
+      {cancelModalOrderId && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <form onSubmit={confirmCancellation} className="relative w-full max-w-md rounded-3xl border border-white/10 bg-dark-900 p-6 shadow-2xl">
+            <button type="button" onClick={() => setCancelModalOrderId(null)} className="absolute right-4 top-4 text-zinc-400 hover:text-white"><X size={20} /></button>
+            <div className="mb-5 flex items-center gap-3"><div className="rounded-xl bg-red-500/10 p-3 text-red-400"><RotateCcw /></div><div><h2 className="text-xl font-bold text-white">Cancelar pedido</h2><p className="text-sm text-zinc-400">O motivo ficará registrado na auditoria.</p></div></div>
+            <label className="block text-sm font-semibold text-zinc-300">Motivo do cancelamento<textarea required minLength={3} maxLength={500} value={cancelMotivo} onChange={event => setCancelMotivo(event.target.value)} className="mt-2 h-24 w-full resize-none rounded-xl border border-white/10 bg-dark-950 p-3 text-white outline-none focus:border-red-500" placeholder="Ex.: cliente desistiu do pedido" /></label>
+            <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-white/[.03] p-4"><input type="checkbox" checked={cancelEstornado} onChange={event => setCancelEstornado(event.target.checked)} className="mt-1 h-4 w-4 accent-red-500" /><span><strong className="block text-sm text-white">Registrar devolução do pagamento</strong><small className="text-zinc-400">Lança a saída no caixa. O reembolso no banco ou maquininha deve estar confirmado.</small></span></label>
+            <div className="mt-6 flex gap-3"><button type="button" onClick={() => setCancelModalOrderId(null)} className="flex-1 rounded-xl bg-white/5 py-3 font-bold text-zinc-300">Voltar</button><button className="flex-1 rounded-xl bg-red-500 py-3 font-bold text-white hover:bg-red-600">Confirmar</button></div>
+          </form>
         </div>
       )}
     </div>

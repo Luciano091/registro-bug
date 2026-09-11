@@ -42,7 +42,7 @@ PERMISSOES_POR_PERFIL = {
     "atendente": {"pedidos.visualizar", "pedidos.criar", "pedidos.atualizar", "cardapio.visualizar", "salao.operar", "entregas.visualizar", "configuracoes.visualizar"},
     "garcom": {"pedidos.visualizar", "pedidos.criar", "cardapio.visualizar", "salao.operar", "configuracoes.visualizar"},
     "cozinha": {"pedidos.visualizar", "pedidos.atualizar", "cozinha.operar", "configuracoes.visualizar"},
-    "entregador": {"pedidos.visualizar", "entregas.visualizar", "entregas.operar", "configuracoes.visualizar"},
+    "entregador": {"entregas.visualizar", "entregas.operar"},
 }
 
 @dataclass(frozen=True)

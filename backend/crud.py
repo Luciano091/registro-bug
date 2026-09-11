@@ -44,6 +44,26 @@ def produto_disponivel_agora(produto: models.Produto):
 def preco_vigente(produto: models.Produto):
     return produto.preco_promocao if produto.promocao_ativa else produto.preco
 
+def _baixar_estoque_produto(produto: models.Produto, quantidade: float):
+    if produto.controlar_estoque and produto.estoque < quantidade:
+        raise ValueError(f"Estoque insuficiente para o produto '{produto.nome}'. Restam apenas {produto.estoque} unidades.")
+    for ficha in produto.fichas_tecnicas:
+        necessario = quantidade * ficha.quantidade
+        if ficha.insumo and ficha.insumo.controlar_estoque and ficha.insumo.estoque < necessario:
+            raise ValueError(f"Estoque de insumo insuficiente: '{ficha.insumo.nome}'. Necessário: {necessario}, Disponível: {ficha.insumo.estoque}.")
+    if produto.controlar_estoque:
+        produto.estoque -= quantidade
+    for ficha in produto.fichas_tecnicas:
+        if ficha.insumo and ficha.insumo.controlar_estoque:
+            ficha.insumo.estoque -= quantidade * ficha.quantidade
+
+def _repor_estoque_produto(produto: models.Produto, quantidade: float):
+    if produto.controlar_estoque:
+        produto.estoque += quantidade
+    for ficha in produto.fichas_tecnicas:
+        if ficha.insumo and ficha.insumo.controlar_estoque:
+            ficha.insumo.estoque += quantidade * ficha.quantidade
+
 def create_produto(db: Session, produto: schemas.ProdutoCreate, estabelecimento_id: int):
     values = produto.model_dump()
     if values.get("setor_producao_id") is None:
@@ -245,6 +265,15 @@ def save_grupo_opcao(db: Session, payload: schemas.GrupoOpcaoCreate, estabelecim
         duplicate = duplicate.filter(models.GrupoOpcao.id != grupo_id)
     if duplicate.first():
         raise ValueError("Já existe um grupo com este nome.")
+    linked_ids = {opcao.produto_vinculado_id for opcao in payload.opcoes if opcao.produto_vinculado_id}
+    if linked_ids:
+        linked_products = db.query(models.Produto).filter(
+            models.Produto.estabelecimento_id == estabelecimento_id,
+            models.Produto.id.in_(linked_ids),
+            models.Produto.is_combo == False,
+        ).all()
+        if len(linked_products) != len(linked_ids):
+            raise ValueError("Um produto vinculado não pertence ao estabelecimento ou também é um combo.")
     values = payload.model_dump(exclude={"opcoes"})
     values["nome"] = values["nome"].strip()
     if grupo:
@@ -381,6 +410,7 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate, estabelecimento_id:
             adicionais_total += valor
             snapshots.append(models.ItemPedidoOpcao(
                 opcao_id=opcao.id, grupo_nome=opcao.grupo.nome, opcao_nome=opcao.nome,
+                produto_vinculado_id=opcao.produto_vinculado_id,
                 preco_unitario=opcao.preco_adicional, quantidade=selecao.quantidade, subtotal=valor,
             ))
         for grupo_id, grupo in grupos_vinculados.items():
@@ -400,18 +430,19 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate, estabelecimento_id:
                 setor_producao_id=produto.setor_producao_id, status_producao="pendente",
             )
         )
-        if produto.controlar_estoque:
-            if produto.estoque < item.quantidade:
-                raise ValueError(f"Estoque insuficiente para o produto '{produto.nome}'. Restam apenas {produto.estoque} unidades.")
-            produto.estoque -= item.quantidade
-                
-        # Baixa de Insumos (Ficha Técnica)
-        for ficha in produto.fichas_tecnicas:
-            if ficha.insumo and ficha.insumo.controlar_estoque:
-                qtde_necessaria = item.quantidade * ficha.quantidade
-                if ficha.insumo.estoque < qtde_necessaria:
-                    raise ValueError(f"Estoque de insumo insuficiente: '{ficha.insumo.nome}'. Necessário: {qtde_necessaria}, Disponível: {ficha.insumo.estoque}.")
-                ficha.insumo.estoque -= qtde_necessaria
+        _baixar_estoque_produto(produto, item.quantidade)
+        if produto.is_combo:
+            for selecao in item.opcoes:
+                opcao = opcoes_por_id[selecao.opcao_id]
+                if opcao.produto_vinculado_id:
+                    vinculado = db.query(models.Produto).filter(
+                        models.Produto.id == opcao.produto_vinculado_id,
+                        models.Produto.estabelecimento_id == estabelecimento_id,
+                        models.Produto.ativo == True,
+                    ).first()
+                    if not vinculado:
+                        raise ValueError(f"O item vinculado à opção '{opcao.nome}' não está disponível.")
+                    _baixar_estoque_produto(vinculado, item.quantidade * selecao.quantidade)
             
     taxa_entrega = 0.0
     if pedido.tipo_entrega.lower() in ("delivery", "entrega"):
@@ -562,13 +593,11 @@ def adicionar_item_comanda(db: Session, comanda_id: int, payload: schemas.Comand
             raise ValueError(f"A opção '{opcao.nome}' não pertence ao produto.")
         contagem[opcao.grupo_id] += selecao.quantidade
         extras += opcao.preco_adicional * selecao.quantidade
-        snapshots.append({"grupo": opcao.grupo.nome, "opcao": opcao.nome, "quantidade": selecao.quantidade, "preco": opcao.preco_adicional})
+        snapshots.append({"grupo": opcao.grupo.nome, "opcao": opcao.nome, "quantidade": selecao.quantidade, "preco": opcao.preco_adicional, "produto_vinculado_id": opcao.produto_vinculado_id})
     for grupo_id, grupo in grupos.items():
         minimo = max(grupo.minimo, 1 if grupo.obrigatorio else 0)
         if contagem[grupo_id] < minimo or contagem[grupo_id] > grupo.maximo:
             raise ValueError(f"Revise a quantidade de escolhas em '{grupo.nome}'.")
-    if produto.controlar_estoque and produto.estoque < payload.quantidade:
-        raise ValueError(f"Estoque insuficiente para '{produto.nome}'.")
     valor = preco_vigente(produto) + extras
     item = models.ComandaItem(
         produto_id=produto.id, produto_nome=produto.nome, quantidade=payload.quantidade, custo_unitario=produto.preco_compra or 0,
@@ -577,12 +606,19 @@ def adicionar_item_comanda(db: Session, comanda_id: int, payload: schemas.Comand
         setor_producao_id=produto.setor_producao_id,
     )
     comanda.itens.append(item)
-    if produto.controlar_estoque: produto.estoque -= payload.quantidade
-    for ficha in produto.fichas_tecnicas:
-        if ficha.insumo and ficha.insumo.controlar_estoque:
-            necessario = payload.quantidade * ficha.quantidade
-            if ficha.insumo.estoque < necessario: raise ValueError(f"Estoque de insumo insuficiente: '{ficha.insumo.nome}'.")
-            ficha.insumo.estoque -= necessario
+    _baixar_estoque_produto(produto, payload.quantidade)
+    if produto.is_combo:
+        for selecao in payload.opcoes:
+            opcao = por_id[selecao.opcao_id]
+            if opcao.produto_vinculado_id:
+                vinculado = db.query(models.Produto).filter(
+                    models.Produto.id == opcao.produto_vinculado_id,
+                    models.Produto.estabelecimento_id == usuario.estabelecimento_id,
+                    models.Produto.ativo == True,
+                ).first()
+                if not vinculado:
+                    raise ValueError(f"O item vinculado à opção '{opcao.nome}' não está disponível.")
+                _baixar_estoque_produto(vinculado, payload.quantidade * selecao.quantidade)
     recalcular_comanda(comanda); db.commit(); db.refresh(comanda)
     return comanda
 
@@ -603,10 +639,15 @@ def cancelar_item_comanda(db: Session, item_id: int, estabelecimento_id: int):
     item = db.query(models.ComandaItem).join(models.Comanda).filter(models.ComandaItem.id == item_id, models.Comanda.estabelecimento_id == estabelecimento_id, models.Comanda.status == "aberta").first()
     if not item or item.status == "cancelado": return None
     produto = db.query(models.Produto).filter(models.Produto.id == item.produto_id, models.Produto.estabelecimento_id == estabelecimento_id).first()
-    if produto and produto.controlar_estoque: produto.estoque += item.quantidade
     if produto:
-        for ficha in produto.fichas_tecnicas:
-            if ficha.insumo and ficha.insumo.controlar_estoque: ficha.insumo.estoque += item.quantidade * ficha.quantidade
+        _repor_estoque_produto(produto, item.quantidade)
+        if produto.is_combo:
+            for snapshot in json.loads(item.opcoes_json or "[]"):
+                linked_id = snapshot.get("produto_vinculado_id")
+                if linked_id:
+                    vinculado = db.query(models.Produto).filter(models.Produto.id == linked_id, models.Produto.estabelecimento_id == estabelecimento_id).first()
+                    if vinculado:
+                        _repor_estoque_produto(vinculado, item.quantidade * int(snapshot.get("quantidade", 1)))
     item.status = "cancelado"; item.atualizado_em = models.get_now(); recalcular_comanda(item.comanda); db.commit(); db.refresh(item.comanda)
     return item.comanda
 
@@ -947,7 +988,7 @@ def fechar_caixa(db: Session, caixa_id: int, estabelecimento_id: int):
         
         # Calcular saldo final
         total_entradas = sum(m.valor for m in db_caixa.movimentacoes if m.tipo in ["venda", "suprimento"])
-        total_saidas = sum(m.valor for m in db_caixa.movimentacoes if m.tipo == "sangria")
+        total_saidas = sum(m.valor for m in db_caixa.movimentacoes if m.tipo in ("sangria", "estorno"))
         db_caixa.saldo_final = db_caixa.saldo_inicial + total_entradas - total_saidas
         
         db.commit()
@@ -1230,3 +1271,46 @@ def update_lead(db: Session, lead_id: int, payload: schemas.LeadComercialUpdate)
     db.commit()
     db.refresh(lead)
     return lead
+
+
+def cancelar_pedido(db: Session, pedido_id: int, motivo: str, estornado: bool, estabelecimento_id: int):
+    pedido = db.query(models.Pedido).filter(models.Pedido.id == pedido_id, models.Pedido.estabelecimento_id == estabelecimento_id).first()
+    if not pedido:
+        return None
+    ja_cancelado = pedido.status == "Cancelado"
+    if ja_cancelado and (not estornado or pedido.estornado):
+        return pedido
+    if not ja_cancelado and pedido.status not in ("Finalizado", "Concluído", "Entregue"):
+        for item in pedido.itens:
+            if item.produto:
+                _repor_estoque_produto(item.produto, item.quantidade)
+                if item.produto.is_combo:
+                    for snapshot in item.opcoes:
+                        if snapshot.produto_vinculado_id:
+                            vinculado = db.query(models.Produto).filter(
+                                models.Produto.id == snapshot.produto_vinculado_id,
+                                models.Produto.estabelecimento_id == estabelecimento_id,
+                            ).first()
+                            if vinculado:
+                                _repor_estoque_produto(vinculado, item.quantidade * snapshot.quantidade)
+            item.status_producao = "finalizado"
+    pedido.status = 'Cancelado'
+    pedido.motivo_cancelamento = motivo.strip()
+    if pedido.entrega:
+        pedido.entrega.status = "cancelada"
+    if estornado and not pedido.estornado:
+        venda = db.query(models.MovimentacaoCaixa).join(models.Caixa).filter(
+            models.Caixa.estabelecimento_id == estabelecimento_id,
+            models.MovimentacaoCaixa.tipo == "venda",
+            models.MovimentacaoCaixa.descricao == f"Pedido #{pedido.numero}",
+        ).order_by(models.MovimentacaoCaixa.id.desc()).first()
+        if venda:
+            db.add(models.MovimentacaoCaixa(
+                caixa_id=venda.caixa_id, tipo="estorno", valor=pedido.total,
+                forma_pagamento=pedido.forma_pagamento,
+                descricao=f"Estorno do pedido #{pedido.numero}",
+            ))
+        pedido.estornado = True
+    db.commit()
+    db.refresh(pedido)
+    return pedido

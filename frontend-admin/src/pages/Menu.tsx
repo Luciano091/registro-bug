@@ -43,7 +43,8 @@ const Menu = () => {
       controlar_estoque: item.controlar_estoque || false,
       estoque: item.estoque !== null && item.estoque !== undefined ? item.estoque.toString() : '',
       is_promocao: item.is_promocao || false,
-      preco_promocao: item.preco_promocao ? item.preco_promocao.toString() : ''
+      preco_promocao: item.preco_promocao ? item.preco_promocao.toString() : '',
+      is_combo: item.is_combo || false,
     });
     setEditingId(item.id);
     setShowModal(true);

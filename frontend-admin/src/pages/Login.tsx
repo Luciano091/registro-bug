@@ -9,6 +9,11 @@ const Login = () => {
   const [erro, setErro] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [forgotModal, setForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotSuccess, setForgotSuccess] = useState(false);
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotError, setForgotError] = useState('');
   const navigate = useNavigate();
   const estabelecimento = new URLSearchParams(window.location.search).get('estabelecimento') || localStorage.getItem('estabelecimentoSlug') || 'bisburger';
 
@@ -22,6 +27,7 @@ const Login = () => {
       if (response.data.token) {
         localStorage.setItem('adminToken', response.data.token);
         localStorage.setItem('estabelecimentoSlug', response.data.estabelecimento.slug);
+        if (response.data.estabelecimento.nome) localStorage.setItem('estabelecimentoNome', response.data.estabelecimento.nome);
         if (response.data.usuario) localStorage.setItem('ritmesaSession', JSON.stringify(response.data.usuario));
         navigate('/'); // Vai para o Dashboard
       }
@@ -36,6 +42,20 @@ const Login = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleForgot = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setForgotLoading(true);
+    setForgotError('');
+    try {
+      await api.post('/auth/forgot-password', { email: forgotEmail.trim(), estabelecimento });
+      setForgotSuccess(true);
+    } catch {
+      setForgotError('Não foi possível solicitar o link agora. Tente novamente.');
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -122,6 +142,19 @@ const Login = () => {
         </div>
 
       </div>
+      {forgotModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <form onSubmit={handleForgot} className="relative w-full max-w-sm rounded-3xl border border-white/10 bg-dark-900 p-6 shadow-2xl">
+            <button type="button" onClick={() => { setForgotModal(false); setForgotSuccess(false); setForgotError(''); }} className="absolute right-4 top-4 text-zinc-400 hover:text-white"><X size={20} /></button>
+            <h2 className="mb-2 text-2xl font-bold text-white">Recuperar senha</h2>
+            {forgotSuccess ? (
+              <div className="py-6 text-center"><CheckCircle2 className="mx-auto mb-4 text-emerald-500" size={42} /><p className="text-zinc-300">Se o e-mail existir, enviaremos um link válido por 15 minutos.</p><button type="button" onClick={() => { setForgotModal(false); setForgotSuccess(false); }} className="mt-6 w-full rounded-xl bg-white/5 py-3 font-bold text-white">Voltar ao login</button></div>
+            ) : (
+              <><p className="mb-5 text-sm text-zinc-400">Digite o e-mail cadastrado no painel.</p><input type="email" required value={forgotEmail} onChange={event => setForgotEmail(event.target.value)} placeholder="seu@email.com" className="w-full rounded-xl border border-white/10 bg-dark-950 px-4 py-3 text-white outline-none focus:border-brand-500" />{forgotError && <p className="mt-3 text-sm text-red-400">{forgotError}</p>}<button disabled={forgotLoading} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 py-3 font-bold text-white disabled:opacity-50">{forgotLoading ? <Loader2 className="animate-spin" size={20} /> : 'Enviar link'}</button></>
+            )}
+          </form>
+        </div>
+      )}
     </div>
   );
 };

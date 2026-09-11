@@ -163,7 +163,7 @@ export default function CashFlow() {
 
   // Calculate totals
   const totalEntradas = caixa.movimentacoes.filter(m => m.tipo === 'venda' || m.tipo === 'suprimento').reduce((acc, curr) => acc + curr.valor, 0);
-  const totalSaidas = caixa.movimentacoes.filter(m => m.tipo === 'sangria').reduce((acc, curr) => acc + curr.valor, 0);
+  const totalSaidas = caixa.movimentacoes.filter(m => m.tipo === 'sangria' || m.tipo === 'estorno').reduce((acc, curr) => acc + curr.valor, 0);
   const saldoAtual = caixa.saldo_inicial + totalEntradas - totalSaidas;
 
   return (
@@ -244,9 +244,9 @@ export default function CashFlow() {
                   <td className="p-4 text-zinc-200">{mov.descricao || "-"}</td>
                   <td className="p-4 text-zinc-300 text-sm">{mov.forma_pagamento}</td>
                   <td className={`p-4 text-right font-medium ${
-                    mov.tipo === 'sangria' ? 'text-red-400' : 'text-emerald-400'
+                    mov.tipo === 'sangria' || mov.tipo === 'estorno' ? 'text-red-400' : 'text-emerald-400'
                   }`}>
-                    {mov.tipo === 'sangria' ? '-' : '+'} R$ {mov.valor.toFixed(2)}
+                    {mov.tipo === 'sangria' || mov.tipo === 'estorno' ? '-' : '+'} R$ {mov.valor.toFixed(2)}
                   </td>
                 </tr>
               ))}

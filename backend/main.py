@@ -1,11 +1,15 @@
-from jose import JWTError, jwt
-from fastapi import FastAPI, Depends, HTTPException, Body, Query, BackgroundTasks, Request, Header
+from fastapi import FastAPI, Depends, HTTPException, Query, BackgroundTasks, Request, Header
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any, Optional
 import datetime
 from datetime import timedelta
 import os
+import hashlib
+import hmac
+import smtplib
+import ssl
+from email.message import EmailMessage
 import cloudinary
 import cloudinary.uploader
 from fastapi import UploadFile, File, Form
@@ -1186,63 +1190,90 @@ def update_ficha_tecnica(produto_id: int, itens: List[schemas.ProdutoInsumoCreat
 
 
 @app.post("/pedidos/{pedido_id}/cancelar", response_model=schemas.Pedido)
-def cancelar_pedido(pedido_id: int, payload: schemas.PedidoCancelamento, background_tasks: BackgroundTasks, db: Session = Depends(get_db), atual: auth.UsuarioAutenticado = Depends(auth.require_user_permission("pedidos.atualizar"))):
+def cancelar_pedido(pedido_id: int, payload: schemas.PedidoCancelamento, db: Session = Depends(get_db), atual: auth.UsuarioAutenticado = Depends(auth.require_user_permission("pedidos.atualizar"))):
     pedido = crud.cancelar_pedido(db, pedido_id, payload.motivo, payload.estornado, atual.estabelecimento_id)
     if not pedido:
         raise HTTPException(status_code=404, detail="Pedido não encontrado")
-    
-    # Audit log
-    db.add(models.LogAuditoria(
-        estabelecimento_id=atual.estabelecimento_id,
-        acao="PEDIDO_CANCELADO",
-        recurso="pedidos",
-        recurso_id=pedido.id,
-        detalhes=f"Motivo: {payload.motivo}. Estornado: {payload.estornado}",
-        usuario_id=atual.usuario_id
-    ))
-    db.commit()
+    crud.create_audit_log(
+        db, atual.estabelecimento_id, "pedido.cancelado", atual.usuario_id,
+        "pedido", pedido.id, {"motivo": payload.motivo, "estornado": payload.estornado},
+    )
     return pedido
 
 
+def _send_password_reset_email(recipient: str, reset_url: str) -> None:
+    host = os.getenv("SMTP_HOST")
+    port = int(os.getenv("SMTP_PORT", "587"))
+    username = os.getenv("SMTP_USERNAME")
+    password = os.getenv("SMTP_PASSWORD")
+    sender = os.getenv("SMTP_FROM_EMAIL", username or "")
+    if not host or not sender:
+        print("Recuperação de senha não enviada: SMTP não configurado.")
+        return
+    message = EmailMessage()
+    message["Subject"] = "Redefina sua senha da Ritmesa"
+    message["From"] = sender
+    message["To"] = recipient
+    message.set_content(f"Use este link para criar uma nova senha. Ele expira em 15 minutos:\n\n{reset_url}")
+    context = ssl.create_default_context()
+    try:
+        if port == 465:
+            with smtplib.SMTP_SSL(host, port, context=context, timeout=20) as smtp:
+                if username and password:
+                    smtp.login(username, password)
+                smtp.send_message(message)
+        else:
+            with smtplib.SMTP(host, port, timeout=20) as smtp:
+                smtp.starttls(context=context)
+                if username and password:
+                    smtp.login(username, password)
+                smtp.send_message(message)
+    except (OSError, smtplib.SMTPException) as exc:
+        print(f"Falha ao enviar recuperação de senha: {type(exc).__name__}")
+
+
 @app.post("/auth/forgot-password")
-def forgot_password(email: str = Body(..., embed=True), db: Session = Depends(get_db)):
-    usuario = db.query(models.Usuario).filter(models.Usuario.email == email).first()
+def forgot_password(payload: schemas.PasswordResetRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    email = payload.email.strip().lower()
+    usuario = db.query(models.Usuario).join(models.Estabelecimento).filter(
+        models.Usuario.email == email,
+        models.Usuario.ativo == True,
+        models.Estabelecimento.slug == payload.estabelecimento.strip().lower(),
+        models.Estabelecimento.status.in_(("ativo", "trial")),
+    ).first()
     if not usuario:
         return {"msg": "Se o e-mail existir, um link de recuperação foi enviado."}
-    
-    # Generate token
-    token = auth.create_access_token(data={"sub": str(usuario.id), "type": "reset"}, expires_delta=timedelta(minutes=15))
-    
-    # In a real scenario, we send an email here.
-    # We will log it to the console for now until SMTP is configured.
-    print(f"\n\n=== EMAIL DE RECUPERAÇÃO ===")
-    print(f"Para: {email}")
-    print(f"Link: https://painel.ritmesa.com.br/reset-password?token={token}")
-    print(f"============================\n\n")
-    
+    password_fingerprint = hashlib.sha256(usuario.senha_hash.encode()).hexdigest()[:16]
+    token = auth.create_access_token(
+        data={"sub": str(usuario.id), "estabelecimento_id": usuario.estabelecimento_id, "purpose": "password_reset", "pwd": password_fingerprint},
+        expires_delta=timedelta(minutes=15),
+    )
+    reset_url = f"{os.getenv('PANEL_URL', 'https://painel.ritmesa.com.br').rstrip('/')}/reset-password?token={token}"
+    background_tasks.add_task(_send_password_reset_email, email, reset_url)
     return {"msg": "Se o e-mail existir, um link de recuperação foi enviado."}
 
-class ResetPasswordPayload(BaseModel):
-    token: str
-    nova_senha: str
-
 @app.post("/auth/reset-password")
-def reset_password(payload: ResetPasswordPayload, db: Session = Depends(get_db)):
+def reset_password(payload: schemas.PasswordResetConfirm, db: Session = Depends(get_db)):
     try:
-        payload_data = jwt.decode(payload.token, auth.SECRET_KEY, algorithms=[auth.ALGORITHM])
-        if payload_data.get("type") != "reset":
+        payload_data = auth.jwt.decode(payload.token, auth.SECRET_KEY, algorithms=[auth.ALGORITHM])
+        if payload_data.get("purpose") != "password_reset":
             raise HTTPException(status_code=400, detail="Token inválido")
         user_id = int(payload_data.get("sub"))
-    except JWTError:
+    except (auth.jwt.PyJWTError, TypeError, ValueError):
         raise HTTPException(status_code=400, detail="Token inválido ou expirado")
         
-    usuario = db.query(models.Usuario).filter(models.Usuario.id == user_id).first()
+    usuario = db.query(models.Usuario).filter(
+        models.Usuario.id == user_id,
+        models.Usuario.estabelecimento_id == payload_data.get("estabelecimento_id"),
+        models.Usuario.ativo == True,
+    ).first()
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
         
-    if len(payload.nova_senha) < 8:
-        raise HTTPException(status_code=400, detail="A senha deve ter pelo menos 8 caracteres")
-        
+    current_fingerprint = hashlib.sha256(usuario.senha_hash.encode()).hexdigest()[:16]
+    token_fingerprint = payload_data.get("pwd")
+    if not isinstance(token_fingerprint, str) or not hmac.compare_digest(token_fingerprint, current_fingerprint):
+        raise HTTPException(status_code=400, detail="Este link já foi utilizado ou não é mais válido")
     usuario.senha_hash = auth.get_password_hash(payload.nova_senha)
     db.commit()
     return {"msg": "Senha alterada com sucesso"}

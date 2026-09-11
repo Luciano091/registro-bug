@@ -99,6 +99,7 @@ function AppContent() {
   const [session, setSession] = useState<SessionUser | null>(readSession());
   const location = useLocation();
   const isLoginRoute = location.pathname === '/login';
+  const isPasswordResetRoute = location.pathname === '/reset-password';
   const isPlatformHost = window.location.hostname.toLowerCase().startsWith('admin.');
   const isPlatformRoute = location.pathname.startsWith('/ritmesa-admin');
   const isPlatformArea = isPlatformHost || isPlatformRoute;
@@ -106,7 +107,10 @@ function AppContent() {
   useEffect(() => {
     if (isLoginRoute || isPlatformArea || !localStorage.getItem('adminToken')) return;
     api.get('/configuracao')
-      .then(({ data }) => setEstabelecimento(data || {}))
+      .then(({ data }) => {
+        setEstabelecimento(data || {});
+        if (data?.nome_empresa) localStorage.setItem('estabelecimentoNome', data.nome_empresa);
+      })
       .catch(() => setEstabelecimento({}));
   }, [isLoginRoute, isPlatformArea]);
 
@@ -130,11 +134,11 @@ function AppContent() {
     );
   }
   
-  if (isLoginRoute) {
+  if (isLoginRoute || isPasswordResetRoute) {
     return (
       <Routes>
         <Route path="/login" element={<Login />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
       </Routes>
     );
   }
