@@ -22,6 +22,8 @@ const statusIcons: any = {
   'Cancelado': <X size={16} />,
 };
 
+const shortOrderNumber = (number: string) => number.split('-').pop() || number;
+
 const Orders = () => {
   const [filter, setFilter] = useState('Hoje');
   const [search, setSearch] = useState('');
@@ -72,7 +74,7 @@ const Orders = () => {
       return;
     }
 
-    const orderNumber = passedOrder.numero.split('-')[1] || passedOrder.numero;
+    const orderNumber = shortOrderNumber(passedOrder.numero);
     
     const businessName = localStorage.getItem('estabelecimentoNome') || 'nosso estabelecimento';
     let text = `Olá ${passedOrder.cliente}! Aqui é do *${businessName}*. 🍽️\n\n`;
@@ -212,7 +214,7 @@ const Orders = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
                         <span className="text-brand-500/70 text-sm font-bold">#</span>
-                        <span className="font-bold text-white text-lg">{order.numero.split('-')[1] || order.numero}</span>
+                        <span className="font-bold text-white text-lg">{shortOrderNumber(order.numero)}</span>
                       </div>
                       <span className="text-xs text-zinc-400 mt-1 block">Há pouco tempo</span>
                     </td>
@@ -300,7 +302,7 @@ const Orders = () => {
             <div className="px-6 py-4 border-b border-white/5 flex justify-between items-center bg-black/20">
               <div>
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  Pedido #{selectedOrder.numero.split('-')[1] || selectedOrder.numero}
+                  Pedido #{shortOrderNumber(selectedOrder.numero)}
                 </h3>
                 <p className="text-sm text-zinc-300 mt-0.5">{selectedOrder.cliente}</p>
               </div>

@@ -134,7 +134,7 @@ const Dashboard = () => {
               resumo.ultimos_pedidos.map((pedido: any) => (
                 <div key={pedido.id} className="flex justify-between items-center p-4 bg-dark-900/50 rounded-xl border border-white/5 hover:border-white/10 hover:bg-dark-900/80 transition-all cursor-default">
                   <div>
-                    <p className="font-bold">Pedido {pedido.numero}</p>
+                    <p className="font-bold">Pedido #{pedido.numero.split('-').pop() || pedido.numero}</p>
                     <p className="text-xs text-zinc-300 mt-1">{pedido.cliente}</p>
                   </div>
                   <div className="bg-brand-500/20 text-brand-400 px-3 py-1 rounded-lg text-xs font-bold border border-brand-500/20 shadow-[inset_0px_1px_1px_rgba(255,255,255,0.05)]">
