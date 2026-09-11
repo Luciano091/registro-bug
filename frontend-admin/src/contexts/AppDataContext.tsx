@@ -9,8 +9,6 @@ interface AppDataContextType {
   produtos: any[];
   dashboardResumo: any;
   caixa: any;
-  orderSoundEnabled: boolean;
-  orderSoundReady: boolean;
 
   // Loading states (only for first load)
   ordersLoaded: boolean;
@@ -28,8 +26,6 @@ interface AppDataContextType {
   updateOrderStatus: (orderId: number, newStatus: string) => void;
   addOrUpdateProduto: (produto: any) => void;
   setCaixaData: (data: any) => void;
-  enableOrderSound: () => Promise<void>;
-  disableOrderSound: () => void;
 
 }
 
@@ -57,7 +53,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     alertas_estoque: []
   });
   const [caixa, setCaixa] = useState<any>(null);
-  const [orderSoundEnabled, setOrderSoundEnabled] = useState(() => localStorage.getItem('ritmesaOrderSound') === 'on');
   const [orderSoundReady, setOrderSoundReady] = useState(false);
   const orderAudio = useRef<HTMLAudioElement | null>(null);
   const knownOrderIds = useRef<Set<number> | null>(null);
@@ -86,12 +81,7 @@ const showBrowserNotification = (title: string, body: string) => {
     return orderAudio.current;
   }, []);
 
-  const enableOrderSound = useCallback(async () => {
-    localStorage.setItem('ritmesaOrderSound', 'on');
-    setOrderSoundEnabled(true);
-    if ('Notification' in window && Notification.permission === 'default') {
-      void Notification.requestPermission();
-    }
+  const playOrderSound = useCallback(async () => {
     const audio = getOrderAudio();
     audio.currentTime = 0;
     try {
@@ -103,28 +93,8 @@ const showBrowserNotification = (title: string, body: string) => {
     }
   }, [getOrderAudio]);
 
-  const disableOrderSound = useCallback(() => {
-    localStorage.setItem('ritmesaOrderSound', 'off');
-    setOrderSoundEnabled(false);
-    setOrderSoundReady(false);
-    orderAudio.current?.pause();
-  }, []);
-
-  const playOrderSound = useCallback(async () => {
-    if (!orderSoundEnabled) return;
-    const audio = getOrderAudio();
-    audio.currentTime = 0;
-    try {
-      await audio.play();
-      setOrderSoundReady(true);
-    } catch (error) {
-      setOrderSoundReady(false);
-      console.error('O navegador bloqueou o som de novos pedidos:', error);
-    }
-  }, [getOrderAudio, orderSoundEnabled]);
-
   useEffect(() => {
-    if (!orderSoundEnabled || orderSoundReady) return;
+    if (orderSoundReady) return;
     const unlock = async () => {
       const audio = getOrderAudio();
       audio.muted = true;
@@ -145,7 +115,7 @@ const showBrowserNotification = (title: string, body: string) => {
       window.removeEventListener('pointerdown', unlock);
       window.removeEventListener('keydown', unlock);
     };
-  }, [getOrderAudio, orderSoundEnabled, orderSoundReady]);
+  }, [getOrderAudio, orderSoundReady]);
 
   // ========== Refresh Functions ==========
   const refreshOrders = useCallback(async () => {
@@ -266,8 +236,6 @@ const showBrowserNotification = (title: string, body: string) => {
       produtos,
       dashboardResumo,
       caixa,
-      orderSoundEnabled,
-      orderSoundReady,
 
       ordersLoaded,
       produtosLoaded,
@@ -282,8 +250,6 @@ const showBrowserNotification = (title: string, body: string) => {
       updateOrderStatus,
       addOrUpdateProduto,
       setCaixaData,
-      enableOrderSound,
-      disableOrderSound,
 
     }}>
       {children}

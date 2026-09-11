@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Home, PlusCircle, ListOrdered, Utensils, BarChart3, Settings as SettingsIcon, ChevronLeft, ChevronRight, Wallet, LogOut, Menu as MenuIcon, X, Package, Store, Users, Armchair, ChefHat, Truck, BellOff } from 'lucide-react';
+import { Home, PlusCircle, ListOrdered, Utensils, BarChart3, Settings as SettingsIcon, ChevronLeft, ChevronRight, Wallet, LogOut, Menu as MenuIcon, X, Package, Store, Users, Armchair, ChefHat, Truck } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import NewOrder from './pages/NewOrder';
 import Orders from './pages/Orders';
@@ -20,7 +20,7 @@ import Login from './pages/Login';
 import ResetPassword from './pages/ResetPassword';
 import { Navigate } from 'react-router-dom';
 import { NetworkProvider, useNetwork } from './contexts/NetworkContext';
-import { AppDataProvider, useAppData } from './contexts/AppDataContext';
+import { AppDataProvider } from './contexts/AppDataContext';
 import { WifiOff, RefreshCcw } from 'lucide-react';
 import api from './services/api';
 import { can, readSession, type SessionUser } from './services/session';
@@ -97,7 +97,6 @@ function AppContent() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [estabelecimento, setEstabelecimento] = useState<{ nome_empresa?: string; logo?: string }>({});
   const [session, setSession] = useState<SessionUser | null>(readSession());
-  const { orderSoundEnabled, orderSoundReady, enableOrderSound } = useAppData();
   const location = useLocation();
   const isLoginRoute = location.pathname === '/login';
   const isPasswordResetRoute = location.pathname === '/reset-password';
@@ -190,16 +189,6 @@ function AppContent() {
           </nav>
           
           <div className="p-3 border-t border-white/5 mt-auto space-y-1">
-            {!(orderSoundEnabled && orderSoundReady) && (
-              <button
-                onClick={enableOrderSound}
-                className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 px-4'} py-2.5 rounded-lg bg-amber-500/10 text-amber-300 transition-all duration-200 font-semibold hover:bg-amber-500/15`}
-                title="Ativar som de novos pedidos"
-              >
-                <BellOff size={20} className="flex-shrink-0" />
-                {!isCollapsed && <span>Ativar som de pedidos</span>}
-              </button>
-            )}
             {!isCollapsed && (
               <div className="tenant-card mb-3">
                 {estabelecimento.logo ? (
@@ -240,16 +229,6 @@ function AppContent() {
               <strong className="truncate">{estabelecimento.nome_empresa || 'Meu estabelecimento'}</strong>
               <span className="flex items-center gap-1.5"><img src="/brand/ritmesa-mark.png" alt="" /> Gestão por Ritmesa</span>
             </div>
-            {!(orderSoundEnabled && orderSoundReady) && (
-              <button
-                onClick={enableOrderSound}
-                className="ml-auto grid h-10 w-10 flex-shrink-0 place-items-center rounded-xl border border-amber-200 bg-amber-50 text-amber-700"
-                title="Ativar som de novos pedidos"
-                aria-label="Ativar som de novos pedidos"
-              >
-                <BellOff size={19} />
-              </button>
-            )}
           </div>
           <Routes>
             <Route path="/" element={<ProtectedRoute user={session}><HomeRoute user={session} /></ProtectedRoute>} />
