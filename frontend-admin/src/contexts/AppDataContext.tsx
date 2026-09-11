@@ -186,6 +186,11 @@ const showBrowserNotification = (title: string, body: string) => {
 
   // ========== Preload critical data on app start ==========
   useEffect(() => {
+    const path = window.location.pathname;
+    const isPublicRoute = path === '/login' || path === '/reset-password';
+    const isPlatformArea = window.location.hostname.toLowerCase().startsWith('admin.') || path.startsWith('/ritmesa-admin');
+    if (isPublicRoute || isPlatformArea || !localStorage.getItem('adminToken')) return;
+
     refreshProdutos();
     refreshOrders();
     

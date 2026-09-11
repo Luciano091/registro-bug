@@ -25,7 +25,10 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && window.location.pathname !== '/login') {
+    const path = window.location.pathname;
+    const isPublicRoute = path === '/login' || path === '/reset-password';
+    const isPlatformArea = window.location.hostname.toLowerCase().startsWith('admin.') || path.startsWith('/ritmesa-admin');
+    if (error.response?.status === 401 && !isPublicRoute && !isPlatformArea) {
       let slug = 'bisburger';
       try {
         localStorage.removeItem('adminToken');

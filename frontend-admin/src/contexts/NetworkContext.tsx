@@ -27,7 +27,10 @@ export function NetworkProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (isOnline) {
+    const path = window.location.pathname;
+    const isPublicRoute = path === '/login' || path === '/reset-password';
+    const isPlatformArea = window.location.hostname.toLowerCase().startsWith('admin.') || path.startsWith('/ritmesa-admin');
+    if (isOnline && !isPublicRoute && !isPlatformArea && localStorage.getItem('adminToken')) {
       syncOfflineOrders();
     }
   }, [isOnline]);
