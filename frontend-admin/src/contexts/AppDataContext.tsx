@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import api from '../services/api';
 import { notificationSoundBase64 } from '../notificationSound';
@@ -9,6 +9,8 @@ interface AppDataContextType {
   produtos: any[];
   dashboardResumo: any;
   caixa: any;
+  orderSoundEnabled: boolean;
+  orderSoundReady: boolean;
 
   // Loading states (only for first load)
   ordersLoaded: boolean;
@@ -26,6 +28,8 @@ interface AppDataContextType {
   updateOrderStatus: (orderId: number, newStatus: string) => void;
   addOrUpdateProduto: (produto: any) => void;
   setCaixaData: (data: any) => void;
+  enableOrderSound: () => Promise<void>;
+  disableOrderSound: () => void;
 
 }
 
@@ -53,6 +57,10 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     alertas_estoque: []
   });
   const [caixa, setCaixa] = useState<any>(null);
+  const [orderSoundEnabled, setOrderSoundEnabled] = useState(() => localStorage.getItem('ritmesaOrderSound') === 'on');
+  const [orderSoundReady, setOrderSoundReady] = useState(false);
+  const orderAudio = useRef<HTMLAudioElement | null>(null);
+  const knownOrderIds = useRef<Set<number> | null>(null);
 
 
   // Track whether first load happened
@@ -64,53 +72,103 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 // Helper function for browser notifications
 const showBrowserNotification = (title: string, body: string) => {
   if (!("Notification" in window)) return;
-  
   if (Notification.permission === "granted") {
     new Notification(title, { body });
-  } else if (Notification.permission !== "denied") {
-    Notification.requestPermission().then(permission => {
-      if (permission === "granted") {
-        new Notification(title, { body });
-      }
-    });
   }
 };
+
+  const getOrderAudio = useCallback(() => {
+    if (!orderAudio.current) {
+      orderAudio.current = new Audio(notificationSoundBase64);
+      orderAudio.current.preload = 'auto';
+      orderAudio.current.volume = 1;
+    }
+    return orderAudio.current;
+  }, []);
+
+  const enableOrderSound = useCallback(async () => {
+    localStorage.setItem('ritmesaOrderSound', 'on');
+    setOrderSoundEnabled(true);
+    if ('Notification' in window && Notification.permission === 'default') {
+      void Notification.requestPermission();
+    }
+    const audio = getOrderAudio();
+    audio.currentTime = 0;
+    try {
+      await audio.play();
+      setOrderSoundReady(true);
+    } catch (error) {
+      setOrderSoundReady(false);
+      console.error('O navegador bloqueou o som de novos pedidos:', error);
+    }
+  }, [getOrderAudio]);
+
+  const disableOrderSound = useCallback(() => {
+    localStorage.setItem('ritmesaOrderSound', 'off');
+    setOrderSoundEnabled(false);
+    setOrderSoundReady(false);
+    orderAudio.current?.pause();
+  }, []);
+
+  const playOrderSound = useCallback(async () => {
+    if (!orderSoundEnabled) return;
+    const audio = getOrderAudio();
+    audio.currentTime = 0;
+    try {
+      await audio.play();
+      setOrderSoundReady(true);
+    } catch (error) {
+      setOrderSoundReady(false);
+      console.error('O navegador bloqueou o som de novos pedidos:', error);
+    }
+  }, [getOrderAudio, orderSoundEnabled]);
+
+  useEffect(() => {
+    if (!orderSoundEnabled || orderSoundReady) return;
+    const unlock = async () => {
+      const audio = getOrderAudio();
+      audio.muted = true;
+      try {
+        await audio.play();
+        audio.pause();
+        audio.currentTime = 0;
+        setOrderSoundReady(true);
+      } catch {
+        setOrderSoundReady(false);
+      } finally {
+        audio.muted = false;
+      }
+    };
+    window.addEventListener('pointerdown', unlock, { once: true });
+    window.addEventListener('keydown', unlock, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
+  }, [getOrderAudio, orderSoundEnabled, orderSoundReady]);
 
   // ========== Refresh Functions ==========
   const refreshOrders = useCallback(async () => {
     if (!localStorage.getItem('adminToken')) return;
     try {
       const response = await api.get('/pedidos');
-      setOrders(prev => {
-        if (prev.length > 0) {
-          // Filtrar IDs otimistas (que são Date.now() e portanto gigantes)
-          const maxPrevId = Math.max(0, ...prev.filter(o => o.id < 1000000000).map(o => o.id));
-          const maxNewId = Math.max(0, ...response.data.filter((o: any) => o.id < 1000000000).map((o: any) => o.id));
-          
-          if (maxNewId > maxPrevId) {
-            try {
-              const audio = new Audio(notificationSoundBase64);
-              audio.volume = 1.0;
-              const playPromise = audio.play();
-              if (playPromise !== undefined) {
-                playPromise.catch(e => console.log('Autoplay blocked:', e));
-              }
-              const businessName = localStorage.getItem('estabelecimentoNome') || 'seu estabelecimento';
-              showBrowserNotification("Novo pedido!", `Um novo pedido acabou de chegar em ${businessName}.`);
-            } catch (e) {
-              console.error('Audio/Notification error', e);
-            }
-          }
-        }
-        return response.data;
-      });
+      const incomingOrders: any[] = response.data;
+      const incomingIds = new Set<number>(incomingOrders.filter(order => order.id < 1000000000).map(order => order.id));
+      const hasNewOrder = knownOrderIds.current !== null && [...incomingIds].some(id => !knownOrderIds.current?.has(id));
+      knownOrderIds.current = incomingIds;
+      setOrders(incomingOrders);
+      if (hasNewOrder) {
+        void playOrderSound();
+        const businessName = localStorage.getItem('estabelecimentoNome') || 'seu estabelecimento';
+        showBrowserNotification("Novo pedido!", `Um novo pedido acabou de chegar em ${businessName}.`);
+      }
       setOrdersLoaded(true);
     } catch (error) {
       console.error('Erro ao carregar pedidos:', error);
       // Even on error, mark as loaded so UI doesn't stay on skeleton forever
       setOrdersLoaded(true);
     }
-  }, []);
+  }, [playOrderSound]);
 
   const refreshProdutos = useCallback(async () => {
     try {
@@ -208,6 +266,8 @@ const showBrowserNotification = (title: string, body: string) => {
       produtos,
       dashboardResumo,
       caixa,
+      orderSoundEnabled,
+      orderSoundReady,
 
       ordersLoaded,
       produtosLoaded,
@@ -222,6 +282,8 @@ const showBrowserNotification = (title: string, body: string) => {
       updateOrderStatus,
       addOrUpdateProduto,
       setCaixaData,
+      enableOrderSound,
+      disableOrderSound,
 
     }}>
       {children}
