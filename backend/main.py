@@ -520,6 +520,17 @@ def assign_delivery(pedido_id: int, payload: schemas.EntregaAtribuir, db: Sessio
     crud.create_audit_log(db, usuario.estabelecimento_id, "entrega.atribuida", usuario.usuario_id, "pedido", pedido.id, {"entregador_id": payload.entregador_id})
     return pedido
 
+@app.post("/entregas/{pedido_id}/aceitar", response_model=schemas.Pedido)
+def accept_delivery(pedido_id: int, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("entregas.operar"))):
+    try:
+        pedido = crud.aceitar_entrega(db, pedido_id, usuario)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    if not pedido:
+        raise HTTPException(status_code=404, detail="Pedido de entrega não encontrado.")
+    crud.create_audit_log(db, usuario.estabelecimento_id, "entrega.aceita", usuario.usuario_id, "pedido", pedido.id)
+    return pedido
+
 @app.put("/entregas/{pedido_id}/status", response_model=schemas.Pedido)
 def update_delivery_status(pedido_id: int, payload: schemas.EntregaStatusUpdate, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.get_current_user)):
     if not (usuario.pode("entregas.operar") or usuario.pode("entregas.gerenciar")): raise HTTPException(status_code=403, detail="Você não tem permissão para esta ação.")

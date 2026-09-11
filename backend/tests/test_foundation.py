@@ -285,6 +285,25 @@ class FoundationTests(unittest.TestCase):
         self.assertEqual(order.status, "Finalizado")
         self.assertEqual(driver.status_entrega, "disponivel")
 
+    def test_driver_can_see_and_accept_ready_unassigned_delivery(self):
+        establishment = self.create_establishment("Entrega Livre", "entrega-livre", "livre@teste.com")
+        driver = crud.create_usuario(self.db, schemas.UsuarioCreate(nome="Carlos", email="carlos-livre@teste.com", senha="12345678", perfil="entregador"), establishment.id)
+        other_driver = crud.create_usuario(self.db, schemas.UsuarioCreate(nome="João", email="joao-livre@teste.com", senha="12345678", perfil="entregador"), establishment.id)
+        product = crud.create_produto(self.db, schemas.ProdutoCreate(nome="Pizza", categoria="Pizzas", preco=40), establishment.id)
+        order = crud.create_pedido(self.db, schemas.PedidoCreate(cliente="Ana", telefone="", endereco="Rua A, 10", tipo_entrega="Delivery", forma_pagamento="Pix", itens=[schemas.ItemPedidoCreate(produto_id=product.id, quantidade=1)]), establishment.id)
+        driver_session = auth.UsuarioAutenticado(establishment.id, driver.id, driver.nome, driver.email, "entregador", frozenset(auth.PERMISSOES_POR_PERFIL["entregador"]))
+        other_session = auth.UsuarioAutenticado(establishment.id, other_driver.id, other_driver.nome, other_driver.email, "entregador", frozenset(auth.PERMISSOES_POR_PERFIL["entregador"]))
+
+        self.assertNotIn(order, crud.get_pedidos_entrega(self.db, establishment.id, driver.id))
+        order.status = "Pronto"; self.db.commit()
+        self.assertIn(order, crud.get_pedidos_entrega(self.db, establishment.id, driver.id))
+        accepted = crud.aceitar_entrega(self.db, order.id, driver_session)
+        self.assertEqual(accepted.entrega.entregador_id, driver.id)
+        self.assertEqual(driver.status_entrega, "atribuido")
+        self.assertNotIn(order, crud.get_pedidos_entrega(self.db, establishment.id, other_driver.id))
+        with self.assertRaisesRegex(ValueError, "outro entregador"):
+            crud.aceitar_entrega(self.db, order.id, other_session)
+
     def test_delivery_areas_quote_and_order_fee_are_tenant_scoped(self):
         first = self.create_establishment("Entrega Centro", "entrega-centro", "centro@teste.com")
         second = self.create_establishment("Outra Unidade", "outra-entrega", "outra@teste.com")

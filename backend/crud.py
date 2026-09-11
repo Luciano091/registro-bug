@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, and_, or_
 import models, schemas
 import datetime
 import uuid as uuid_lib
@@ -753,7 +753,10 @@ def get_pedidos_entrega(db: Session, estabelecimento_id: int, entregador_id: int
         models.Pedido.status != "Cancelado",
     )
     if entregador_id:
-        query = query.join(models.Entrega).filter(models.Entrega.entregador_id == entregador_id, models.Entrega.status.in_(("atribuida", "em_rota")))
+        query = query.outerjoin(models.Entrega).filter(or_(
+            and_(models.Entrega.entregador_id == entregador_id, models.Entrega.status.in_(("atribuida", "em_rota"))),
+            and_(models.Pedido.status == "Pronto", or_(models.Entrega.id.is_(None), models.Entrega.entregador_id.is_(None))),
+        ))
     else:
         query = query.filter(models.Pedido.status != "Finalizado")
     return query.order_by(models.Pedido.data).all()
@@ -770,6 +773,44 @@ def atribuir_entrega(db: Session, pedido_id: int, entregador_id: int, estabeleci
     if entrega.entregador and entrega.entregador.id != entregador.id and entrega.entregador.status_entrega != "em_rota": entrega.entregador.status_entrega = "disponivel"
     entrega.entregador = entregador; entrega.status = "atribuida"; entrega.atribuido_em = models.get_now(); entrega.observacao = None
     entregador.status_entrega = "atribuido"; db.add(entrega); db.commit(); db.refresh(pedido); return pedido
+
+def aceitar_entrega(db: Session, pedido_id: int, usuario):
+    if usuario.perfil != "entregador" or not usuario.usuario_id:
+        raise ValueError("Somente um entregador pode aceitar esta entrega.")
+    pedido = db.query(models.Pedido).filter(
+        models.Pedido.id == pedido_id,
+        models.Pedido.estabelecimento_id == usuario.estabelecimento_id,
+        func.lower(models.Pedido.tipo_entrega).in_(("delivery", "entrega")),
+    ).with_for_update().first()
+    if not pedido:
+        return None
+    entrega = pedido.entrega
+    if entrega and entrega.entregador_id:
+        if entrega.entregador_id == usuario.usuario_id and entrega.status in ("atribuida", "em_rota"):
+            return pedido
+        raise ValueError("Esta entrega já foi aceita por outro entregador.")
+    if pedido.status != "Pronto":
+        raise ValueError("O pedido precisa estar pronto para ser aceito.")
+    entregador = db.query(models.Usuario).filter(
+        models.Usuario.id == usuario.usuario_id,
+        models.Usuario.estabelecimento_id == usuario.estabelecimento_id,
+        models.Usuario.perfil == "entregador",
+        models.Usuario.ativo == True,
+    ).first()
+    if not entregador:
+        raise ValueError("Entregador inválido para este estabelecimento.")
+    if entregador.status_entrega != "disponivel":
+        raise ValueError("Conclua sua entrega atual antes de aceitar outra.")
+    entrega = entrega or models.Entrega(estabelecimento_id=usuario.estabelecimento_id, pedido=pedido)
+    entrega.entregador = entregador
+    entrega.status = "atribuida"
+    entrega.atribuido_em = models.get_now()
+    entrega.observacao = None
+    entregador.status_entrega = "atribuido"
+    db.add(entrega)
+    db.commit()
+    db.refresh(pedido)
+    return pedido
 
 def atualizar_status_entrega(db: Session, pedido_id: int, novo_status: str, usuario):
     pedido = get_pedido(db, pedido_id, usuario.estabelecimento_id)
