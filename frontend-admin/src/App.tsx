@@ -96,7 +96,7 @@ function AppContent() {
   const { realtimeConnected } = useAppData();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [estabelecimento, setEstabelecimento] = useState<{ nome_empresa?: string; logo?: string }>({});
+  const [estabelecimento, setEstabelecimento] = useState<{ nome_empresa?: string; logo?: string }>(() => ({ nome_empresa: localStorage.getItem('estabelecimentoNome') || undefined }));
   const [session, setSession] = useState<SessionUser | null>(readSession());
   const location = useLocation();
   const isLoginRoute = location.pathname === '/login';
@@ -112,7 +112,7 @@ function AppContent() {
         setEstabelecimento(data || {});
         if (data?.nome_empresa) localStorage.setItem('estabelecimentoNome', data.nome_empresa);
       })
-      .catch(() => setEstabelecimento({}));
+      .catch(() => setEstabelecimento({ nome_empresa: localStorage.getItem('estabelecimentoNome') || undefined }));
   }, [isLoginRoute, isPasswordResetRoute, isPlatformArea]);
 
   useEffect(() => {

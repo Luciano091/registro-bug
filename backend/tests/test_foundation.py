@@ -299,6 +299,7 @@ class FoundationTests(unittest.TestCase):
         other_session = auth.UsuarioAutenticado(establishment.id, other_driver.id, other_driver.nome, other_driver.email, "entregador", frozenset(auth.PERMISSOES_POR_PERFIL["entregador"]))
 
         self.assertNotIn(order, crud.get_pedidos_entrega(self.db, establishment.id, driver.id))
+        self.assertNotIn(order, crud.get_pedidos_entrega(self.db, establishment.id))
         order.status = "Pronto"; self.db.commit()
         self.assertIn(order, crud.get_pedidos_entrega(self.db, establishment.id, driver.id))
         accepted = crud.aceitar_entrega(self.db, order.id, driver_session)
@@ -310,6 +311,16 @@ class FoundationTests(unittest.TestCase):
         self.assertNotIn(order, crud.get_pedidos_entrega(self.db, establishment.id, other_driver.id))
         with self.assertRaisesRegex(ValueError, "outro entregador"):
             crud.aceitar_entrega(self.db, order.id, other_session)
+
+        # Uma entrega antiga já concluída não deve bloquear o pedido caso ele volte a ficar pronto.
+        accepted.entrega.status = "entregue"
+        accepted.status = "Pronto"
+        driver.status_entrega = "disponivel"
+        self.db.commit()
+        self.assertIn(order, crud.get_pedidos_entrega(self.db, establishment.id, other_driver.id))
+        reassigned = crud.aceitar_entrega(self.db, order.id, other_session)
+        self.assertEqual(reassigned.entrega.entregador_id, other_driver.id)
+        self.assertEqual(reassigned.entrega.status, "atribuida")
 
     def test_push_device_registration_is_user_and_tenant_scoped(self):
         first = self.create_establishment("Push A", "push-a", "push-a@teste.com")

@@ -818,20 +818,25 @@ def get_push_tokens(db: Session, estabelecimento_id: int, usuario_id: int = None
     return [row[0] for row in query.distinct().all()]
 
 def get_pedidos_entrega(db: Session, estabelecimento_id: int, entregador_id: int = None):
-    query = db.query(models.Pedido).options(
+    active_delivery = models.Entrega.status.in_(("atribuida", "em_rota"))
+    query = db.query(models.Pedido).outerjoin(models.Entrega).options(
         joinedload(models.Pedido.entrega).joinedload(models.Entrega.entregador),
     ).filter(
         models.Pedido.estabelecimento_id == estabelecimento_id,
         func.lower(models.Pedido.tipo_entrega).in_(("delivery", "entrega")),
         models.Pedido.status != "Cancelado",
+        models.Pedido.status != "Finalizado",
     )
     if entregador_id:
-        query = query.outerjoin(models.Entrega).filter(or_(
-            and_(models.Entrega.entregador_id == entregador_id, models.Entrega.status.in_(("atribuida", "em_rota"))),
-            and_(models.Pedido.status == "Pronto", or_(models.Entrega.id.is_(None), models.Entrega.entregador_id.is_(None))),
+        query = query.filter(or_(
+            and_(models.Entrega.entregador_id == entregador_id, active_delivery),
+            and_(models.Pedido.status == "Pronto", or_(models.Entrega.id.is_(None), models.Entrega.entregador_id.is_(None), ~active_delivery)),
         ))
     else:
-        query = query.filter(models.Pedido.status != "Finalizado")
+        query = query.filter(or_(
+            models.Pedido.status == "Pronto",
+            and_(models.Pedido.status != "Finalizado", models.Entrega.entregador_id.is_not(None), active_delivery),
+        ))
     return query.order_by(models.Pedido.data).all()
 
 def get_pedido_entrega(db: Session, pedido_id: int, estabelecimento_id: int):
@@ -866,8 +871,8 @@ def aceitar_entrega(db: Session, pedido_id: int, usuario):
     if not pedido:
         return None
     entrega = pedido.entrega
-    if entrega and entrega.entregador_id:
-        if entrega.entregador_id == usuario.usuario_id and entrega.status in ("atribuida", "em_rota"):
+    if entrega and entrega.entregador_id and entrega.status in ("atribuida", "em_rota"):
+        if entrega.entregador_id == usuario.usuario_id:
             return pedido
         raise ValueError("Esta entrega já foi aceita por outro entregador.")
     if pedido.status != "Pronto":
@@ -883,6 +888,8 @@ def aceitar_entrega(db: Session, pedido_id: int, usuario):
     if entregador.status_entrega != "disponivel":
         raise ValueError("Conclua sua entrega atual antes de aceitar outra.")
     entrega = entrega or models.Entrega(estabelecimento_id=usuario.estabelecimento_id, pedido=pedido)
+    if entrega.entregador and entrega.entregador.id != entregador.id and entrega.entregador.status_entrega == "atribuido":
+        entrega.entregador.status_entrega = "disponivel"
     entrega.entregador = entregador
     entrega.status = "atribuida"
     entrega.atribuido_em = models.get_now()
