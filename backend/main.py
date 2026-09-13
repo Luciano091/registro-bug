@@ -546,7 +546,7 @@ def update_kitchen_item(origem: str, item_id: int, payload: schemas.CozinhaStatu
     return {"id": item.id, "status": item.status if origem == "comanda" else item.status_producao}
 
 # --- Expedição e entregadores ---
-@app.get("/entregas/painel", response_model=List[schemas.Pedido])
+@app.get("/entregas/painel", response_model=List[schemas.PedidoEntregaResumo])
 def delivery_board(db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("entregas.visualizar"))):
     entregador_id = usuario.usuario_id if usuario.perfil == "entregador" else None
     return crud.get_pedidos_entrega(db, usuario.estabelecimento_id, entregador_id)
@@ -585,7 +585,7 @@ def assign_delivery(pedido_id: int, payload: schemas.EntregaAtribuir, background
     background_tasks.add_task(realtime.operation_hub.publish, usuario.estabelecimento_id, "entrega.atualizada", pedido.id)
     return pedido
 
-@app.post("/entregas/{pedido_id}/aceitar", response_model=schemas.Pedido)
+@app.post("/entregas/{pedido_id}/aceitar", response_model=schemas.PedidoEntregaResumo)
 def accept_delivery(pedido_id: int, background_tasks: BackgroundTasks, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("entregas.operar"))):
     try:
         pedido = crud.aceitar_entrega(db, pedido_id, usuario)
@@ -597,7 +597,7 @@ def accept_delivery(pedido_id: int, background_tasks: BackgroundTasks, db: Sessi
     background_tasks.add_task(realtime.operation_hub.publish, usuario.estabelecimento_id, "entrega.atualizada", pedido.id)
     return pedido
 
-@app.put("/entregas/{pedido_id}/status", response_model=schemas.Pedido)
+@app.put("/entregas/{pedido_id}/status", response_model=schemas.PedidoEntregaResumo)
 def update_delivery_status(pedido_id: int, payload: schemas.EntregaStatusUpdate, background_tasks: BackgroundTasks, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.get_current_user)):
     if not (usuario.pode("entregas.operar") or usuario.pode("entregas.gerenciar")): raise HTTPException(status_code=403, detail="Você não tem permissão para esta ação.")
     try:

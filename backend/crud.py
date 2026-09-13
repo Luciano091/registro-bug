@@ -818,7 +818,9 @@ def get_push_tokens(db: Session, estabelecimento_id: int, usuario_id: int = None
     return [row[0] for row in query.distinct().all()]
 
 def get_pedidos_entrega(db: Session, estabelecimento_id: int, entregador_id: int = None):
-    query = db.query(models.Pedido).filter(
+    query = db.query(models.Pedido).options(
+        joinedload(models.Pedido.entrega).joinedload(models.Entrega.entregador),
+    ).filter(
         models.Pedido.estabelecimento_id == estabelecimento_id,
         func.lower(models.Pedido.tipo_entrega).in_(("delivery", "entrega")),
         models.Pedido.status != "Cancelado",
@@ -831,6 +833,14 @@ def get_pedidos_entrega(db: Session, estabelecimento_id: int, entregador_id: int
     else:
         query = query.filter(models.Pedido.status != "Finalizado")
     return query.order_by(models.Pedido.data).all()
+
+def get_pedido_entrega(db: Session, pedido_id: int, estabelecimento_id: int):
+    return db.query(models.Pedido).options(
+        joinedload(models.Pedido.entrega).joinedload(models.Entrega.entregador),
+    ).filter(
+        models.Pedido.id == pedido_id,
+        models.Pedido.estabelecimento_id == estabelecimento_id,
+    ).first()
 
 def atribuir_entrega(db: Session, pedido_id: int, entregador_id: int, estabelecimento_id: int):
     pedido = get_pedido(db, pedido_id, estabelecimento_id)
@@ -884,7 +894,7 @@ def aceitar_entrega(db: Session, pedido_id: int, usuario):
     return pedido
 
 def atualizar_status_entrega(db: Session, pedido_id: int, novo_status: str, usuario):
-    pedido = get_pedido(db, pedido_id, usuario.estabelecimento_id)
+    pedido = get_pedido_entrega(db, pedido_id, usuario.estabelecimento_id)
     if not pedido or not pedido.entrega: return None
     entrega = pedido.entrega
     if usuario.perfil == "entregador" and entrega.entregador_id != usuario.usuario_id: return None

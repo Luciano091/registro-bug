@@ -297,6 +297,9 @@ class Pedido(PedidoResumo):
     class Config:
         from_attributes = True
 
+class PedidoEntregaResumo(PedidoResumo):
+    entrega: Optional[EntregaResumo] = None
+
 # --- Salão, mesas e comandas ---
 class MesaBase(BaseModel):
     numero: str = Field(min_length=1, max_length=20)

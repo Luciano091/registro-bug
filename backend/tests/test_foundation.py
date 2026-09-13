@@ -303,6 +303,9 @@ class FoundationTests(unittest.TestCase):
         self.assertIn(order, crud.get_pedidos_entrega(self.db, establishment.id, driver.id))
         accepted = crud.aceitar_entrega(self.db, order.id, driver_session)
         self.assertEqual(accepted.entrega.entregador_id, driver.id)
+        summary = schemas.PedidoEntregaResumo.model_validate(accepted).model_dump()
+        self.assertEqual(summary["entrega"]["entregador"]["id"], driver.id)
+        self.assertNotIn("itens", summary)
         self.assertEqual(driver.status_entrega, "atribuido")
         self.assertNotIn(order, crud.get_pedidos_entrega(self.db, establishment.id, other_driver.id))
         with self.assertRaisesRegex(ValueError, "outro entregador"):
