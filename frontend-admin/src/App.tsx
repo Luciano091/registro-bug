@@ -107,13 +107,17 @@ function AppContent() {
 
   useEffect(() => {
     if (isLoginRoute || isPasswordResetRoute || isPlatformArea || !localStorage.getItem('adminToken')) return;
-    api.get('/configuracao')
+    const slug = localStorage.getItem('estabelecimentoSlug');
+    const configPath = session?.perfil === 'entregador' && slug
+      ? `/public/${encodeURIComponent(slug)}/configuracao`
+      : '/configuracao';
+    api.get(configPath)
       .then(({ data }) => {
         setEstabelecimento(data || {});
         if (data?.nome_empresa) localStorage.setItem('estabelecimentoNome', data.nome_empresa);
       })
       .catch(() => setEstabelecimento({ nome_empresa: localStorage.getItem('estabelecimentoNome') || undefined }));
-  }, [isLoginRoute, isPasswordResetRoute, isPlatformArea]);
+  }, [isLoginRoute, isPasswordResetRoute, isPlatformArea, session?.perfil]);
 
   useEffect(() => {
     if (isLoginRoute || isPasswordResetRoute || isPlatformArea || !localStorage.getItem('adminToken')) return;
@@ -220,7 +224,7 @@ function AppContent() {
 
         {/* Main Content */}
         <main className="admin-main min-w-0 flex-1 overflow-y-auto relative pb-20 md:pb-0 z-10">
-          <div className="mobile-brand md:hidden">
+          <div className={`mobile-brand md:hidden ${session?.perfil === 'entregador' ? 'driver-mobile-brand' : ''}`}>
             {estabelecimento.logo ? (
               <img src={estabelecimento.logo} alt={`Logo de ${estabelecimento.nome_empresa || 'estabelecimento'}`} className="mobile-tenant-logo" />
             ) : (
@@ -287,7 +291,7 @@ function AppContent() {
         )}
 
         {/* Mobile Bottom Nav */}
-        <nav className="mobile-bottom-nav fixed bottom-0 z-50 flex w-full justify-between px-2 py-1.5 md:hidden print:hidden pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+        <nav className={`mobile-bottom-nav fixed bottom-0 z-50 flex w-full justify-between px-2 py-1.5 md:hidden print:hidden pb-[max(0.5rem,env(safe-area-inset-bottom))] ${session?.perfil === 'entregador' ? 'driver-bottom-nav' : ''}`}>
           {can(session, 'dashboard.visualizar') && <Link to="/" aria-current={location.pathname === '/' ? 'page' : undefined} className={`mobile-nav-item ${location.pathname === '/' ? 'is-active' : ''}`}><Home size={22} /><span>Início</span></Link>}
           {can(session, 'pedidos.visualizar') && session?.perfil !== 'entregador' && <Link to="/pedidos" aria-current={location.pathname === '/pedidos' ? 'page' : undefined} className={`mobile-nav-item ${location.pathname === '/pedidos' ? 'is-active' : ''}`}><ListOrdered size={22} /><span>Pedidos</span></Link>}
           {can(session, 'cozinha.operar') && !can(session, 'dashboard.visualizar') && <Link to="/cozinha" aria-current={location.pathname === '/cozinha' ? 'page' : undefined} className={`mobile-nav-item ${location.pathname === '/cozinha' ? 'is-active' : ''}`}><ChefHat size={22} /><span>Cozinha</span></Link>}
