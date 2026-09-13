@@ -53,7 +53,7 @@ const Settings = () => {
   };
 
   return (
-    <div className="p-6 md:p-10 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 h-full flex flex-col overflow-y-auto pb-20">
+    <div className="p-6 md:p-10 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
       <header className="mb-8 flex flex-col md:flex-row justify-between md:items-end gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-white font-heading drop-shadow-sm">Configurações</h2>
