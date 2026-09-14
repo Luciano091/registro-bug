@@ -7,13 +7,14 @@ type NativeGoogleAuth = { signIn: () => Promise<{ credential: string }> };
 type CapacitorAuthBridge = {
   isNativePlatform?: () => boolean;
   isPluginAvailable?: (name: string) => boolean;
-  registerPlugin?: (name: string) => NativeGoogleAuth;
+  Plugins?: { NativeGoogleAuth?: NativeGoogleAuth };
 };
 
 export const ContaView = () => {
   const capacitor = (window as Window & { Capacitor?: CapacitorAuthBridge }).Capacitor;
   const isNativeApp = capacitor?.isNativePlatform?.() === true || navigator.userAgent.includes('BisBurgerApp');
-  const hasNativeGoogleAuth = isNativeApp && capacitor?.isPluginAvailable?.('NativeGoogleAuth') === true;
+  const nativeGoogleAuth = capacitor?.Plugins?.NativeGoogleAuth;
+  const hasNativeGoogleAuth = isNativeApp && capacitor?.isPluginAvailable?.('NativeGoogleAuth') === true && typeof nativeGoogleAuth?.signIn === 'function';
   const [nome, setNome] = useState('');
   const [telefone, setTelefone] = useState('');
   const [endereco, setEndereco] = useState('');
@@ -76,11 +77,14 @@ export const ContaView = () => {
   };
 
   const handleNativeGoogleSignIn = async () => {
-    if (!capacitor?.registerPlugin) return;
     setGoogleError('');
+    if (!nativeGoogleAuth?.signIn) {
+      setGoogleError('O acesso Google não está disponível neste aplicativo. Baixe a atualização.');
+      return;
+    }
     setGoogleLoading(true);
     try {
-      const credential = await capacitor.registerPlugin('NativeGoogleAuth').signIn();
+      const credential = await nativeGoogleAuth.signIn();
       await handleGoogleSuccess(credential);
     } catch (error) {
       console.error('Erro no acesso Google do Android:', error);
