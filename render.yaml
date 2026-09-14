@@ -17,6 +17,8 @@ services:
         value: production
       - key: CORS_ORIGINS
         sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
       - key: PANEL_URL
         value: https://painel.ritmesa.com.br
       - key: RESEND_API_KEY

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { User, Save, Phone, MapPin, LogOut } from 'lucide-react';
-import { GoogleLogin } from '@react-oauth/google';
+import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import api from '../services/api';
 
 export const ContaView = () => {
@@ -11,6 +11,7 @@ export const ContaView = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [foto, setFoto] = useState('');
   const [email, setEmail] = useState('');
+  const [googleError, setGoogleError] = useState('');
 
   useEffect(() => {
     setNome(localStorage.getItem('user_nome') || '');
@@ -33,7 +34,12 @@ export const ContaView = () => {
     setTimeout(() => setSaved(false), 2000);
   };
 
-  const handleGoogleSuccess = async (credentialResponse: any) => {
+  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+    if (!credentialResponse.credential) {
+      setGoogleError('Não foi possível receber a confirmação do Google. Tente novamente.');
+      return;
+    }
+    setGoogleError('');
     try {
       const response = await api.post('/auth/google', { token: credentialResponse.credential });
       const data = response.data;
@@ -54,7 +60,7 @@ export const ContaView = () => {
       setIsLoggedIn(true);
     } catch (error) {
       console.error('Erro ao fazer login:', error);
-      alert('Falha ao autenticar com o Google. Tente novamente.');
+      setGoogleError('Não foi possível entrar com Google agora. Você pode preencher seus dados abaixo.');
     }
   };
 
@@ -65,96 +71,50 @@ export const ContaView = () => {
     setIsLoggedIn(false);
     setFoto('');
     setEmail('');
+    setGoogleError('');
   };
 
   return (
-    <div className="p-6 max-w-lg mx-auto">
-      <div className="flex items-center gap-4 mb-8">
+    <div className="mx-auto w-full max-w-lg px-4 pb-8 pt-5 md:px-6">
+      <header className="mb-5 flex items-center gap-3">
         {isLoggedIn && foto ? (
-          <img src={foto} alt="Perfil" className="w-16 h-16 rounded-full border-2 border-brand-500 object-cover" />
+          <img src={foto} alt="Foto do perfil" className="h-12 w-12 shrink-0 rounded-2xl border border-brand-200 object-cover" />
         ) : (
-          <div className="w-16 h-16 bg-brand-500/10 rounded-full flex items-center justify-center text-brand-500">
-            <User size={32} />
-          </div>
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-orange-50 text-brand-600"><User size={24} /></div>
         )}
-        
-        <div className="flex-1">
-          <h2 className="text-xl font-heading font-bold text-zinc-900">Minha Conta</h2>
-          <p className="text-zinc-500 text-sm">{isLoggedIn ? email : 'Seus dados para agilizar o pedido'}</p>
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl font-heading font-bold leading-tight text-zinc-900">Minha conta</h1>
+          <p className="mt-0.5 truncate text-xs text-zinc-500">{isLoggedIn ? email : 'Seus dados para pedir mais rápido'}</p>
         </div>
-        
-        {isLoggedIn && (
-          <button onClick={handleLogout} className="flex items-center gap-2 p-2 text-zinc-400 hover:text-red-500 transition-colors">
-            <span className="text-sm font-bold">Sair</span>
-            <LogOut size={20} />
-          </button>
-        )}
-      </div>
+        {isLoggedIn && <button type="button" onClick={handleLogout} className="flex min-h-10 items-center gap-1.5 rounded-xl px-2 text-sm font-semibold text-zinc-500 transition-colors hover:bg-red-50 hover:text-red-600"><LogOut size={17} />Sair</button>}
+      </header>
 
-      {!isLoggedIn && (
-        <div className="mb-8 p-4 bg-white border border-zinc-200 rounded-xl flex flex-col items-center text-center">
-          <p className="text-sm font-bold text-zinc-700 mb-4">Cadastre-se rapidamente para não precisar preencher seus dados sempre</p>
-          <GoogleLogin
-            onSuccess={handleGoogleSuccess}
-            onError={() => {
-              console.log('Login Failed');
-            }}
-            useOneTap
-          />
-        </div>
-      )}
+      {!isLoggedIn && <section className="mb-5 rounded-2xl border border-zinc-200 bg-white p-4 text-center shadow-sm">
+        <h2 className="text-base font-heading font-bold text-zinc-900">Entre com Google</h2>
+        <p className="mt-1 text-xs leading-relaxed text-zinc-500">Acesse seus dados em outros aparelhos.</p>
+        <div className="mt-3 flex justify-center"><GoogleLogin onSuccess={handleGoogleSuccess} onError={() => setGoogleError('Não foi possível abrir o login Google. Tente novamente.')} text="continue_with" size="large" shape="pill" width="280" /></div>
+        {googleError && <p role="alert" className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-left text-xs text-red-700">{googleError}</p>}
+        <p className="mt-3 text-xs text-zinc-400">Ou preencha seus dados abaixo sem entrar.</p>
+      </section>}
 
-      <div className="space-y-4">
-        <div>
-          <label className="block text-xs font-bold text-zinc-500 mb-1.5 uppercase tracking-wide">Nome Completo</label>
-          <div className="relative">
-            <User size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
-            <input 
-              type="text" 
-              value={nome}
-              onChange={e => setNome(e.target.value)}
-              className="w-full bg-white border border-zinc-200 rounded-xl py-3 pl-10 pr-4 text-sm text-zinc-900 focus:outline-none focus:border-brand-500"
-              placeholder="Como quer ser chamado?"
-            />
+      <section className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+        <h2 className="mb-4 text-sm font-heading font-bold text-zinc-900">Dados para o pedido</h2>
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="conta-nome" className="mb-1.5 block text-xs font-semibold text-zinc-600">Nome completo</label>
+            <div className="relative"><User size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" /><input id="conta-nome" type="text" autoComplete="name" value={nome} onChange={e => setNome(e.target.value)} className="min-h-11 w-full rounded-xl border border-zinc-200 bg-white py-2.5 pl-10 pr-4 text-sm text-zinc-900 focus:border-brand-500 focus:outline-none" placeholder="Como quer ser chamado?" /></div>
           </div>
-        </div>
-        
-        <div>
-          <label className="block text-xs font-bold text-zinc-500 mb-1.5 uppercase tracking-wide">WhatsApp</label>
-          <div className="relative">
-            <Phone size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
-            <input 
-              type="tel" 
-              value={telefone}
-              onChange={e => setTelefone(e.target.value)}
-              className="w-full bg-white border border-zinc-200 rounded-xl py-3 pl-10 pr-4 text-sm text-zinc-900 focus:outline-none focus:border-brand-500"
-              placeholder="(11) 99999-9999"
-            />
+          <div>
+            <label htmlFor="conta-telefone" className="mb-1.5 block text-xs font-semibold text-zinc-600">WhatsApp</label>
+            <div className="relative"><Phone size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" /><input id="conta-telefone" type="tel" autoComplete="tel" value={telefone} onChange={e => setTelefone(e.target.value)} className="min-h-11 w-full rounded-xl border border-zinc-200 bg-white py-2.5 pl-10 pr-4 text-sm text-zinc-900 focus:border-brand-500 focus:outline-none" placeholder="(11) 99999-9999" /></div>
           </div>
-        </div>
-
-        <div>
-          <label className="block text-xs font-bold text-zinc-500 mb-1.5 uppercase tracking-wide">Endereço Principal</label>
-          <div className="relative">
-            <MapPin size={18} className="absolute left-3.5 top-3 text-zinc-400" />
-            <textarea 
-              value={endereco}
-              onChange={e => setEndereco(e.target.value)}
-              className="w-full bg-white border border-zinc-200 rounded-xl py-3 pl-10 pr-4 text-sm text-zinc-900 focus:outline-none focus:border-brand-500 min-h-[80px] resize-none"
-              placeholder="Rua, número, bairro..."
-            />
+          <div>
+            <label htmlFor="conta-endereco" className="mb-1.5 block text-xs font-semibold text-zinc-600">Endereço principal</label>
+            <div className="relative"><MapPin size={18} className="absolute left-3.5 top-3 text-zinc-400" /><textarea id="conta-endereco" autoComplete="street-address" value={endereco} onChange={e => setEndereco(e.target.value)} className="min-h-[68px] w-full resize-none rounded-xl border border-zinc-200 bg-white py-2.5 pl-10 pr-4 text-sm text-zinc-900 focus:border-brand-500 focus:outline-none" placeholder="Rua, número, bairro..." /></div>
           </div>
+          <button type="button" onClick={handleSave} className={`flex min-h-11 w-full items-center justify-center gap-2 rounded-xl font-bold text-white transition-all active:scale-[.98] ${saved ? 'bg-emerald-500' : 'bg-brand-500 hover:bg-brand-600'}`}>{saved ? 'Dados salvos!' : <><Save size={17} />Salvar dados</>}</button>
         </div>
-
-        <button 
-          onClick={handleSave}
-          className={`w-full py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${
-            saved ? 'bg-emerald-500 text-white' : 'bg-brand-500 text-white active:scale-95'
-          }`}
-        >
-          {saved ? 'Dados Salvos!' : <><Save size={18} /> Salvar Dados</>}
-        </button>
-      </div>
+      </section>
     </div>
   );
 };

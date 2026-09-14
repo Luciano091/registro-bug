@@ -6,6 +6,8 @@ import PublicMenu from './pages/PublicMenu';
 import LandingPage from './pages/LandingPage';
 import { getEstablishmentSlug } from './services/api';
 
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '190788590463-vmt6leseuk1o1g8knrsi6f6he801ga1l.apps.googleusercontent.com';
+
 function AppRouter() {
   const slug = getEstablishmentSlug();
 
@@ -32,7 +34,7 @@ function AppRouter() {
 
 function App() {
   return (
-    <GoogleOAuthProvider clientId="190788590463-vmt6leseuk1o1g8knrsi6f6he801ga1l.apps.googleusercontent.com">
+    <GoogleOAuthProvider clientId={googleClientId}>
       <NetworkProvider>
         <CartProvider>
           <Router>

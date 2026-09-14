@@ -329,7 +329,7 @@ def auth_google(token_data: dict, db: Session = Depends(get_db)):
     if not token:
         raise HTTPException(status_code=400, detail="Token não fornecido")
     
-    CLIENT_ID = "190788590463-vmt6leseuk1o1g8knrsi6f6he801ga1l.apps.googleusercontent.com"
+    CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID") or "190788590463-vmt6leseuk1o1g8knrsi6f6he801ga1l.apps.googleusercontent.com"
     try:
         idinfo = id_token.verify_oauth2_token(token, google_requests.Request(), CLIENT_ID)
         
