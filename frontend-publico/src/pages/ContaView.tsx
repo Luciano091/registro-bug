@@ -110,7 +110,7 @@ export const ContaView = () => {
 
   return (
     <div className="mx-auto w-full max-w-lg px-5 pb-8 pt-5 md:px-6">
-      <header className={`mb-5 ${!isLoggedIn && guestStep === 'overview' ? 'border-b border-zinc-200 pb-5 text-center' : ''}`}>
+      <header className={`mb-5 ${!isLoggedIn && guestStep === 'overview' ? 'border-b border-zinc-200 pb-4 text-center' : ''}`}>
         <h1 className="font-heading text-[1.75rem] font-bold leading-tight text-zinc-900">{!isLoggedIn && guestStep === 'overview' ? 'Entrar' : 'Minha conta'}</h1>
         {isLoggedIn && <p className="mt-1 text-sm leading-relaxed text-zinc-500">Gerencie os dados usados nos seus pedidos.</p>}
       </header>
@@ -124,15 +124,11 @@ export const ContaView = () => {
       )}
 
       {!isLoggedIn && guestStep === 'overview' && (
-        <section className="flex min-h-[calc(100dvh-13rem)] flex-col pt-9 sm:min-h-[32rem]">
-          <div className="text-center">
-            <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-orange-50 text-brand-600"><User size={30} strokeWidth={1.8} /></div>
-            <h2 className="mt-6 font-heading text-xl font-bold text-zinc-900">Seus pedidos em um só lugar</h2>
-            <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-zinc-500">Entre com Google para acessar seus dados em qualquer aparelho.</p>
-          </div>
+        <section className="flex min-h-[calc(100dvh-13.75rem)] flex-col pt-8">
+          <p className="mx-auto max-w-xs text-center text-base leading-relaxed text-zinc-600">Entre para acompanhar seus pedidos e salvar seus dados.</p>
           {isNativeApp ? (
             hasNativeGoogleAuth ? (
-              <button type="button" onClick={handleNativeGoogleSignIn} disabled={googleLoading} className="mt-9 flex min-h-14 w-full items-center justify-center gap-3 rounded-xl border border-zinc-300 bg-white px-3 text-base font-semibold text-zinc-900 transition-colors hover:border-zinc-400 hover:bg-zinc-50 active:bg-zinc-100 disabled:opacity-60">
+              <button type="button" onClick={handleNativeGoogleSignIn} disabled={googleLoading} className="mt-7 flex min-h-14 w-full items-center justify-center gap-3 rounded-xl border border-zinc-300 bg-white px-3 text-base font-semibold text-zinc-900 transition-colors hover:border-zinc-400 hover:bg-zinc-50 active:bg-zinc-100 disabled:opacity-60">
                 <img src="/google-g.png" alt="" className="h-5 w-5 shrink-0 object-contain" />
                 {googleLoading ? 'Conectando...' : 'Continuar com Google'}
               </button>
@@ -140,15 +136,14 @@ export const ContaView = () => {
               <p className="mt-5 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-900">Atualize o aplicativo para entrar com Google. <a className="font-bold underline" href="/app-bisburger.apk?v=1.0.3" target="_blank" rel="noreferrer">Baixar atualização</a></p>
             )
           ) : (
-            <div className="mt-9 flex justify-center"><GoogleLogin onSuccess={handleGoogleSuccess} onError={() => setGoogleError('Não foi possível abrir o login Google. Tente novamente.')} use_fedcm_for_button text="continue_with" size="large" shape="pill" width="280" /></div>
+            <div className="mt-7 flex justify-center"><GoogleLogin onSuccess={handleGoogleSuccess} onError={() => setGoogleError('Não foi possível abrir o login Google. Tente novamente.')} use_fedcm_for_button text="continue_with" size="large" shape="pill" width="280" /></div>
           )}
           {googleError && <p role="alert" className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">{googleError}</p>}
-          <div className="my-7 flex items-center gap-4 text-xs font-medium text-zinc-400"><span className="h-px flex-1 bg-zinc-200" /><span>ou</span><span className="h-px flex-1 bg-zinc-200" /></div>
-          <button type="button" onClick={() => setGuestStep('details')} className="flex min-h-12 w-full items-center justify-center rounded-xl px-3 text-sm font-semibold text-zinc-700 transition-colors hover:bg-zinc-50 hover:text-zinc-900">Continuar sem conta</button>
-          <p className="mt-2 text-center text-xs leading-relaxed text-zinc-500">Você também pode fazer pedidos sem entrar.</p>
-          <div className="mt-auto pt-14 text-center">
-            <p className="font-heading text-lg font-bold tracking-tight text-zinc-800">BisBurger</p>
-            <p className="mt-1 text-[11px] text-zinc-400">Pedidos com tecnologia Ritmesa</p>
+          <div className="my-6 flex items-center gap-4 text-xs font-medium text-zinc-400"><span className="h-px flex-1 bg-zinc-200" /><span>ou</span><span className="h-px flex-1 bg-zinc-200" /></div>
+          <button type="button" onClick={() => setGuestStep('details')} className="flex min-h-11 w-full items-center justify-center rounded-xl px-3 text-sm font-semibold text-zinc-700 transition-colors hover:bg-zinc-50 hover:text-zinc-900">Continuar sem conta</button>
+          <div className="mt-auto flex flex-col items-center pt-8 text-center">
+            <img src="/logo.png" alt="BisBurger" className="h-16 w-16 rounded-xl object-contain" />
+            <p className="mt-2 text-[11px] text-zinc-400">Pedidos com tecnologia Ritmesa</p>
           </div>
         </section>
       )}
