@@ -1,7 +1,7 @@
 {
   "name": "bisburger-native",
   "private": true,
-  "version": "1.0.2",
+  "version": "1.0.3",
   "scripts": {
     "sync": "cap sync android",
     "open": "cap open android"

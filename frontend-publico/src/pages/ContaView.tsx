@@ -3,7 +3,17 @@ import { User, Save, Phone, MapPin, LogOut } from 'lucide-react';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import api from '../services/api';
 
+type NativeGoogleAuth = { signIn: () => Promise<{ credential: string }> };
+type CapacitorAuthBridge = {
+  isNativePlatform?: () => boolean;
+  isPluginAvailable?: (name: string) => boolean;
+  registerPlugin?: (name: string) => NativeGoogleAuth;
+};
+
 export const ContaView = () => {
+  const capacitor = (window as Window & { Capacitor?: CapacitorAuthBridge }).Capacitor;
+  const isNativeApp = capacitor?.isNativePlatform?.() === true || navigator.userAgent.includes('BisBurgerApp');
+  const hasNativeGoogleAuth = isNativeApp && capacitor?.isPluginAvailable?.('NativeGoogleAuth') === true;
   const [nome, setNome] = useState('');
   const [telefone, setTelefone] = useState('');
   const [endereco, setEndereco] = useState('');
@@ -12,6 +22,7 @@ export const ContaView = () => {
   const [foto, setFoto] = useState('');
   const [email, setEmail] = useState('');
   const [googleError, setGoogleError] = useState('');
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   useEffect(() => {
     setNome(localStorage.getItem('user_nome') || '');
@@ -64,6 +75,21 @@ export const ContaView = () => {
     }
   };
 
+  const handleNativeGoogleSignIn = async () => {
+    if (!capacitor?.registerPlugin) return;
+    setGoogleError('');
+    setGoogleLoading(true);
+    try {
+      const credential = await capacitor.registerPlugin('NativeGoogleAuth').signIn();
+      await handleGoogleSuccess(credential);
+    } catch (error) {
+      console.error('Erro no acesso Google do Android:', error);
+      setGoogleError('Não foi possível concluir o acesso Google. Tente novamente.');
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('cliente_token');
     localStorage.removeItem('user_email');
@@ -92,7 +118,20 @@ export const ContaView = () => {
       {!isLoggedIn && <section className="mb-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
         <h2 className="text-base font-heading font-bold text-zinc-900">Entre com Google</h2>
         <p className="mt-1 text-xs text-zinc-500">Seus dados disponíveis em outros aparelhos.</p>
-        <div className="mt-3 flex justify-center"><GoogleLogin onSuccess={handleGoogleSuccess} onError={() => setGoogleError('Não foi possível abrir o login Google. Tente novamente.')} use_fedcm_for_button text="continue_with" size="large" shape="pill" width="280" /></div>
+        {isNativeApp ? (
+          hasNativeGoogleAuth ? (
+            <button type="button" onClick={handleNativeGoogleSignIn} disabled={googleLoading} className="mt-3 flex min-h-11 w-full items-center justify-center rounded-full border border-[#747775] bg-white px-4 font-semibold text-[#1f1f1f] transition-colors active:bg-zinc-100 disabled:opacity-60">
+              <img src="/google-g.png" alt="" className="mr-3 h-5 w-5 object-contain" />
+              {googleLoading ? 'Conectando ao Google...' : 'Continuar com Google'}
+            </button>
+          ) : (
+            <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              Atualize o aplicativo para entrar com Google. <a className="font-bold underline" href="/app-bisburger.apk?v=1.0.3" target="_blank" rel="noreferrer">Baixar atualização</a>
+            </p>
+          )
+        ) : (
+          <div className="mt-3 flex justify-center"><GoogleLogin onSuccess={handleGoogleSuccess} onError={() => setGoogleError('Não foi possível abrir o login Google. Tente novamente.')} use_fedcm_for_button text="continue_with" size="large" shape="pill" width="280" /></div>
+        )}
         {googleError && <p role="alert" className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-left text-xs text-red-700">{googleError}</p>}
       </section>}
 
