@@ -92,7 +92,7 @@ export const ContaView = () => {
       {!isLoggedIn && <section className="mb-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
         <h2 className="text-base font-heading font-bold text-zinc-900">Entre com Google</h2>
         <p className="mt-1 text-xs text-zinc-500">Seus dados disponíveis em outros aparelhos.</p>
-        <div className="mt-3 flex justify-center"><GoogleLogin onSuccess={handleGoogleSuccess} onError={() => setGoogleError('Não foi possível abrir o login Google. Tente novamente.')} text="continue_with" size="large" shape="pill" width="280" /></div>
+        <div className="mt-3 flex justify-center"><GoogleLogin onSuccess={handleGoogleSuccess} onError={() => setGoogleError('Não foi possível abrir o login Google. Tente novamente.')} use_fedcm_for_button text="continue_with" size="large" shape="pill" width="280" /></div>
         {googleError && <p role="alert" className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-left text-xs text-red-700">{googleError}</p>}
       </section>}
 
