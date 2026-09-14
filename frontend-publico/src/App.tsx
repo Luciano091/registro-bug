@@ -34,7 +34,7 @@ function AppRouter() {
 
 function App() {
   return (
-    <GoogleOAuthProvider clientId={googleClientId}>
+    <GoogleOAuthProvider clientId={googleClientId} locale="pt-BR">
       <NetworkProvider>
         <CartProvider>
           <Router>
