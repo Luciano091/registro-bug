@@ -6,7 +6,7 @@ import PublicMenu from './pages/PublicMenu';
 import LandingPage from './pages/LandingPage';
 import { getEstablishmentSlug } from './services/api';
 
-const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '190788590463-vmt6leseuk1o1g8knrsi6f6he801ga1l.apps.googleusercontent.com';
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '836965237182-kmgamm79oo3ft7kgifqom9ulj5u37mt2.apps.googleusercontent.com';
 
 function AppRouter() {
   const slug = getEstablishmentSlug();
