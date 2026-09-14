@@ -544,6 +544,48 @@ def update_pedido_status(db: Session, pedido_id: int, status: str, estabelecimen
         db.refresh(db_pedido)
     return db_pedido
 
+def confirmar_pagamento_pedido(db: Session, pedido_id: int, estabelecimento_id: int, forma_pagamento: str):
+    pedido = db.query(models.Pedido).filter(
+        models.Pedido.id == pedido_id,
+        models.Pedido.estabelecimento_id == estabelecimento_id,
+    ).with_for_update().first()
+    if not pedido:
+        return None
+    if pedido.status == "Cancelado":
+        raise ValueError("Não é possível confirmar pagamento de um pedido cancelado.")
+    if pedido.pagamento_confirmado_em:
+        return pedido
+
+    venda_existente = db.query(models.MovimentacaoCaixa).join(models.Caixa).filter(
+        models.Caixa.estabelecimento_id == estabelecimento_id,
+        models.MovimentacaoCaixa.tipo == "venda",
+        models.MovimentacaoCaixa.descricao == f"Pedido #{pedido.numero}",
+    ).order_by(models.MovimentacaoCaixa.id).first()
+    if venda_existente:
+        pedido.pagamento_confirmado_em = venda_existente.data or models.get_now()
+        db.commit()
+        db.refresh(pedido)
+        return pedido
+
+    caixa = get_caixa_aberto(db, estabelecimento_id)
+    if not caixa:
+        raise ValueError("Abra o caixa antes de confirmar o recebimento.")
+
+    confirmado_em = models.get_now()
+    pedido.forma_pagamento = forma_pagamento.strip()
+    pedido.pagamento_confirmado_em = confirmado_em
+    db.add(models.MovimentacaoCaixa(
+        caixa_id=caixa.id,
+        tipo="venda",
+        valor=pedido.total,
+        forma_pagamento=pedido.forma_pagamento,
+        descricao=f"Pedido #{pedido.numero}",
+        data=confirmado_em,
+    ))
+    db.commit()
+    db.refresh(pedido)
+    return pedido
+
 # --- Salão, mesas e comandas ---
 def get_mesas(db: Session, estabelecimento_id: int):
     return db.query(models.Mesa).filter(models.Mesa.estabelecimento_id == estabelecimento_id).order_by(models.Mesa.ordem, models.Mesa.numero).all()
@@ -1409,6 +1451,15 @@ def cancelar_pedido(db: Session, pedido_id: int, motivo: str, estornado: bool, e
     ja_cancelado = pedido.status == "Cancelado"
     if ja_cancelado and (not estornado or pedido.estornado):
         return pedido
+    venda = None
+    if estornado and not pedido.estornado:
+        venda = db.query(models.MovimentacaoCaixa).join(models.Caixa).filter(
+            models.Caixa.estabelecimento_id == estabelecimento_id,
+            models.MovimentacaoCaixa.tipo == "venda",
+            models.MovimentacaoCaixa.descricao == f"Pedido #{pedido.numero}",
+        ).order_by(models.MovimentacaoCaixa.id.desc()).first()
+        if not venda:
+            raise ValueError("Este pedido não tem recebimento registrado para devolver.")
     if not ja_cancelado and pedido.status not in ("Finalizado", "Concluído", "Entregue"):
         for item in pedido.itens:
             if item.produto:
@@ -1428,17 +1479,11 @@ def cancelar_pedido(db: Session, pedido_id: int, motivo: str, estornado: bool, e
     if pedido.entrega:
         pedido.entrega.status = "cancelada"
     if estornado and not pedido.estornado:
-        venda = db.query(models.MovimentacaoCaixa).join(models.Caixa).filter(
-            models.Caixa.estabelecimento_id == estabelecimento_id,
-            models.MovimentacaoCaixa.tipo == "venda",
-            models.MovimentacaoCaixa.descricao == f"Pedido #{pedido.numero}",
-        ).order_by(models.MovimentacaoCaixa.id.desc()).first()
-        if venda:
-            db.add(models.MovimentacaoCaixa(
-                caixa_id=venda.caixa_id, tipo="estorno", valor=pedido.total,
-                forma_pagamento=pedido.forma_pagamento,
-                descricao=f"Estorno do pedido #{pedido.numero}",
-            ))
+        db.add(models.MovimentacaoCaixa(
+            caixa_id=venda.caixa_id, tipo="estorno", valor=pedido.total,
+            forma_pagamento=pedido.forma_pagamento,
+            descricao=f"Estorno do pedido #{pedido.numero}",
+        ))
         pedido.estornado = True
     db.commit()
     db.refresh(pedido)

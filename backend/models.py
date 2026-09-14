@@ -234,6 +234,7 @@ class Pedido(Base):
     tipo_entrega = Column(String) # "Delivery" ou "Retirada"
     cliente_id = Column(Integer, ForeignKey("clientes.id"), nullable=True)
     forma_pagamento = Column(String) # "Pix", "Cartão", "Dinheiro"
+    pagamento_confirmado_em = Column(DateTime, nullable=True)
     status = Column(String, default="Recebido")
     subtotal = Column(Numeric(10, 2, asdecimal=False), default=0.0)
     taxa_entrega = Column(Numeric(10, 2, asdecimal=False), default=0.0)

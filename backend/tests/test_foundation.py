@@ -72,6 +72,62 @@ class FoundationTests(unittest.TestCase):
         self.assertNotIn("configuracoes.visualizar", auth.PERMISSOES_POR_PERFIL["entregador"])
         self.assertEqual(auth.PERMISSOES_POR_PERFIL["proprietario"], {"*"})
 
+    def test_manual_payment_confirmation_posts_one_cash_sale(self):
+        establishment = self.create_establishment("Caixa Manual", "caixa-manual", "caixa@teste.com")
+        other = self.create_establishment("Outro Caixa", "outro-caixa", "outro-caixa@teste.com")
+        product = crud.create_produto(self.db, schemas.ProdutoCreate(nome="Lanche", categoria="Lanches", preco=20), establishment.id)
+        cash = crud.abrir_caixa(self.db, schemas.CaixaCreate(operador="Caixa", saldo_inicial=0), establishment.id)
+        order = crud.create_pedido(self.db, schemas.PedidoCreate(
+            cliente="Ana", telefone="", tipo_entrega="Retirada", forma_pagamento="PIX",
+            itens=[schemas.ItemPedidoCreate(produto_id=product.id, quantidade=1)],
+        ), establishment.id)
+
+        self.assertIsNone(order.pagamento_confirmado_em)
+        self.assertEqual(self.db.query(models.MovimentacaoCaixa).count(), 0)
+        self.assertIsNone(crud.confirmar_pagamento_pedido(self.db, order.id, other.id, "Dinheiro"))
+        confirmed = crud.confirmar_pagamento_pedido(self.db, order.id, establishment.id, "Dinheiro")
+        self.assertIsNotNone(confirmed.pagamento_confirmado_em)
+        self.assertEqual(confirmed.forma_pagamento, "Dinheiro")
+        self.assertEqual(self.db.query(models.MovimentacaoCaixa).count(), 1)
+        sale = cash.movimentacoes[0]
+        self.assertEqual(sale.tipo, "venda")
+        self.assertEqual(sale.valor, order.total)
+        self.assertEqual(sale.forma_pagamento, "Dinheiro")
+
+        crud.confirmar_pagamento_pedido(self.db, order.id, establishment.id, "PIX")
+        self.assertEqual(self.db.query(models.MovimentacaoCaixa).count(), 1)
+        self.assertEqual(order.forma_pagamento, "Dinheiro")
+
+    def test_unpaid_order_cannot_register_refund(self):
+        establishment = self.create_establishment("Sem Recebimento", "sem-recebimento", "sem@teste.com")
+        product = crud.create_produto(self.db, schemas.ProdutoCreate(nome="Lanche", categoria="Lanches", preco=20), establishment.id)
+        crud.abrir_caixa(self.db, schemas.CaixaCreate(operador="Caixa", saldo_inicial=0), establishment.id)
+        order = crud.create_pedido(self.db, schemas.PedidoCreate(
+            cliente="Ana", telefone="", tipo_entrega="Retirada", forma_pagamento="PIX",
+            itens=[schemas.ItemPedidoCreate(produto_id=product.id, quantidade=1)],
+        ), establishment.id)
+        with self.assertRaisesRegex(ValueError, "não tem recebimento"):
+            crud.cancelar_pedido(self.db, order.id, "Cliente desistiu", True, establishment.id)
+        self.assertNotEqual(order.status, "Cancelado")
+        self.assertFalse(order.estornado)
+        self.assertEqual(self.db.query(models.MovimentacaoCaixa).count(), 0)
+
+    def test_old_cash_sale_is_not_posted_again_on_confirmation(self):
+        establishment = self.create_establishment("Caixa Antigo", "caixa-antigo", "antigo@teste.com")
+        product = crud.create_produto(self.db, schemas.ProdutoCreate(nome="Suco", categoria="Bebidas", preco=8), establishment.id)
+        cash = crud.abrir_caixa(self.db, schemas.CaixaCreate(operador="Caixa", saldo_inicial=0), establishment.id)
+        order = crud.create_pedido(self.db, schemas.PedidoCreate(
+            cliente="Bia", telefone="", tipo_entrega="Retirada", forma_pagamento="PIX",
+            itens=[schemas.ItemPedidoCreate(produto_id=product.id, quantidade=1)],
+        ), establishment.id)
+        crud.add_movimentacao(self.db, cash.id, schemas.MovimentacaoCaixaCreate(
+            tipo="venda", valor=order.total, forma_pagamento="PIX", descricao=f"Pedido #{order.numero}",
+        ))
+        crud.confirmar_pagamento_pedido(self.db, order.id, establishment.id, "Dinheiro")
+        self.assertIsNotNone(order.pagamento_confirmado_em)
+        self.assertEqual(order.forma_pagamento, "PIX")
+        self.assertEqual(self.db.query(models.MovimentacaoCaixa).count(), 1)
+
     def test_combo_deducts_linked_stock_and_cancellation_restores_it_once(self):
         establishment = self.create_establishment("Combo", "combo", "combo@teste.com")
         other = self.create_establishment("Outro Combo", "outro-combo", "outro-combo@teste.com")

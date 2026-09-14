@@ -3,6 +3,9 @@ import { useState, useEffect } from 'react';
 import { Search, Clock, CheckCircle2, Loader2, MessageCircle, X, Eye, MapPin, RotateCcw } from 'lucide-react';
 import api from '../services/api';
 import { useAppData } from '../contexts/AppDataContext';
+import { can, readSession } from '../services/session';
+
+const PAYMENT_METHODS = ['PIX', 'Cartão de Crédito', 'Cartão de Débito', 'Dinheiro'];
 
 const statusColors: any = {
   'Recebido': 'bg-blue-500/10 text-blue-400 border-blue-500/20 shadow-[0_0_10px_rgba(59,130,246,0.15)] backdrop-blur-md',
@@ -32,6 +35,9 @@ const Orders = () => {
   const [cancelModalOrderId, setCancelModalOrderId] = useState<number | null>(null);
   const [cancelMotivo, setCancelMotivo] = useState('');
   const [cancelEstornado, setCancelEstornado] = useState(false);
+  const [receivedMethod, setReceivedMethod] = useState('PIX');
+  const [confirmingPayment, setConfirmingPayment] = useState(false);
+  const canConfirmPayment = can(readSession(), 'caixa.operar');
   const { orders: cachedOrders, ordersLoaded, refreshOrders, updateOrderStatus: optimisticUpdateStatus } = useAppData();
   const orders = cachedOrders;
 
@@ -75,12 +81,28 @@ const Orders = () => {
   const openOrderDetails = async (order: any) => {
     setDetailLoading(order.id);
     try {
-      setSelectedOrder(await getOrderDetails(order));
+      const detail = await getOrderDetails(order);
+      setReceivedMethod(detail.forma_pagamento || 'PIX');
+      setSelectedOrder(detail);
     } catch (error) {
       console.error(error);
       alert('Não foi possível carregar os detalhes do pedido.');
     } finally {
       setDetailLoading(null);
+    }
+  };
+
+  const confirmPayment = async () => {
+    if (!selectedOrder || confirmingPayment) return;
+    setConfirmingPayment(true);
+    try {
+      const { data } = await api.post(`/pedidos/${selectedOrder.id}/pagamento/confirmar`, { forma_pagamento: receivedMethod });
+      setSelectedOrder(data);
+      await refreshOrders();
+    } catch (error: any) {
+      alert(error.response?.data?.detail || 'Não foi possível confirmar o recebimento.');
+    } finally {
+      setConfirmingPayment(false);
     }
   };
 
@@ -287,6 +309,9 @@ const Orders = () => {
                       <span className="font-bold text-brand-400">
                         R$ {order.total.toFixed(2)}
                       </span>
+                      <span className={`mt-1 block text-[11px] font-semibold ${order.estornado ? 'text-zinc-400' : order.pagamento_confirmado_em ? 'text-emerald-400' : order.status === 'Cancelado' ? 'text-zinc-400' : 'text-amber-400'}`}>
+                        {order.estornado ? 'Devolução registrada' : order.pagamento_confirmado_em ? 'Recebido' : order.status === 'Cancelado' ? 'Cancelado' : 'A receber'}
+                      </span>
                     </td>
                     
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -356,12 +381,31 @@ const Orders = () => {
                 <div className="bg-dark-900 p-3 rounded-xl border border-white/5">
                   <span className="text-zinc-400 block text-xs mb-1">Pagamento</span>
                   <span className="text-zinc-200 font-medium">{selectedOrder.forma_pagamento || '-'}</span>
+                  <span className={`block mt-1 text-xs font-semibold ${selectedOrder.estornado ? 'text-zinc-400' : selectedOrder.pagamento_confirmado_em ? 'text-emerald-400' : 'text-amber-400'}`}>
+                    {selectedOrder.estornado ? 'Devolução registrada' : selectedOrder.pagamento_confirmado_em ? 'Recebido' : 'A receber'}
+                  </span>
                 </div>
                 <div className="col-span-2 bg-dark-900 p-3 rounded-xl border border-white/5">
                   <span className="text-zinc-400 block text-xs mb-1">Entrega ({selectedOrder.tipo_entrega})</span>
                   <span className="text-zinc-200 font-medium">{selectedOrder.endereco || 'Retirada no Local'}</span>
                 </div>
               </div>
+
+              {!selectedOrder.pagamento_confirmado_em && selectedOrder.status !== 'Cancelado' && canConfirmPayment && (
+                <div className="mb-6 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+                  <h4 className="text-sm font-bold text-white">Confirmar recebimento</h4>
+                  <p className="mt-1 text-xs text-zinc-400">Registre somente depois de receber. A venda será lançada no caixa aberto.</p>
+                  <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                    <select value={receivedMethod} onChange={event => setReceivedMethod(event.target.value)} aria-label="Forma de pagamento recebida" className="min-h-10 flex-1 rounded-lg border border-white/10 bg-dark-900 px-3 text-sm text-white">
+                      {!PAYMENT_METHODS.includes(receivedMethod) && <option value={receivedMethod}>{receivedMethod}</option>}
+                      {PAYMENT_METHODS.map(method => <option key={method} value={method}>{method}</option>)}
+                    </select>
+                    <button type="button" disabled={confirmingPayment} onClick={confirmPayment} className="min-h-10 rounded-lg bg-emerald-600 px-4 text-sm font-bold text-white disabled:opacity-60">
+                      {confirmingPayment ? 'Confirmando...' : 'Confirmar recebimento'}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-3">
                 <h4 className="text-sm font-semibold text-zinc-300 uppercase tracking-wider mb-2">Itens do Pedido</h4>
@@ -396,7 +440,9 @@ const Orders = () => {
             <button type="button" onClick={() => setCancelModalOrderId(null)} className="absolute right-4 top-4 text-zinc-400 hover:text-white"><X size={20} /></button>
             <div className="mb-5 flex items-center gap-3"><div className="rounded-xl bg-red-500/10 p-3 text-red-400"><RotateCcw /></div><div><h2 className="text-xl font-bold text-white">Cancelar pedido</h2><p className="text-sm text-zinc-400">O motivo ficará registrado na auditoria.</p></div></div>
             <label className="block text-sm font-semibold text-zinc-300">Motivo do cancelamento<textarea required minLength={3} maxLength={500} value={cancelMotivo} onChange={event => setCancelMotivo(event.target.value)} className="mt-2 h-24 w-full resize-none rounded-xl border border-white/10 bg-dark-950 p-3 text-white outline-none focus:border-red-500" placeholder="Ex.: cliente desistiu do pedido" /></label>
-            <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-white/[.03] p-4"><input type="checkbox" checked={cancelEstornado} onChange={event => setCancelEstornado(event.target.checked)} className="mt-1 h-4 w-4 accent-red-500" /><span><strong className="block text-sm text-white">Registrar devolução do pagamento</strong><small className="text-zinc-400">Lança a saída no caixa. O reembolso no banco ou maquininha deve estar confirmado.</small></span></label>
+            {cachedOrders.find(order => order.id === cancelModalOrderId)?.pagamento_confirmado_em ? (
+              <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-white/[.03] p-4"><input type="checkbox" checked={cancelEstornado} onChange={event => setCancelEstornado(event.target.checked)} className="mt-1 h-4 w-4 accent-red-500" /><span><strong className="block text-sm text-white">Registrar devolução do pagamento</strong><small className="text-zinc-400">Lança a saída no caixa. O reembolso no banco ou maquininha deve estar confirmado.</small></span></label>
+            ) : <p className="mt-4 text-sm text-zinc-400">Este pedido ainda não tem pagamento registrado.</p>}
             <div className="mt-6 flex gap-3"><button type="button" onClick={() => setCancelModalOrderId(null)} className="flex-1 rounded-xl bg-white/5 py-3 font-bold text-zinc-300">Voltar</button><button className="flex-1 rounded-xl bg-red-500 py-3 font-bold text-white hover:bg-red-600">Confirmar</button></div>
           </form>
         </div>

@@ -276,6 +276,9 @@ class PedidoCreate(PedidoBase):
 class PedidoAdminCreate(PedidoCreate):
     taxa_entrega_manual: Optional[float] = Field(default=None, ge=0)
 
+class ConfirmacaoPagamento(BaseModel):
+    forma_pagamento: str = Field(min_length=2, max_length=50)
+
 class PedidoResumo(PedidoBase):
     id: int
     numero: str
@@ -286,6 +289,7 @@ class PedidoResumo(PedidoBase):
     desconto: float = 0.0
     total: float
     data: datetime
+    pagamento_confirmado_em: Optional[datetime] = None
 
     class Config:
         from_attributes = True

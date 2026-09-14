@@ -377,6 +377,7 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
                     </button>
                   ))}
                 </div>
+                <p className="mt-2 text-xs leading-relaxed text-zinc-500">O pagamento é feito diretamente ao estabelecimento. O aplicativo não cobra agora.</p>
               </div>
             </div>
           )}

@@ -470,14 +470,6 @@ def create_pedido(slug: str, pedido: schemas.PedidoCreate, background_tasks: Bac
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     
-    # Adicionar movimentação automática
-    mov = schemas.MovimentacaoCaixaCreate(
-        tipo="venda",
-        valor=db_pedido.total,
-        forma_pagamento=db_pedido.forma_pagamento,
-        descricao=f"Pedido #{db_pedido.numero}"
-    )
-    crud.add_movimentacao(db, caixa_aberto.id, mov)
     background_tasks.add_task(realtime.operation_hub.publish, estabelecimento.id, "pedido.criado", db_pedido.id)
     return db_pedido
 
@@ -491,15 +483,20 @@ def create_admin_order(pedido: schemas.PedidoAdminCreate, background_tasks: Back
         db_pedido = crud.create_pedido(db, pedido_base, estabelecimento_id, pedido.taxa_entrega_manual)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
-    movimento = schemas.MovimentacaoCaixaCreate(
-        tipo="venda",
-        valor=db_pedido.total,
-        forma_pagamento=db_pedido.forma_pagamento,
-        descricao=f"Pedido #{db_pedido.numero}",
-    )
-    crud.add_movimentacao(db, caixa_aberto.id, movimento)
+    db_pedido = crud.confirmar_pagamento_pedido(db, db_pedido.id, estabelecimento_id, db_pedido.forma_pagamento)
     background_tasks.add_task(realtime.operation_hub.publish, estabelecimento_id, "pedido.criado", db_pedido.id)
     return db_pedido
+
+@app.post("/pedidos/{pedido_id}/pagamento/confirmar", response_model=schemas.Pedido)
+def confirmar_pagamento_pedido(pedido_id: int, payload: schemas.ConfirmacaoPagamento, background_tasks: BackgroundTasks, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("caixa.operar"))):
+    try:
+        pedido = crud.confirmar_pagamento_pedido(db, pedido_id, usuario.estabelecimento_id, payload.forma_pagamento)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    if not pedido:
+        raise HTTPException(status_code=404, detail="Pedido não encontrado.")
+    background_tasks.add_task(realtime.operation_hub.publish, usuario.estabelecimento_id, "pedido.atualizado", pedido.id)
+    return pedido
 
 # --- Painel de cozinha (KDS) ---
 @app.get("/cozinha/setores", response_model=List[schemas.SetorProducao])
@@ -1288,7 +1285,10 @@ def update_ficha_tecnica(produto_id: int, itens: List[schemas.ProdutoInsumoCreat
 
 @app.post("/pedidos/{pedido_id}/cancelar", response_model=schemas.Pedido)
 def cancelar_pedido(pedido_id: int, payload: schemas.PedidoCancelamento, background_tasks: BackgroundTasks, db: Session = Depends(get_db), atual: auth.UsuarioAutenticado = Depends(auth.require_user_permission("pedidos.atualizar"))):
-    pedido = crud.cancelar_pedido(db, pedido_id, payload.motivo, payload.estornado, atual.estabelecimento_id)
+    try:
+        pedido = crud.cancelar_pedido(db, pedido_id, payload.motivo, payload.estornado, atual.estabelecimento_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
     if not pedido:
         raise HTTPException(status_code=404, detail="Pedido não encontrado")
     crud.create_audit_log(
