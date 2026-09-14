@@ -110,6 +110,19 @@ class CupomValidar(BaseModel):
     codigo: str
     subtotal: float = Field(ge=0)
 
+class CupomConsultar(BaseModel):
+    codigo: str = Field(min_length=2, max_length=40)
+
+class CupomConsultado(BaseModel):
+    codigo: str
+    descricao: Optional[str] = None
+    pedido_minimo: float
+    tipo: str
+    valor: float
+
+    class Config:
+        from_attributes = True
+
 class CupomValidado(BaseModel):
     codigo: str
     desconto: float

@@ -207,7 +207,7 @@ def save_cupom(db: Session, payload: schemas.CupomCreate, estabelecimento_id: in
     db.refresh(cupom)
     return cupom
 
-def validar_cupom(db: Session, codigo: str, subtotal: float, estabelecimento_id: int, bloquear: bool = False):
+def consultar_cupom(db: Session, codigo: str, estabelecimento_id: int, bloquear: bool = False):
     codigo_normalizado = (codigo or "").strip().upper()
     query = db.query(models.Cupom).filter(
         models.Cupom.estabelecimento_id == estabelecimento_id,
@@ -223,6 +223,10 @@ def validar_cupom(db: Session, codigo: str, subtotal: float, estabelecimento_id:
         raise ValueError("Este cupom expirou.")
     if cupom.limite_usos is not None and cupom.usos >= cupom.limite_usos:
         raise ValueError("Este cupom atingiu o limite de usos.")
+    return cupom
+
+def validar_cupom(db: Session, codigo: str, subtotal: float, estabelecimento_id: int, bloquear: bool = False):
+    cupom = consultar_cupom(db, codigo, estabelecimento_id, bloquear)
     if subtotal < cupom.pedido_minimo:
         raise ValueError(f"Pedido mínimo de R$ {cupom.pedido_minimo:.2f} para usar este cupom.")
     desconto = subtotal * cupom.valor / 100 if cupom.tipo == "percentual" else cupom.valor

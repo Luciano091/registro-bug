@@ -178,6 +178,15 @@ def public_validate_coupon(slug: str, payload: schemas.CupomValidar, db: Session
         raise HTTPException(status_code=400, detail=str(exc))
     return schemas.CupomValidado(codigo=cupom.codigo, desconto=desconto, total=max(0, payload.subtotal - desconto), descricao=cupom.descricao)
 
+@app.post("/public/{slug}/cupons/consultar", response_model=schemas.CupomConsultado)
+def public_consult_coupon(slug: str, payload: schemas.CupomConsultar, db: Session = Depends(get_db)):
+    estabelecimento = require_public_establishment(slug, db)
+    try:
+        cupom = crud.consultar_cupom(db, payload.codigo, estabelecimento.id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return cupom
+
 @app.get("/produtos", response_model=List[schemas.Produto])
 def read_produtos(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("cardapio.visualizar"))):
     return crud.get_produtos(db, estabelecimento_id, skip=skip, limit=limit)

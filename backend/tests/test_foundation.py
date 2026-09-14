@@ -273,6 +273,54 @@ class FoundationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "inválido"):
             crud.validar_cupom(self.db, "BEMVINDO", 100, other.id)
 
+    def test_coupon_consultation_minimum_limit_and_order_redemption(self):
+        establishment = self.create_establishment("Cupons", "cupons", "cupons@teste.com")
+        other = self.create_establishment("Outra Loja", "outra-loja", "outra@teste.com")
+        product = crud.create_produto(self.db, schemas.ProdutoCreate(nome="Lanche", categoria="Lanches", preco=30), establishment.id)
+        coupon = crud.save_cupom(self.db, schemas.CupomCreate(
+            codigo="PROMO10", tipo="percentual", valor=10, pedido_minimo=20, limite_usos=1,
+        ), establishment.id)
+
+        consulted = crud.consultar_cupom(self.db, " promo10 ", establishment.id)
+        self.assertEqual(consulted.id, coupon.id)
+        self.assertEqual(schemas.CupomConsultado.model_validate(consulted).pedido_minimo, 20)
+        self.assertEqual(coupon.usos, 0)
+        with self.assertRaisesRegex(ValueError, "Pedido mínimo"):
+            crud.validar_cupom(self.db, "PROMO10", 19, establishment.id)
+        with self.assertRaisesRegex(ValueError, "inválido"):
+            crud.consultar_cupom(self.db, "PROMO10", other.id)
+
+        payload = schemas.PedidoCreate(
+            uuid="coupon-idempotent-order", cliente="Ana", telefone="", tipo_entrega="Retirada",
+            forma_pagamento="PIX", cupom_codigo="promo10",
+            itens=[schemas.ItemPedidoCreate(produto_id=product.id, quantidade=1)],
+        )
+        order = crud.create_pedido(self.db, payload, establishment.id)
+        self.assertEqual(order.desconto, 3)
+        self.assertEqual(order.total, 27)
+        self.assertEqual(crud.create_pedido(self.db, payload, establishment.id).id, order.id)
+        self.db.refresh(coupon)
+        self.assertEqual(coupon.usos, 1)
+        with self.assertRaisesRegex(ValueError, "limite de usos"):
+            crud.consultar_cupom(self.db, "PROMO10", establishment.id)
+
+        inactive = crud.save_cupom(self.db, schemas.CupomCreate(codigo="PAUSADO", tipo="fixo", valor=5, ativo=False), establishment.id)
+        with self.assertRaisesRegex(ValueError, "inativo"):
+            crud.consultar_cupom(self.db, inactive.codigo, establishment.id)
+        future = crud.save_cupom(self.db, schemas.CupomCreate(
+            codigo="FUTURO", tipo="fixo", valor=5, inicio=models.get_now() + datetime.timedelta(days=1),
+        ), establishment.id)
+        with self.assertRaisesRegex(ValueError, "ainda não"):
+            crud.consultar_cupom(self.db, future.codigo, establishment.id)
+        expired = crud.save_cupom(self.db, schemas.CupomCreate(
+            codigo="VENCIDO", tipo="fixo", valor=5, fim=models.get_now() - datetime.timedelta(days=1),
+        ), establishment.id)
+        with self.assertRaisesRegex(ValueError, "expirou"):
+            crud.consultar_cupom(self.db, expired.codigo, establishment.id)
+        fixed = crud.save_cupom(self.db, schemas.CupomCreate(codigo="DESCONTOFIXO", tipo="fixo", valor=50), establishment.id)
+        _, desconto = crud.validar_cupom(self.db, fixed.codigo, 30, establishment.id)
+        self.assertEqual(desconto, 30)
+
     def test_dining_tab_closes_into_order_and_split_cash_payments(self):
         establishment = self.create_establishment("Bistrô", "bistro", "bistro@teste.com")
         owner = crud.get_usuario_by_email(self.db, "bistro@teste.com", establishment.id)
