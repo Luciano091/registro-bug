@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, Save, Phone, MapPin, LogOut, ArrowRight, ArrowLeft, ShieldCheck } from 'lucide-react';
+import { User, Save, Phone, MapPin, LogOut, ArrowRight, ArrowLeft } from 'lucide-react';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import api from '../services/api';
 
@@ -110,10 +110,9 @@ export const ContaView = () => {
 
   return (
     <div className="mx-auto w-full max-w-lg px-4 pb-8 pt-6 md:px-6">
-      <header className="mb-6">
-        <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-600">BisBurger</p>
+      <header className="mb-5">
         <h1 className="font-heading text-[1.75rem] font-bold leading-tight text-zinc-900">Minha conta</h1>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500">{isLoggedIn ? 'Gerencie os dados usados nos seus pedidos.' : 'Entre ou informe seus dados para pedir com mais praticidade.'}</p>
+        {isLoggedIn && <p className="mt-1 text-sm leading-relaxed text-zinc-500">Gerencie os dados usados nos seus pedidos.</p>}
       </header>
 
       {isLoggedIn && (
@@ -125,32 +124,24 @@ export const ContaView = () => {
       )}
 
       {!isLoggedIn && guestStep === 'overview' && (
-        <>
-          <section className="rounded-[1.75rem] border border-orange-100 bg-gradient-to-br from-orange-50 via-white to-white p-5 shadow-sm">
-            <div className="mb-5 grid h-14 w-14 place-items-center rounded-2xl bg-white text-brand-600 shadow-sm"><User size={27} strokeWidth={1.8} /></div>
-            <h2 className="font-heading text-xl font-bold leading-snug text-zinc-900">Seu próximo pedido começa aqui</h2>
-            <p className="mt-2 text-sm leading-relaxed text-zinc-600">Entre para acessar sua conta ou continue sem cadastro.</p>
-            <button type="button" onClick={() => { setGoogleError(''); setGuestStep('login'); }} className="mt-6 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 text-sm font-bold text-white transition-all hover:bg-brand-600 active:scale-[.98]">
-              Entrar ou criar conta <ArrowRight size={18} />
-            </button>
-            <p className="mt-3 flex items-center justify-center gap-2 text-xs font-medium text-zinc-500"><img src="/google-g.png" alt="" className="h-4 w-4 object-contain" /> Acesso com Google</p>
-            <button type="button" onClick={() => setGuestStep('details')} className="mt-2 flex min-h-11 w-full items-center justify-center rounded-xl px-3 text-sm font-semibold text-zinc-600 transition-colors hover:bg-white hover:text-zinc-900">
-              {nome || telefone || endereco ? 'Editar dados deste aparelho' : 'Pedir sem conta'}
-            </button>
-          </section>
-          <p className="mt-4 flex items-start gap-2 px-1 text-xs leading-relaxed text-zinc-500"><ShieldCheck size={16} className="mt-0.5 shrink-0 text-brand-600" />Você pode fazer pedidos mesmo sem criar uma conta.</p>
-        </>
+        <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <p className="text-sm text-zinc-500">Escolha como continuar.</p>
+          <button type="button" onClick={() => { setGoogleError(''); setGuestStep('login'); }} className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 text-sm font-bold text-white transition-all hover:bg-brand-600 active:scale-[.98]">
+            Entrar ou criar conta <ArrowRight size={18} />
+          </button>
+          <button type="button" onClick={() => setGuestStep('details')} className="mt-2 flex min-h-11 w-full items-center justify-center rounded-xl px-3 text-sm font-semibold text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-zinc-900">
+            Continuar sem conta
+          </button>
+        </section>
       )}
 
       {!isLoggedIn && guestStep === 'login' && (
-        <section className="rounded-[1.75rem] border border-zinc-200 bg-white p-5 shadow-sm">
+        <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
           <button type="button" onClick={() => setGuestStep('overview')} className="mb-5 flex min-h-9 items-center gap-1 text-sm font-semibold text-zinc-500 hover:text-zinc-900"><ArrowLeft size={17} /> Voltar</button>
-          <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-orange-50 text-brand-600"><ShieldCheck size={23} /></div>
-          <h2 className="font-heading text-xl font-bold text-zinc-900">Entre na sua conta</h2>
-          <p className="mt-1 text-sm leading-relaxed text-zinc-500">Use o Google para entrar. Se for sua primeira vez, seu cadastro será criado.</p>
+          <h2 className="font-heading text-lg font-bold text-zinc-900">Entrar com Google</h2>
           {isNativeApp ? (
             hasNativeGoogleAuth ? (
-              <button type="button" onClick={handleNativeGoogleSignIn} disabled={googleLoading} className="mt-6 flex min-h-12 w-full items-center justify-center gap-3 whitespace-nowrap rounded-xl border border-zinc-300 bg-white px-3 text-sm font-semibold text-zinc-900 transition-colors hover:bg-zinc-50 active:bg-zinc-100 disabled:opacity-60">
+              <button type="button" onClick={handleNativeGoogleSignIn} disabled={googleLoading} className="mt-4 flex min-h-12 w-full items-center justify-center gap-3 whitespace-nowrap rounded-xl border border-zinc-300 bg-white px-3 text-sm font-semibold text-zinc-900 transition-colors hover:bg-zinc-50 active:bg-zinc-100 disabled:opacity-60">
                 <img src="/google-g.png" alt="" className="h-5 w-5 shrink-0 object-contain" />
                 {googleLoading ? 'Conectando...' : 'Continuar com Google'}
               </button>
@@ -158,10 +149,9 @@ export const ContaView = () => {
               <p className="mt-5 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-900">Atualize o aplicativo para entrar com Google. <a className="font-bold underline" href="/app-bisburger.apk?v=1.0.3" target="_blank" rel="noreferrer">Baixar atualização</a></p>
             )
           ) : (
-            <div className="mt-6 flex justify-center"><GoogleLogin onSuccess={handleGoogleSuccess} onError={() => setGoogleError('Não foi possível abrir o login Google. Tente novamente.')} use_fedcm_for_button text="continue_with" size="large" shape="pill" width="280" /></div>
+            <div className="mt-4 flex justify-center"><GoogleLogin onSuccess={handleGoogleSuccess} onError={() => setGoogleError('Não foi possível abrir o login Google. Tente novamente.')} use_fedcm_for_button text="continue_with" size="large" shape="pill" width="280" /></div>
           )}
           {googleError && <p role="alert" className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">{googleError}</p>}
-          <div className="mt-6 border-t border-zinc-100 pt-4"><button type="button" onClick={() => setGuestStep('details')} className="w-full min-h-10 text-sm font-semibold text-zinc-500 hover:text-zinc-900">Continuar sem cadastro</button></div>
         </section>
       )}
 
