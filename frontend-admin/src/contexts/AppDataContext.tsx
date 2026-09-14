@@ -193,8 +193,7 @@ const showBrowserNotification = (title: string, body: string) => {
 
   // ========== Optimistic Updates ==========
   const addOptimisticOrder = useCallback((order: any) => {
-    // Add the new order at the top of the list
-    setOrders(prev => [order, ...prev]);
+    setOrders(prev => [order, ...prev.filter(existing => existing.id !== order.id)]);
   }, []);
 
   const updateOrderStatus = useCallback((orderId: number, newStatus: string) => {

@@ -112,6 +112,21 @@ class FoundationTests(unittest.TestCase):
         self.assertFalse(order.estornado)
         self.assertEqual(self.db.query(models.MovimentacaoCaixa).count(), 0)
 
+    def test_staff_order_uses_persisted_id_for_status_change(self):
+        establishment = self.create_establishment("Pedido do Balcão", "pedido-balcao", "balcao@teste.com")
+        product = crud.create_produto(self.db, schemas.ProdutoCreate(nome="Lanche", categoria="Lanches", preco=20), establishment.id)
+        crud.abrir_caixa(self.db, schemas.CaixaCreate(operador="Caixa", saldo_inicial=0), establishment.id)
+        order = crud.create_pedido(self.db, schemas.PedidoCreate(
+            cliente="Pedro", telefone="", tipo_entrega="Retirada", forma_pagamento="PIX",
+            itens=[schemas.ItemPedidoCreate(produto_id=product.id, quantidade=1)],
+        ), establishment.id)
+        confirmed = crud.confirmar_pagamento_pedido(self.db, order.id, establishment.id, "PIX")
+        self.assertEqual(confirmed.numero.split("-")[-1], "001")
+        self.assertIsNotNone(confirmed.pagamento_confirmado_em)
+        updated = crud.update_pedido_status(self.db, confirmed.id, "Em preparo", establishment.id)
+        self.assertEqual(updated.status, "Em preparo")
+        self.assertIsNone(crud.update_pedido_status(self.db, confirmed.id + 1000000000, "Pronto", establishment.id))
+
     def test_old_cash_sale_is_not_posted_again_on_confirmation(self):
         establishment = self.create_establishment("Caixa Antigo", "caixa-antigo", "antigo@teste.com")
         product = crud.create_produto(self.db, schemas.ProdutoCreate(nome="Suco", categoria="Bebidas", preco=8), establishment.id)

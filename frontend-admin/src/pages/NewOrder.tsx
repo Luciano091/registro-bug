@@ -126,55 +126,32 @@ const NewOrder = () => {
         }))
       };
 
-      // 1. Atualização Otimista Imediata (antes do servidor responder)
-      const optimisticOrder = {
-        id: Date.now(),
-        uuid: orderUuid,
-        numero: `OPT-${Date.now()}`,
-        cliente,
-        telefone,
-        endereco,
-        bairro,
-        tipo_entrega: tipoEntrega,
-        forma_pagamento: formaPagamento,
-        status: 'Recebido',
-        total,
-        subtotal,
-        taxa_entrega: deliveryFee,
-        data: new Date().toISOString(),
-        itens: itens.map(item => ({ produto_id: item.produto.id, quantidade: item.quantidade, valor_unitario: item.precoUnitario, subtotal: item.precoUnitario * item.quantidade, produto_nome: item.produto.nome, produto: item.produto, opcoes: item.opcoes }))
-      };
-      
-      addOptimisticOrder(optimisticOrder);
-      
-      // 2. Limpar formulário imediatamente para o usuário continuar trabalhando
-      setCliente(''); setTelefone(''); setEndereco(''); setBairro(''); setTaxaManual(''); setItens([]); setShowCheckout(false);
-      setIsSubmitting(false);
-
-      // 3. Enviar para o servidor em background
       if (!isOnline) {
         await saveOfflineOrder(orderUuid, pedidoData);
+        alert('Pedido salvo neste aparelho. Ele aparecerá em Pedidos após o envio quando a conexão voltar.');
       } else {
-        api.post('/pedidos', pedidoData).then(() => {
-          refreshOrders();
-          refreshProdutos();
-          refreshDashboard();
-        }).catch(async (error: any) => {
+        try {
+          const { data } = await api.post('/pedidos', pedidoData);
+          addOptimisticOrder(data);
+          void refreshOrders();
+          void refreshProdutos();
+          void refreshDashboard();
+        } catch (error: any) {
           if (!error.response || error.message === 'Network Error') {
             await saveOfflineOrder(orderUuid, pedidoData);
+            alert('A conexão caiu. O pedido ficou salvo neste aparelho e aparecerá após a sincronização.');
           } else {
             const detail = error.response?.data?.detail;
-            if (detail && detail.includes("Caixa está fechado")) {
-              alert(`Atenção: O pedido de ${cliente || 'Cliente'} não foi salvo porque o Caixa está fechado! Abra o caixa.`);
-            } else {
-              alert(detail || 'Houve um erro ao salvar o pedido.');
-            }
+            alert(detail || 'O pedido não foi salvo. Revise os dados e tente novamente.');
+            return;
           }
-        });
+        }
       }
+      setCliente(''); setTelefone(''); setEndereco(''); setBairro(''); setTaxaManual(''); setItens([]); setShowCheckout(false);
     } catch (error: any) {
       console.error(error);
-      alert('Erro inesperado ao processar o pedido.');
+      alert('Não foi possível salvar o pedido neste aparelho. Tente novamente.');
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -194,7 +171,7 @@ const NewOrder = () => {
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-white font-heading drop-shadow-sm">Novo Pedido</h2>
-          <p className="text-brand-400 font-mono text-sm mt-1">#{new Date().toISOString().slice(0,10).replace(/-/g,'')}-012</p>
+          <p className="mt-1 text-sm text-zinc-400">O número do pedido aparece após a confirmação.</p>
         </div>
       </header>
 

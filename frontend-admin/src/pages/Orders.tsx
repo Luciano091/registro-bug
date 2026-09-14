@@ -51,10 +51,10 @@ const Orders = () => {
       optimisticUpdateStatus(id, newStatus);
       await api.put(`/pedidos/${id}/status?status=${encodeURIComponent(newStatus)}`);
       refreshOrders();
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      refreshOrders(); // rollback
-      alert("Erro ao alterar status");
+      void refreshOrders();
+      alert(error.response?.data?.detail || 'Não foi possível alterar o status. Atualize os pedidos e tente novamente.');
     }
   };
 
