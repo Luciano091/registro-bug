@@ -225,28 +225,10 @@ const PublicMenu = () => {
                   <Clock size={14} />
                   {config?.tempo_medio_preparo || 30} min
                 </div>
-            </div>
-          </div>
-          
-          <div 
-            onClick={() => setActiveTab('conta')}
-            className="mt-5 cursor-pointer rounded-[14px] border border-zinc-800/80 bg-[#1c1c1e] px-4 py-3.5 shadow-sm transition-all hover:bg-[#232325] active:scale-[0.99] md:w-max md:pr-10"
-          >
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex min-w-0 flex-col justify-center">
-                <div className="flex items-center gap-2">
-                  <Gift className="h-4 w-4 shrink-0 text-amber-500" />
-                  <h3 className="truncate text-sm font-bold tracking-tight text-white">
-                    GANHE 2% DE CASHBACK
-                  </h3>
+                <div className="flex min-h-9 items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 text-xs font-semibold text-amber-700">
+                  <Gift size={14} />
+                  2% de cashback
                 </div>
-                <p className="mt-0.5 truncate pl-6 text-[13px] text-zinc-400">
-                  em todas as suas compras
-                </p>
-              </div>
-              <div className="shrink-0 text-[12px] font-medium text-amber-500/80">
-                Veja como <span className="hidden sm:inline">funciona </span>&rarr;
-              </div>
             </div>
           </div>
         </div>
