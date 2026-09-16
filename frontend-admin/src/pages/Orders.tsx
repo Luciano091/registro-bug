@@ -140,6 +140,8 @@ const Orders = () => {
     
     if (passedOrder.tipo_entrega === 'Delivery' || passedOrder.tipo_entrega === 'Entrega') {
       text += `*Endereço de Entrega:* ${passedOrder.endereco || 'Não informado'}\n`;
+    } else if (passedOrder.tipo_entrega === 'Salão' || passedOrder.tipo_entrega === 'Mesa') {
+      text += `*Mesa/Salão:* ${passedOrder.observacao || 'Atendimento local'}\n`;
     } else {
       text += `*Retirada:* No balcão da lanchonete\n`;
     }
@@ -293,6 +295,17 @@ const Orders = () => {
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/10 text-amber-500 text-xs font-medium border border-amber-500/20">
                           Retirada no Local
                         </span>
+                      ) : order.tipo_entrega === 'Salão' || order.tipo_entrega === 'Mesa' ? (
+                        <div>
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-500/10 text-purple-400 text-xs font-medium border border-purple-500/20 mb-1">
+                            Salão / Mesa
+                          </span>
+                          {order.observacao && (
+                            <p className="text-xs text-zinc-300 whitespace-normal break-words">
+                              {order.observacao.includes('Mesa') ? order.observacao : 'Atendimento local'}
+                            </p>
+                          )}
+                        </div>
                       ) : (
                         <div>
                           <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium text-brand-400 bg-brand-500/10 mb-1">
@@ -387,7 +400,13 @@ const Orders = () => {
                 </div>
                 <div className="col-span-2 bg-dark-900 p-3 rounded-xl border border-white/5">
                   <span className="text-zinc-400 block text-xs mb-1">Entrega ({selectedOrder.tipo_entrega})</span>
-                  <span className="text-zinc-200 font-medium">{selectedOrder.endereco || 'Retirada no Local'}</span>
+                  <span className="text-zinc-200 font-medium">
+                    {selectedOrder.endereco || (
+                      selectedOrder.tipo_entrega === 'Salão' || selectedOrder.tipo_entrega === 'Mesa' 
+                        ? selectedOrder.observacao || 'Atendimento local' 
+                        : 'Retirada no Local'
+                    )}
+                  </span>
                 </div>
               </div>
 
