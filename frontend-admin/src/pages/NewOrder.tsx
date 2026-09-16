@@ -113,7 +113,7 @@ const NewOrder = () => {
       const pedidoData = {
         uuid: orderUuid,
         cliente,
-        telefone: telefone || undefined,
+        telefone: telefone || '',
         endereco: endereco || undefined,
         bairro: bairro || undefined,
         taxa_entrega_manual: tipoEntrega === 'Delivery' && deliveryConfig?.entrega_modo === 'distancia' ? Number(taxaManual) : undefined,
@@ -142,7 +142,10 @@ const NewOrder = () => {
             alert('Não foi possível confirmar a resposta do servidor. O pedido ficou salvo neste aparelho para reenviar automaticamente. Mantenha o painel aberto e evite cadastrar o mesmo pedido novamente.');
           } else {
             const detail = error.response?.data?.detail;
-            alert(detail || 'O pedido não foi salvo. Revise os dados e tente novamente.');
+            const message = typeof detail === 'string' ? detail : Array.isArray(detail)
+              ? detail.map((issue: any) => `${issue.loc?.slice(1).join('.') || 'Campo'}: ${issue.msg}`).join('\n')
+              : 'O pedido não foi salvo. Revise os dados e tente novamente.';
+            alert(message);
             return;
           }
         }

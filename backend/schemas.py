@@ -287,6 +287,7 @@ class PedidoCreate(PedidoBase):
     itens: List[ItemPedidoCreate]
 
 class PedidoAdminCreate(PedidoCreate):
+    telefone: str = ""
     taxa_entrega_manual: Optional[float] = Field(default=None, ge=0)
 
 class ConfirmacaoPagamento(BaseModel):
