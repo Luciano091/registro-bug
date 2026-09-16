@@ -540,7 +540,8 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate, estabelecimento_id:
     desconto = 0.0
     if pedido.cupom_codigo:
         cupom, desconto = validar_cupom(db, pedido.cupom_codigo, subtotal, estabelecimento_id, bloquear=True)
-    total = max(0.0, subtotal + taxa_entrega - desconto)
+    cashback_usado = float(pedido.cashback_usado or 0)
+    total = max(0.0, subtotal + taxa_entrega - desconto - cashback_usado)
     
     # Gerar numero do pedido baseado na data e id (simplificado: YYYYMMDD-COUNT)
     hoje = (datetime.datetime.utcnow() - datetime.timedelta(hours=3)).date()
@@ -566,6 +567,7 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate, estabelecimento_id:
         taxa_entrega=taxa_entrega,
         cupom_codigo=cupom.codigo if cupom else None,
         desconto=desconto,
+        cashback_usado=cashback_usado,
         total=total,
         status="Recebido"
     )

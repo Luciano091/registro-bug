@@ -242,6 +242,7 @@ class Pedido(Base):
     taxa_servico = Column(Numeric(10, 2, asdecimal=False), default=0.0)
     cupom_codigo = Column(String, nullable=True)
     desconto = Column(Numeric(10, 2, asdecimal=False), default=0.0)
+    cashback_usado = Column(Numeric(10, 2, asdecimal=False), default=0.0)
     total = Column(Numeric(10, 2, asdecimal=False), default=0.0)
     observacao = Column(String, nullable=True)
     origem = Column(String, nullable=False, default="balcao")
