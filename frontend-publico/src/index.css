@@ -42,7 +42,7 @@ a {
 
 .store-hero-layout {
   display: grid;
-  grid-template-columns: 80px minmax(0, 1fr);
+  grid-template-columns: 96px minmax(0, 1fr);
   column-gap: 20px;
   row-gap: 8px;
   align-items: center;
@@ -59,9 +59,9 @@ a {
 
 @media (max-width: 639px) {
   .store-hero { padding-top: 12px; padding-bottom: 12px; }
-  .store-hero-layout { grid-template-columns: 62px minmax(0, 1fr); column-gap: 12px; row-gap: 7px; }
-  .store-hero-logo { width: 62px; height: 62px; border-radius: 14px; }
-  .store-hero-logo img { border-radius: 11px; }
+  .store-hero-layout { grid-template-columns: 76px minmax(0, 1fr); column-gap: 12px; row-gap: 7px; }
+  .store-hero-logo { width: 76px; height: 76px; border-radius: 16px; }
+  .store-hero-logo img { border-radius: 13px; }
   .store-hero-copy h1 { font-size: 20px; line-height: 1.12; }
   .store-hero-copy > div { margin-top: 5px; }
   .store-hero-copy > div span { font-size: 12px; }

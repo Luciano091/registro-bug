@@ -192,7 +192,7 @@ const PublicMenu = () => {
       <div className="store-hero w-full border-b border-zinc-200 py-5 md:py-6">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="store-hero-layout items-start md:items-center">
-            <div className="store-hero-logo h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-0.5 shadow-sm">
+            <div className="store-hero-logo shrink-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-0.5 shadow-sm">
               <img src={config?.logo || "/logo.png"} alt={config?.nome_empresa || "Logo"} className="h-full w-full rounded-[14px] object-cover" />
             </div>
             
