@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BellRing, ChefHat, Clock3, Flame, Play, Printer, RefreshCw, Settings2, CheckCircle2, X } from 'lucide-react';
 import api from '../services/api';
 import { can, readSession } from '../services/session';
+import { PrinterService } from "../services/PrinterService";
 
 type Station = { id: number; nome: string; cor: string; ordem: number; ativo: boolean };
 type Option = { grupo: string; opcao: string; quantidade: number };
@@ -86,11 +87,39 @@ export default function Kitchen() {
     setProducts(current => current.map(p => p.id === productId ? { ...p, setor_producao_id: setor } : p));
     await api.put(`/cozinha/produtos/${productId}/setor`, { setor_producao_id: setor });
   }
-  function printTicket(event: React.MouseEvent<HTMLButtonElement>) {
-    const card = event.currentTarget.closest('.kds-ticket');
-    card?.classList.add('print-target'); document.body.classList.add('printing-kds-ticket');
-    const cleanup = () => { card?.classList.remove('print-target'); document.body.classList.remove('printing-kds-ticket'); };
-    window.addEventListener('afterprint', cleanup, { once: true }); window.print(); window.setTimeout(cleanup, 1000);
+
+  async function handlePrintTicket(ticket: any) {
+    try {
+      let text = `--------------------------------\n`;
+      text += `         COZINHA - PRODUCAO\n`;
+      text += `--------------------------------\n\n`;
+      
+      text += `[${ticket.tipo.toUpperCase()}] ${ticket.referencia}\n`;
+      if (ticket.cliente) {
+        text += `Cliente: ${ticket.cliente}\n`;
+      }
+      
+      const date = new Date(ticket.criado_em);
+      text += `Enviado as: ${date.toLocaleTimeString('pt-BR')}\n\n`;
+      
+      text += `[ITENS DA FICHA]\n`;
+      ticket.itens.forEach((item: any) => {
+        text += `${item.quantidade}x ${item.produto_nome}\n`;
+        item.opcoes?.forEach((o: any) => {
+          text += `  + ${o.quantidade > 1 ? o.quantidade + 'x ' : ''}${o.opcao}\n`;
+        });
+        if (item.observacao) {
+          text += `  *** OBS: ${item.observacao} ***\n`;
+        }
+        text += `\n`;
+      });
+      
+      text += `\n--------------------------------\n\n\n\n\n`;
+      
+      await PrinterService.printReceipt(text);
+    } catch (e: any) {
+      alert("Erro ao imprimir ficha: " + e.message);
+    }
   }
 
   return <div className="kds-page min-h-full p-4 md:p-8 lg:p-10">
@@ -116,7 +145,7 @@ export default function Kitchen() {
           <div className="divide-y divide-slate-100">{ticket.itens.map(item => { const key = `${item.origem}-${item.id}`; return <div key={key} className="p-4"><div className="flex gap-3 justify-between"><div className="min-w-0"><div className="flex items-start gap-2"><span className="grid place-items-center shrink-0 w-8 h-8 rounded-lg bg-orange-100 text-orange-700 font-bold">{item.quantidade}x</span><div><h3 className="font-bold text-lg text-slate-900">{item.produto_nome}</h3>{item.opcoes.map((o, index) => <p key={index} className="text-sm text-slate-500">+ {o.quantidade > 1 ? `${o.quantidade}x ` : ''}{o.opcao}</p>)}{item.observacao && <p className="mt-2 px-3 py-2 rounded-lg bg-amber-50 text-amber-900 text-sm font-semibold">Obs.: {item.observacao}</p>}</div></div></div><span className={`shrink-0 h-fit px-2 py-1 rounded-full text-xs font-bold ${item.status === 'pronto' ? 'bg-emerald-100 text-emerald-700' : item.status === 'em_preparo' ? 'bg-orange-100 text-orange-700' : 'bg-amber-100 text-amber-700'}`}>{statusLabel[item.status]}</span></div>
             <button disabled={busy === key} onClick={() => advance(item)} className={`mt-4 w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50 ${item.status === 'pronto' ? 'bg-emerald-600 text-white kds-inverse' : item.status === 'em_preparo' ? 'bg-orange-500 text-white kds-inverse' : 'bg-slate-900 text-white kds-inverse'}`}>{item.status === 'pronto' ? <CheckCircle2 size={19}/> : <Play size={19}/>} {item.status === 'pronto' ? 'Retirar da tela' : item.status === 'em_preparo' ? 'Marcar como pronto' : 'Iniciar preparo'}</button>
           </div>})}</div>
-          <button onClick={printTicket} className="print:hidden w-full py-3 border-t border-slate-200 text-slate-500 font-semibold flex items-center justify-center gap-2 hover:bg-slate-50"><Printer size={17}/> Imprimir ficha</button>
+          <button onClick={() => void handlePrintTicket(ticket)} className="print:hidden w-full py-3 border-t border-slate-200 text-slate-500 font-semibold flex items-center justify-center gap-2 hover:bg-slate-50"><Printer size={17}/> Imprimir ficha</button>
         </article>})}</section>}
 
     {settings && <div className="fixed inset-0 z-[80] bg-slate-950/60 p-3 md:p-8 flex items-center justify-center print:hidden"><div className="bg-white rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col"><header className="p-5 border-b flex justify-between items-center"><div><h2 className="text-2xl font-bold text-slate-900">Setores de produção</h2><p className="text-sm text-slate-500">Separe cozinha, bar, chapa ou montagem.</p></div><button onClick={() => setSettings(false)} className="p-2 rounded-full bg-slate-100"><X/></button></header><div className="p-5 overflow-y-auto space-y-6"><div><label className="text-sm font-bold text-slate-700">Novo setor</label><div className="flex gap-2 mt-2"><input value={newStation} onChange={e => setNewStation(e.target.value)} placeholder="Ex.: Bar" className="field flex-1"/><button onClick={addStation} className="px-5 rounded-xl bg-orange-500 text-white kds-inverse font-bold">Adicionar</button></div><div className="flex flex-wrap gap-2 mt-3">{stations.map(s => <span key={s.id} className="px-3 py-2 bg-slate-100 rounded-lg text-sm font-semibold flex items-center gap-2"><i className="w-2 h-2 rounded-full" style={{background:s.cor}}/>{s.nome}</span>)}</div></div><div><h3 className="font-bold text-slate-900 mb-3">Destino dos produtos</h3><div className="space-y-2">{products.map(product => <label key={product.id} className="flex items-center gap-3 p-3 border rounded-xl"><span className="min-w-0 flex-1"><strong className="block truncate text-slate-900">{product.nome}</strong><small className="text-slate-500">{product.categoria}</small></span><select value={product.setor_producao_id || ''} onChange={e => assign(product.id, e.target.value)} className="field !w-auto"><option value="">Sem setor</option>{stations.filter(s=>s.ativo).map(s=><option key={s.id} value={s.id}>{s.nome}</option>)}</select></label>)}</div></div></div></div></div>}

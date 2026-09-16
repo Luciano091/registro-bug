@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 
-import { Search, Clock, CheckCircle2, Loader2, MessageCircle, X, Eye, MapPin, RotateCcw } from 'lucide-react';
+import { Search, Clock, Printer, CheckCircle2, Loader2, MessageCircle, X, Eye, MapPin, RotateCcw } from 'lucide-react';
 import api from '../services/api';
 import { useAppData } from '../contexts/AppDataContext';
 import { can, readSession } from '../services/session';
+import { PrinterService } from "../services/PrinterService";
 
 const PAYMENT_METHODS = ['PIX', 'Cartão de Crédito', 'Cartão de Débito', 'Dinheiro'];
 
@@ -106,7 +107,63 @@ const Orders = () => {
     }
   };
 
+  const handlePrintReceipt = async (passedOrder: any) => {
+    try {
+      const businessName = localStorage.getItem('estabelecimentoNome') || 'Estabelecimento';
+      const orderNumber = shortOrderNumber(passedOrder.numero);
+      
+      let text = `--------------------------------\n`;
+      text += `         ${businessName.toUpperCase()}\n`;
+      text += `--------------------------------\n\n`;
+      
+      text += `PEDIDO #${orderNumber}\n`;
+      text += `Cliente: ${passedOrder.cliente}\n`;
+      if (passedOrder.telefone) text += `Tel: ${passedOrder.telefone}\n`;
+      
+      const date = new Date(passedOrder.data);
+      text += `Data: ${date.toLocaleDateString('pt-BR')} ${date.toLocaleTimeString('pt-BR')}\n\n`;
+      
+      text += `[ITENS DO PEDIDO]\n`;
+      passedOrder.itens?.forEach((item: any) => {
+        const productName = item.produto_nome || item.produto?.nome || 'Produto';
+        const itemTotal = item.subtotal || (item.quantidade * (item.produto?.preco || 0));
+        text += `${item.quantidade}x ${productName} - R$ ${itemTotal.toFixed(2)}\n`;
+        item.opcoes?.forEach((option: any) => { text += `  + ${option.quantidade}x ${option.opcao_nome}\n`; });
+        if (item.observacao) text += `  Obs.: ${item.observacao}\n`;
+      });
+      
+      text += `\n[RESUMO]\n`;
+      if (passedOrder.taxa_entrega > 0) text += `Taxa de Entrega: R$ ${passedOrder.taxa_entrega.toFixed(2)}\n`;
+      if (passedOrder.taxa_servico > 0) text += `Taxa de Servico: R$ ${passedOrder.taxa_servico.toFixed(2)}\n`;
+      if (passedOrder.desconto > 0) text += `Desconto: R$ ${passedOrder.desconto.toFixed(2)}\n`;
+      text += `TOTAL: R$ ${passedOrder.total?.toFixed(2) || '0.00'}\n\n`;
+      
+      text += `[PAGAMENTO]\n`;
+      text += `Forma: ${passedOrder.forma_pagamento || 'Nao informado'}\n`;
+      text += `Status: ${passedOrder.pagamento_confirmado_em ? 'PAGO' : 'PENDENTE'}\n\n`;
+      
+      text += `[ENTREGA]\n`;
+      if (passedOrder.tipo_entrega === 'Delivery' || passedOrder.tipo_entrega === 'Entrega') {
+        text += `Tipo: Delivery\n`;
+        text += `Endereco: ${passedOrder.endereco || 'Nao informado'}\n`;
+      } else if (passedOrder.tipo_entrega === 'Salão' || passedOrder.tipo_entrega === 'Mesa') {
+        text += `Tipo: Mesa/Salao\n`;
+        text += `Mesa: ${passedOrder.observacao || 'Local'}\n`;
+      } else {
+        text += `Tipo: Retirada no Balcao\n`;
+      }
+      
+      text += `\n\n        Obrigado pela\n         preferencia!\n\n`;
+      text += `--------------------------------\n\n\n\n\n`;
+      
+      await PrinterService.printReceipt(text);
+      
+    } catch (err: any) {
+      alert("Erro ao imprimir: " + err.message);
+    }
+  };
   const handleWhatsApp = async (summaryOrder: any) => {
+
     if (!summaryOrder.telefone) {
       alert('Este pedido não possui telefone cadastrado.');
       return;
@@ -354,6 +411,13 @@ const Orders = () => {
                         >
                           <MessageCircle size={16} />
                         </button>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); void handlePrintReceipt(order); }}
+                          className="opacity-0 group-hover:opacity-100 transition-all text-slate-500 hover:text-slate-700 bg-slate-500/10 p-1.5 rounded-full hover:bg-slate-500/20 border border-slate-500/20"
+                          title="Imprimir Cupom Térmico (ESC/POS)"
+                        >
+                          <Printer size={16} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -376,12 +440,21 @@ const Orders = () => {
                 </h3>
                 <p className="text-sm text-zinc-300 mt-0.5">{selectedOrder.cliente}</p>
               </div>
-              <button 
-                onClick={() => setSelectedOrder(null)}
-                className="p-2 hover:bg-white/10 rounded-full transition-colors text-zinc-300 hover:text-white"
-              >
-                <X size={20} />
-              </button>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => void handlePrintReceipt(selectedOrder)}
+                  className="p-2 bg-slate-500/10 hover:bg-slate-500/20 text-slate-400 hover:text-white rounded-full transition-colors border border-slate-500/20"
+                  title="Imprimir Cupom Térmico (ESC/POS)"
+                >
+                  <Printer size={20} />
+                </button>
+                <button 
+                  onClick={() => setSelectedOrder(null)}
+                  className="p-2 hover:bg-white/10 rounded-full transition-colors text-zinc-300 hover:text-white"
+                >
+                  <X size={20} />
+                </button>
+              </div>
             </div>
 
             {/* Content */}
