@@ -1548,11 +1548,7 @@ def cancelar_pedido(db: Session, pedido_id: int, motivo: str, estornado: bool, e
     db.commit()
     db.refresh(pedido)
     return pedido
-from sqlalchemy.orm import Session
-import backend.models as models
-import backend.schemas as schemas
-from backend.crud import get_comanda_aberta_mesa, recalcular_comanda, preco_vigente, produto_disponivel_agora
-import json
+
 
 def processar_pedido_mesa(db: Session, mesa_numero: str, estabelecimento_id: int, pedido: schemas.PedidoCreate, cliente_id: int = None):
     # Find table
