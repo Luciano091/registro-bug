@@ -191,49 +191,53 @@ const PublicMenu = () => {
 
       <div className="store-hero w-full border-b border-zinc-200 py-5 md:py-6">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="store-hero-layout relative">
+          <div className="store-hero-layout items-start md:items-center">
             <div className="store-hero-logo h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-0.5 shadow-sm">
               <img src={config?.logo || "/logo.png"} alt={config?.nome_empresa || "Logo"} className="h-full w-full rounded-[14px] object-cover" />
             </div>
             
-            <div className="store-hero-copy min-w-0 pr-[72px]">
-              <h1 className="text-xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-2xl md:text-3xl">
-                {config?.nome_empresa || 'Seu Restaurante'}
-              </h1>
-              
-              <div className="mt-1.5 flex items-center gap-2">
-                {config?.loja_aberta ? (
-                  <>
-                    <div className="h-2 w-2 rounded-full bg-emerald-500"></div>
-                    <span className="text-sm font-semibold text-emerald-600">Aberto agora</span>
-                  </>
-                ) : (
-                  <>
-                    <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
-                    <span className="text-sm font-bold text-red-500">Fechado</span>
-                  </>
-                )}
+            <div className="flex w-full items-start justify-between gap-2">
+              <div className="store-hero-copy min-w-0">
+                <h1 className="text-xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-2xl md:text-3xl">
+                  {config?.nome_empresa || 'Seu Restaurante'}
+                </h1>
+                
+                <div className="mt-1.5 flex items-center gap-2">
+                  {config?.loja_aberta ? (
+                    <>
+                      <div className="h-2 w-2 rounded-full bg-emerald-500"></div>
+                      <span className="text-sm font-semibold text-emerald-600">Aberto agora</span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
+                      <span className="text-sm font-bold text-red-500">Fechado</span>
+                    </>
+                  )}
+                </div>
+                
+                <div className="store-hero-facts mt-3 flex flex-wrap items-center gap-2">
+                  <div className="flex min-h-9 items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-3 text-xs font-semibold text-emerald-700">
+                    <MapPin size={14} />
+                    {!config?.entrega_habilitada ? 'Somente retirada' : config?.entrega_modo === 'bairro' ? 'Taxa por bairro' : config?.entrega_modo === 'distancia' ? 'Taxa por distância' : config?.taxa_entrega === 0 || !config?.taxa_entrega ? 'Entrega grátis' : `Taxa ${Number(config.taxa_entrega).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`}
+                  </div>
+                  <div className="flex min-h-9 items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-600">
+                    <Clock size={14} />
+                    {config?.tempo_medio_preparo || 30} min
+                  </div>
+                </div>
               </div>
 
-            </div>
-            <div className="store-hero-facts flex flex-wrap items-center gap-2 pr-[72px]">
-                <div className="flex min-h-9 items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-3 text-xs font-semibold text-emerald-700">
-                  <MapPin size={14} />
-                  {!config?.entrega_habilitada ? 'Somente retirada' : config?.entrega_modo === 'bairro' ? 'Taxa por bairro' : config?.entrega_modo === 'distancia' ? 'Taxa por distância' : config?.taxa_entrega === 0 || !config?.taxa_entrega ? 'Entrega grátis' : `Taxa ${Number(config.taxa_entrega).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`}
-                </div>
-                <div className="flex min-h-9 items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-600">
-                  <Clock size={14} />
-                  {config?.tempo_medio_preparo || 30} min
-                </div>
-            </div>
-
-            {/* Logo Cashback 3D - Flutuante na direita */}
-            <div 
-              className="absolute -right-2 -top-1 flex cursor-pointer flex-col items-center transition-transform active:scale-95 md:hover:scale-105"
-              onClick={() => setActiveTab('conta')}
-            >
-              <img src="/cashback-badge.png" alt="Ganhe Cashback" className="h-[54px] w-[54px] object-contain drop-shadow-sm" />
-              <span className="mt-0 text-[10px] font-bold text-amber-700 hover:underline tracking-tight">(Ver mais &rarr;)</span>
+              {/* Logo Cashback 3D - Flex na direita */}
+              <div 
+                className="flex cursor-pointer shrink-0 flex-col items-center justify-center transition-transform active:scale-95 md:hover:scale-105"
+                onClick={() => setActiveTab('conta')}
+              >
+                <img src="/cashback-badge.png" alt="Ganhe Cashback" className="h-16 w-16 md:h-[90px] md:w-[90px] object-contain drop-shadow-sm" />
+                <span className="-mt-1 md:-mt-2 text-[10px] md:text-[11px] font-bold text-amber-700 hover:underline tracking-tight text-center max-w-[70px] md:max-w-[100px] leading-tight">
+                  (Ver mais &rarr;)
+                </span>
+              </div>
             </div>
           </div>
         </div>
