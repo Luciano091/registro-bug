@@ -1414,7 +1414,9 @@ def search_cliente(telefone: str, db: Session = Depends(get_db), estabelecimento
     return cliente
 
 @app.get("/public/{slug}/clientes/me", response_model=schemas.Cliente)
-def get_public_cliente(slug: str, db: Session = Depends(get_db), cliente_id: str = Depends(auth.get_current_cliente)):
+def get_public_cliente(slug: str, db: Session = Depends(get_db), cliente_id: str = Depends(auth.get_current_cliente_optional)):
+    if not cliente_id:
+        raise HTTPException(status_code=401, detail="Não autenticado")
     estabelecimento = require_public_establishment(slug, db)
     cliente = db.query(models.Cliente).filter(models.Cliente.id == int(cliente_id), models.Cliente.estabelecimento_id == estabelecimento.id).first()
     if not cliente:
