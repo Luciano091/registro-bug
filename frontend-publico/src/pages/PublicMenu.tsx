@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { MapPin, Clock, Utensils, Plus, Flame, Check, Ticket, Receipt, User } from 'lucide-react';
+import { MapPin, Clock, Utensils, Plus, Flame, Check, Ticket, Receipt, User, Gift } from 'lucide-react';
 import api from '../services/api';
 import { getEstablishmentSlug } from '../services/api';
 import { ProductModal } from '../components/ProductModal';
@@ -224,6 +224,10 @@ const PublicMenu = () => {
                 <div className="flex min-h-9 items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-600">
                   <Clock size={14} />
                   {config?.tempo_medio_preparo || 30} min
+                </div>
+                <div className="flex min-h-9 items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 text-xs font-semibold text-amber-700">
+                  <Gift size={14} />
+                  2% de cashback
                 </div>
             </div>
           </div>

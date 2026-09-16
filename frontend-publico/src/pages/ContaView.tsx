@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { User, Save, Phone, MapPin, LogOut, ArrowLeft } from 'lucide-react';
+import { User, Save, Phone, MapPin, LogOut, ArrowLeft, Gift, Wallet } from 'lucide-react';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
-import api from '../services/api';
+import api, { getEstablishmentSlug } from '../services/api';
 
 type NativeGoogleAuth = { signIn: () => Promise<{ credential: string }> };
 type CapacitorAuthBridge = {
@@ -25,6 +25,7 @@ export const ContaView = () => {
   const [googleError, setGoogleError] = useState('');
   const [googleLoading, setGoogleLoading] = useState(false);
   const [guestStep, setGuestStep] = useState<'overview' | 'details'>('overview');
+  const [saldoCashback, setSaldoCashback] = useState<number>(0);
 
   useEffect(() => {
     setNome(localStorage.getItem('user_nome') || '');
@@ -37,6 +38,12 @@ export const ContaView = () => {
       setGuestStep('overview');
       setFoto(localStorage.getItem('user_foto') || '');
       setEmail(localStorage.getItem('user_email') || '');
+      // Fetch cashback balance
+      api.get(`/public/${getEstablishmentSlug()}/clientes/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      }).then(res => {
+        setSaldoCashback(res.data.saldo_cashback || 0);
+      }).catch(() => {});
     }
   }, []);
 
@@ -120,6 +127,30 @@ export const ContaView = () => {
           {foto ? <img src={foto} alt="Foto do perfil" className="h-12 w-12 shrink-0 rounded-xl object-cover" /> : <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-orange-50 text-brand-600"><User size={23} /></div>}
           <div className="min-w-0 flex-1"><p className="truncate font-heading text-base font-bold text-zinc-900">{nome}</p><p className="truncate text-xs text-zinc-500">{email}</p></div>
           <button type="button" onClick={handleLogout} aria-label="Sair da conta" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-zinc-500 transition-colors hover:bg-red-50 hover:text-red-600"><LogOut size={19} /></button>
+        </section>
+      )}
+
+      {isLoggedIn && (
+        <section className="mb-4 overflow-hidden rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 shadow-sm">
+          <div className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-600">
+                <Wallet size={19} />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-amber-800">Meu Cashback</p>
+                <p className="text-xl font-bold text-amber-900">
+                  {saldoCashback.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2 rounded-xl bg-white/60 p-3">
+              <Gift size={16} className="mt-0.5 shrink-0 text-amber-600" />
+              <p className="text-xs leading-relaxed text-amber-800">
+                Você ganha <strong>2% de cashback</strong> em cada pedido confirmado. O saldo fica disponível para usar como desconto nos próximos pedidos!
+              </p>
+            </div>
+          </div>
         </section>
       )}
 
