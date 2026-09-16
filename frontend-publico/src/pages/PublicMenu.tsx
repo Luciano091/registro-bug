@@ -219,15 +219,17 @@ const PublicMenu = () => {
                   </div>
                 </div>
 
-                {/* Logo Cashback 3D - Flex na direita */}
+                {/* Botão Cashback 3D - Estilo Mockup */}
                 <div 
-                  className="flex cursor-pointer shrink-0 flex-col items-center justify-center transition-transform active:scale-95 md:hover:scale-105"
+                  className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-[#ebd5a9] bg-[#fae8c3] py-1.5 pl-1.5 pr-3 shadow-sm transition-transform active:scale-95 md:hover:scale-105"
                   onClick={() => setActiveTab('conta')}
                 >
-                  <img src="/cashback-badge.png" alt="Ganhe Cashback" className="h-[60px] w-[60px] md:h-[90px] md:w-[90px] object-contain drop-shadow-sm" />
-                  <span className="-mt-1 md:-mt-2 text-[10px] md:text-[11px] font-bold text-amber-700 hover:underline tracking-tight text-center max-w-[70px] md:max-w-[100px] leading-tight">
-                    (Ver mais &rarr;)
-                  </span>
+                  <img src="/cashback-badge.png" alt="Cashback" className="h-[34px] w-[34px] md:h-[42px] md:w-[42px] object-contain drop-shadow-sm" />
+                  <div className="flex flex-col items-start justify-center">
+                    <span className="text-[11px] font-bold leading-none text-[#a16f21] md:text-[13px]">Ganhe</span>
+                    <span className="mt-[2px] text-[11px] font-bold leading-none text-[#a16f21] md:text-[13px]">Cashback</span>
+                  </div>
+                  <svg className="ml-0.5 h-3.5 w-3.5 text-[#a16f21] md:h-4 md:w-4 md:ml-1" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                 </div>
               </div>
 
