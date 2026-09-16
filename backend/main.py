@@ -378,6 +378,7 @@ def auth_google(token_data: dict, db: Session = Depends(get_db)):
                 "nome": cliente.nome,
                 "email": cliente.email,
                 "foto_url": cliente.foto_url,
+                "saldo_cashback": cliente.saldo_cashback,
                 "telefone": cliente.telefone,
                 "endereco": cliente.endereco
             }

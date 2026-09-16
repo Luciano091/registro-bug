@@ -2,9 +2,8 @@ from database import engine
 from sqlalchemy import text
 
 tables_to_drop = [
-    "grupos_opcoes", "opcoes_produto", "categorias", "cupons",
-    "mesas", "comandas", "itens_comanda", "pagamentos_comanda",
-    "setores_cozinha", "fila_cozinha"
+    "produto_grupos_opcoes", "itens_pedido_opcoes", "setores_producao",
+    "comanda_itens", "comanda_pagamentos", "fila_cozinha"
 ]
 
 with engine.begin() as conn:

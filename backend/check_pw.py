@@ -1,9 +1,9 @@
 from database import SessionLocal
-from models import Configuracao
-
+import models
 db = SessionLocal()
-config = db.query(Configuracao).first()
-if config:
-    print(f"Senha atual no DB: {config.senha_admin}")
+est = db.query(models.Estabelecimento).filter(models.Estabelecimento.slug == "bisburger").first()
+if est:
+    config = db.query(models.Configuracao).filter(models.Configuracao.estabelecimento_id == est.id).first()
+    print("Senha hash is:", config.senha_admin)
 else:
-    print("Nenhuma configuracao encontrada")
+    print("Not found")

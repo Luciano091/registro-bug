@@ -38,9 +38,24 @@ export const CheckoutModal = ({ onClose, lojaAberta = true, mesaNumero }: Checko
   const [cupomCodigo, setCupomCodigo] = useState(getSavedCouponCode);
   const [cupomAplicado, setCupomAplicado] = useState<any | null>(null);
   const [cupomErro, setCupomErro] = useState('');
+  const [cashbackDisponivel, setCashbackDisponivel] = useState(0);
+  const [usarCashback, setUsarCashback] = useState(false);
   const [validandoCupom, setValidandoCupom] = useState(false);
   const deliveryFee = tipoPedido === 'entrega' && deliveryQuote?.atendido ? deliveryQuote.taxa : 0;
-  const totalFinal = Math.max(0, cartTotal + deliveryFee - (cupomAplicado?.desconto || 0));
+  const partialTotal = Math.max(0, cartTotal + deliveryFee - (cupomAplicado?.desconto || 0));
+  const totalFinal = Math.max(0, partialTotal - (usarCashback ? cashbackDisponivel : 0));
+
+
+  useEffect(() => {
+    const token = localStorage.getItem('cliente_token');
+    if (token) {
+      api.get(`/public/${getEstablishmentSlug()}/clientes/me`).then(res => {
+        if (res.data && res.data.saldo_cashback) {
+          setCashbackDisponivel(res.data.saldo_cashback);
+        }
+      }).catch(e => console.error(e));
+    }
+  }, []);
 
   useEffect(() => { setCupomAplicado(null); setCupomErro(''); }, [cartTotal]);
 
@@ -103,6 +118,7 @@ export const CheckoutModal = ({ onClose, lojaAberta = true, mesaNumero }: Checko
       const pedidoData = {
         uuid: orderUuid,
         cliente: nome,
+        cashback_usado: usarCashback && cashbackDisponivel > 0 ? (partialTotal > cashbackDisponivel ? cashbackDisponivel : partialTotal) : 0,
         telefone: telefone,
         endereco: tipoPedido === 'entrega' ? endereco : undefined,
         bairro: tipoPedido === 'entrega' ? bairro || undefined : undefined,
@@ -387,8 +403,20 @@ export const CheckoutModal = ({ onClose, lojaAberta = true, mesaNumero }: Checko
                     ))}
                   </div>
                   <p className="mt-2 text-xs leading-relaxed text-zinc-500">O pagamento é feito diretamente ao estabelecimento. O aplicativo não cobra agora.</p>
+                  {cashbackDisponivel > 0 && (
+                    <div className="mt-4 p-4 rounded-xl border border-emerald-200 bg-emerald-50">
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" checked={usarCashback} onChange={e => setUsarCashback(e.target.checked)} className="accent-emerald-600 w-5 h-5" />
+                        <div>
+                          <strong className="block text-emerald-800 text-sm">Usar saldo de Cashback</strong>
+                          <span className="text-emerald-600 text-xs">Você tem R$ {cashbackDisponivel.toFixed(2)} disponível</span>
+                        </div>
+                      </label>
+                    </div>
+                  )}
                 </div>
               )}
+            </div>
             </div>
           )}
         </div>
@@ -403,6 +431,12 @@ export const CheckoutModal = ({ onClose, lojaAberta = true, mesaNumero }: Checko
               </span>
             </div>
             {step === 2 && tipoPedido === 'entrega' && deliveryQuote?.atendido && <div className="-mt-2 mb-4 flex items-center justify-between text-xs text-zinc-500"><span>Taxa de entrega</span><strong className="text-zinc-700">{deliveryFee ? deliveryFee.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : 'Grátis'}</strong></div>}
+            {usarCashback && cashbackDisponivel > 0 && (
+              <div className="-mt-2 mb-4 flex items-center justify-between text-xs text-emerald-600 font-bold">
+                <span>Desconto (Cashback)</span>
+                <span>− R$ {Math.min(partialTotal, cashbackDisponivel).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>
+              </div>
+            )}
             
             {step === 1 ? (
               <button 

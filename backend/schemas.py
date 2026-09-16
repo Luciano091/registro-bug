@@ -19,6 +19,7 @@ class ClienteUpdate(BaseModel):
 class Cliente(ClienteBase):
     id: int
     data_cadastro: datetime
+    saldo_cashback: float = 0.0
 
     class Config:
         from_attributes = True
@@ -282,12 +283,12 @@ class PedidoBase(BaseModel):
     cupom_codigo: Optional[str] = None
     motivo_cancelamento: Optional[str] = None
     estornado: bool = False
+    cashback_usado: float = 0.0
 
 class PedidoCreate(PedidoBase):
     itens: List[ItemPedidoCreate]
 
 class PedidoAdminCreate(PedidoCreate):
-    telefone: str = ""
     taxa_entrega_manual: Optional[float] = Field(default=None, ge=0)
 
 class ConfirmacaoPagamento(BaseModel):

@@ -400,6 +400,42 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate, estabelecimento_id:
             return existing
 
     # Calcular totais
+
+    # ---------------- CASHBACK & CLIENTE LOGIC ----------------
+    import re
+    telefone_limpo = re.sub(r'\D', '', pedido.telefone) if pedido.telefone else None
+    cliente_id = pedido.cliente_id
+    db_cliente = None
+    
+    if telefone_limpo:
+        db_cliente = db.query(models.Cliente).filter(models.Cliente.telefone == telefone_limpo, models.Cliente.estabelecimento_id == estabelecimento_id).first()
+        if not db_cliente:
+            db_cliente = models.Cliente(
+                estabelecimento_id=estabelecimento_id,
+                nome=pedido.cliente,
+                telefone=telefone_limpo,
+                endereco=pedido.endereco
+            )
+            db.add(db_cliente)
+            db.flush()
+        else:
+            if pedido.endereco and not db_cliente.endereco:
+                db_cliente.endereco = pedido.endereco
+            if pedido.cliente and not db_cliente.nome:
+                db_cliente.nome = pedido.cliente
+            db.flush()
+        cliente_id = db_cliente.id
+
+    if pedido.cashback_usado and pedido.cashback_usado > 0:
+        if not db_cliente:
+            raise ValueError("Não é possível usar cashback sem um cliente cadastrado (telefone).")
+        if db_cliente.saldo_cashback < pedido.cashback_usado:
+            raise ValueError(f"Saldo de cashback insuficiente. O cliente tem R$ {db_cliente.saldo_cashback:.2f} disponível.")
+        
+        # Deduct cashback
+        db_cliente.saldo_cashback -= pedido.cashback_usado
+        db.flush()
+    # ----------------------------------------------------------
     subtotal = 0.0
     db_itens = []
     
@@ -517,7 +553,7 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate, estabelecimento_id:
         tipo_entrega=pedido.tipo_entrega,
         forma_pagamento=pedido.forma_pagamento,
         observacao=pedido.observacao,
-        cliente_id=pedido.cliente_id,
+        cliente_id=cliente_id,
         subtotal=subtotal,
         taxa_entrega=taxa_entrega,
         cupom_codigo=cupom.codigo if cupom else None,
@@ -577,6 +613,18 @@ def confirmar_pagamento_pedido(db: Session, pedido_id: int, estabelecimento_id: 
 
     confirmado_em = models.get_now()
     pedido.forma_pagamento = forma_pagamento.strip()
+
+    # -------------- CASHBACK REWARD --------------
+    if pedido.cliente_id:
+        # Avoid giving cashback on shipping fees or service fees if you prefer, but usually it's on the total.
+        # Let's give 2% of the TOTAL (minus any used cashback to avoid infinite loops, but total already discounts cashback).
+        # We also need to avoid double-crediting if the payment is somehow confirmed twice, but this function checks `if pedido.pagamento_confirmado_em: return`.
+        reward = round(pedido.total * 0.02, 2)
+        if reward > 0:
+            db_cliente = db.query(models.Cliente).filter(models.Cliente.id == pedido.cliente_id).first()
+            if db_cliente:
+                db_cliente.saldo_cashback = (db_cliente.saldo_cashback or 0.0) + reward
+    # ---------------------------------------------
     pedido.pagamento_confirmado_em = confirmado_em
     db.add(models.MovimentacaoCaixa(
         caixa_id=caixa.id,

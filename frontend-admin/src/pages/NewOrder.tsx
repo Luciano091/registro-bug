@@ -23,6 +23,30 @@ const NewOrder = () => {
   const [taxaManual, setTaxaManual] = useState('');
   const [tipoEntrega, setTipoEntrega] = useState('Delivery');
   const [formaPagamento, setFormaPagamento] = useState('PIX');
+  const [cashbackDisponivel, setCashbackDisponivel] = useState(0);
+  const [usarCashback, setUsarCashback] = useState(false);
+
+  useEffect(() => {
+    const fetchCliente = async () => {
+      const cleanPhone = telefone.replace(/\D/g, '');
+      if (cleanPhone.length >= 10) {
+        try {
+          const { data } = await api.get(`/admin/clientes/busca?telefone=${cleanPhone}`);
+          if (data) {
+            if (!cliente) setCliente(data.nome);
+            if (!endereco && data.endereco) setEndereco(data.endereco);
+            setCashbackDisponivel(data.saldo_cashback || 0);
+          }
+        } catch (e) {
+          setCashbackDisponivel(0);
+        }
+      } else {
+        setCashbackDisponivel(0);
+      }
+    };
+    const t = setTimeout(fetchCliente, 600);
+    return () => clearTimeout(t);
+  }, [telefone]);
   
   const [itens, setItens] = useState<{ id: number, produto: any, quantidade: number, opcoes: any[], precoUnitario: number }[]>([]);
   const [optionsProduct, setOptionsProduct] = useState<any | null>(null);
@@ -113,12 +137,13 @@ const NewOrder = () => {
       const pedidoData = {
         uuid: orderUuid,
         cliente,
-        telefone: telefone || '',
+        telefone: telefone || undefined,
         endereco: endereco || undefined,
         bairro: bairro || undefined,
         taxa_entrega_manual: tipoEntrega === 'Delivery' && deliveryConfig?.entrega_modo === 'distancia' ? Number(taxaManual) : undefined,
         tipo_entrega: tipoEntrega,
         forma_pagamento: formaPagamento,
+        cashback_usado: usarCashback && cashbackDisponivel > 0 ? (total > cashbackDisponivel ? cashbackDisponivel : total) : 0,
         itens: itens.map(item => ({
           produto_id: item.produto.id,
           quantidade: item.quantidade,
@@ -142,10 +167,7 @@ const NewOrder = () => {
             alert('Não foi possível confirmar a resposta do servidor. O pedido ficou salvo neste aparelho para reenviar automaticamente. Mantenha o painel aberto e evite cadastrar o mesmo pedido novamente.');
           } else {
             const detail = error.response?.data?.detail;
-            const message = typeof detail === 'string' ? detail : Array.isArray(detail)
-              ? detail.map((issue: any) => `${issue.loc?.slice(1).join('.') || 'Campo'}: ${issue.msg}`).join('\n')
-              : 'O pedido não foi salvo. Revise os dados e tente novamente.';
-            alert(message);
+            alert(detail || 'O pedido não foi salvo. Revise os dados e tente novamente.');
             return;
           }
         }
@@ -219,6 +241,12 @@ const NewOrder = () => {
                   <input value={telefone} onChange={e => setTelefone(e.target.value)} placeholder="(11) 99999-9999"
                     className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all text-white placeholder-zinc-600"
                   />
+                  {cashbackDisponivel > 0 && (
+                    <label className="mt-3 flex items-center gap-2 cursor-pointer p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+                      <input type="checkbox" checked={usarCashback} onChange={e => setUsarCashback(e.target.checked)} className="accent-emerald-500 w-4 h-4" />
+                      <span className="text-sm text-emerald-400 font-medium">Usar saldo de Cashback (R$ {cashbackDisponivel.toFixed(2)})</span>
+                    </label>
+                  )}
                 </div>
                 
                 <div className="pt-4">

@@ -20,6 +20,7 @@ class Estabelecimento(Base):
     plano = Column(String, default="Essencial")
     status = Column(String, default="trial", index=True)
     data_cadastro = Column(DateTime, default=get_now)
+    saldo_cashback = Column(Float, default=0.0)
     trial_ate = Column(DateTime, nullable=True)
     configuracao_id = Column(Integer, ForeignKey("configuracoes.id"), nullable=True, unique=True)
 
@@ -81,6 +82,7 @@ class LeadComercial(Base):
     mensagem = Column(Text, nullable=True)
     status = Column(String, default="novo", index=True)
     data_cadastro = Column(DateTime, default=get_now)
+    saldo_cashback = Column(Float, default=0.0)
 
 class Cliente(Base):
     __tablename__ = "clientes"
@@ -94,6 +96,7 @@ class Cliente(Base):
     telefone = Column(String, nullable=True)
     endereco = Column(String, nullable=True)
     data_cadastro = Column(DateTime, default=get_now)
+    saldo_cashback = Column(Float, default=0.0)
     
     pedidos = relationship("Pedido", back_populates="cliente_obj")
 
