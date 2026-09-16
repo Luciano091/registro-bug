@@ -10,13 +10,14 @@ import { clearSavedCouponCode, getSavedCouponCode, saveCouponCode } from '../ser
 interface CheckoutModalProps {
   onClose: () => void;
   lojaAberta?: boolean;
+  mesaNumero?: string;
 }
 
 type DeliveryArea = { id: number; bairro: string; taxa: number; pedido_minimo: number; prazo_adicional_min: number };
 type DeliveryConfig = { entrega_habilitada: boolean; entrega_modo: 'fixa' | 'bairro' | 'distancia'; areas: DeliveryArea[] };
 type DeliveryQuote = { atendido: boolean; taxa: number; pedido_minimo: number; faltam_para_minimo: number; distancia_km?: number; prazo_estimado_min?: number; mensagem: string };
 
-export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps) => {
+export const CheckoutModal = ({ onClose, lojaAberta = true, mesaNumero }: CheckoutModalProps) => {
   const { items, cartTotal, removeItem, updateQuantity, updateObservacao, clearCart } = useCart();
   const { isOnline } = useNetwork();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,7 +25,7 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
   
   const [nome, setNome] = useState(localStorage.getItem('user_nome') || '');
   const [telefone, setTelefone] = useState(localStorage.getItem('user_telefone') || '');
-  const [tipoPedido, setTipoPedido] = useState<'entrega' | 'retirada'>('entrega');
+  const [tipoPedido, setTipoPedido] = useState<'entrega' | 'retirada' | 'mesa'>(mesaNumero ? 'mesa' : 'entrega');
   const [endereco, setEndereco] = useState(localStorage.getItem('user_endereco') || '');
   const [bairro, setBairro] = useState(localStorage.getItem('user_bairro') || '');
   const [deliveryConfig, setDeliveryConfig] = useState<DeliveryConfig | null>(null);
@@ -107,8 +108,8 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
         bairro: tipoPedido === 'entrega' ? bairro || undefined : undefined,
         latitude_entrega: tipoPedido === 'entrega' ? deliveryLocation?.latitude : undefined,
         longitude_entrega: tipoPedido === 'entrega' ? deliveryLocation?.longitude : undefined,
-        tipo_entrega: tipoPedido === 'entrega' ? 'Delivery' : 'Retirada',
-        forma_pagamento: pagamento,
+        tipo_entrega: tipoPedido === 'entrega' ? 'Delivery' : tipoPedido === 'mesa' ? 'Mesa' : 'Retirada',
+        forma_pagamento: tipoPedido === 'mesa' ? 'Mesa' : pagamento,
         cupom_codigo: cupomAplicado?.codigo || undefined,
         itens: items.map(item => ({
           produto_id: item.produtoId,
@@ -118,8 +119,8 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
         }))
       };
 
-            localStorage.setItem('user_nome', nome);
-      localStorage.setItem('user_telefone', telefone);
+      localStorage.setItem('user_nome', nome);
+      if (telefone) localStorage.setItem('user_telefone', telefone);
       if (tipoPedido === 'entrega') localStorage.setItem('user_endereco', endereco);
       if (tipoPedido === 'entrega' && bairro) localStorage.setItem('user_bairro', bairro);
 
@@ -127,18 +128,17 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
         await saveOfflineOrder(orderUuid, pedidoData);
       } else {
         try {
-          const response = await api.post(`/public/${getEstablishmentSlug()}/pedidos`, pedidoData);
-          if (response.data && response.data.uuid) {
+          const url = tipoPedido === 'mesa' 
+            ? `/public/${getEstablishmentSlug()}/mesas/${mesaNumero}/pedir` 
+            : `/public/${getEstablishmentSlug()}/pedidos`;
+          const response = await api.post(url, pedidoData);
+          if (response.data && (response.data.uuid || response.data.comanda_id)) {
             let saved = [];
             try {
               saved = JSON.parse(localStorage.getItem('meus_pedidos') || '[]');
               if (!Array.isArray(saved)) saved = [];
-            } catch (e) {
-              saved = [];
-            }
-            if (!saved.includes(response.data.uuid)) {
-              saved.push(response.data.uuid);
-            }
+            } catch(e) {}
+            saved.push(response.data.uuid || `mesa-${response.data.comanda_id}`);
             localStorage.setItem('meus_pedidos', JSON.stringify(saved));
           }
         } catch (error: any) {
@@ -167,7 +167,7 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
     if (telefone.replace(/\D/g, '').length < 10) return false;
     if (tipoPedido === 'entrega' && !endereco.trim()) return false;
     if (tipoPedido === 'entrega' && (!deliveryQuote?.atendido || quotingDelivery || !isOnline)) return false;
-    if (!pagamento) return false;
+    if (tipoPedido !== 'mesa' && !pagamento) return false;
     return true;
   };
 
@@ -197,9 +197,13 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
               <div className="w-20 h-20 bg-brand-500/20 text-brand-500 rounded-full flex items-center justify-center mb-4">
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
               </div>
-              <h3 className="text-2xl font-bold text-zinc-900 font-heading">Pedido Recebido!</h3>
+              <h3 className="text-2xl font-bold text-zinc-900 font-heading">
+                {tipoPedido === 'mesa' ? 'Enviado para a Cozinha!' : 'Pedido Recebido!'}
+              </h3>
               <p className="text-zinc-500 max-w-sm">
-                Seu pedido já foi enviado ao estabelecimento. Em breve você receberá atualizações pelo WhatsApp.
+                {tipoPedido === 'mesa' 
+                  ? 'Seus itens já foram recebidos e estão sendo preparados.'
+                  : 'Seu pedido já foi enviado ao estabelecimento. Em breve você receberá atualizações pelo WhatsApp.'}
               </p>
               <button 
                 onClick={onClose}
@@ -327,26 +331,28 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-bold text-zinc-600 mb-2">Como deseja receber?</label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button 
-                    onClick={() => setTipoPedido('entrega')}
-                    disabled={deliveryConfig?.entrega_habilitada === false}
-                    className={`p-3 rounded-xl border flex flex-col items-center gap-2 transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${tipoPedido === 'entrega' ? 'bg-brand-500/10 border-brand-500 text-brand-500' : 'bg-zinc-50 border-zinc-200 text-zinc-500 hover:border-zinc-200'}`}
-                  >
-                    <MapPin size={20} />
-                    <span className="text-sm font-bold">Entrega</span>
-                  </button>
-                  <button 
-                    onClick={() => setTipoPedido('retirada')}
-                    className={`p-3 rounded-xl border flex flex-col items-center gap-2 transition-colors ${tipoPedido === 'retirada' ? 'bg-brand-500/10 border-brand-500 text-brand-500' : 'bg-zinc-50 border-zinc-200 text-zinc-500 hover:border-zinc-200'}`}
-                  >
-                    <ShoppingCart size={20} />
-                    <span className="text-sm font-bold">Retirar no balcão</span>
-                  </button>
+              {tipoPedido !== 'mesa' && (
+                <div>
+                  <label className="block text-sm font-bold text-zinc-600 mb-2">Como deseja receber?</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button 
+                      onClick={() => setTipoPedido('entrega')}
+                      disabled={deliveryConfig?.entrega_habilitada === false}
+                      className={`p-3 rounded-xl border flex flex-col items-center gap-2 transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${tipoPedido === 'entrega' ? 'bg-brand-500/10 border-brand-500 text-brand-500' : 'bg-zinc-50 border-zinc-200 text-zinc-500 hover:border-zinc-200'}`}
+                    >
+                      <MapPin size={20} />
+                      <span className="text-sm font-bold">Entrega</span>
+                    </button>
+                    <button 
+                      onClick={() => setTipoPedido('retirada')}
+                      className={`p-3 rounded-xl border flex flex-col items-center gap-2 transition-colors ${tipoPedido === 'retirada' ? 'bg-brand-500/10 border-brand-500 text-brand-500' : 'bg-zinc-50 border-zinc-200 text-zinc-500 hover:border-zinc-200'}`}
+                    >
+                      <ShoppingCart size={20} />
+                      <span className="text-sm font-bold">Retirar no balcão</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {tipoPedido === 'entrega' && (
                 <div className="animate-in fade-in slide-in-from-top-2 space-y-3">
@@ -365,21 +371,24 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
               )}
 
               <div>
-                <label className="block text-sm font-bold text-zinc-600 mb-2">Forma de pagamento</label>
-                <div className="grid grid-cols-2 gap-3">
-                  {['PIX', 'Cartão de Crédito', 'Cartão de Débito', 'Dinheiro'].map(metodo => (
-                    <button 
-                      key={metodo}
-                      onClick={() => setPagamento(metodo)}
-                      className={`p-3 rounded-xl border flex items-center gap-2 transition-colors ${pagamento === metodo ? 'bg-brand-500/10 border-brand-500 text-brand-500' : 'bg-zinc-50 border-zinc-200 text-zinc-500 hover:border-zinc-200'}`}
-                    >
-                      <CreditCard size={16} />
-                      <span className="text-sm font-bold">{metodo}</span>
-                    </button>
-                  ))}
+              {tipoPedido !== 'mesa' && (
+                <div>
+                  <label className="block text-sm font-bold text-zinc-600 mb-2">Forma de pagamento</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {['PIX', 'Cartão de Crédito', 'Cartão de Débito', 'Dinheiro'].map(metodo => (
+                      <button 
+                        key={metodo}
+                        onClick={() => setPagamento(metodo)}
+                        className={`p-3 rounded-xl border flex items-center gap-2 transition-colors ${pagamento === metodo ? 'bg-brand-500/10 border-brand-500 text-brand-500' : 'bg-zinc-50 border-zinc-200 text-zinc-500 hover:border-zinc-200'}`}
+                      >
+                        <CreditCard size={16} />
+                        <span className="text-sm font-bold">{metodo}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-2 text-xs leading-relaxed text-zinc-500">O pagamento é feito diretamente ao estabelecimento. O aplicativo não cobra agora.</p>
                 </div>
-                <p className="mt-2 text-xs leading-relaxed text-zinc-500">O pagamento é feito diretamente ao estabelecimento. O aplicativo não cobra agora.</p>
-              </div>
+              )}
             </div>
           )}
         </div>
@@ -422,7 +431,7 @@ export const CheckoutModal = ({ onClose, lojaAberta = true }: CheckoutModalProps
                   disabled={!isFormValid() || isSubmitting}
                   className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-brand-500 p-4 font-bold text-white shadow-lg shadow-brand-500/20 transition-colors hover:bg-brand-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-brand-500/50"
                 >
-                  <span>{isSubmitting ? 'Enviando...' : 'Finalizar Pedido'}</span>
+                  <span>{isSubmitting ? 'Enviando...' : tipoPedido === 'mesa' ? 'Enviar para a Cozinha' : 'Finalizar Pedido'}</span>
                 </button>
               </div>
             )}

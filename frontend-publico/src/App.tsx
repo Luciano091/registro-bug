@@ -25,8 +25,10 @@ function AppRouter() {
   return (
     <Routes>
       <Route path="/" element={<PublicMenu />} />
+      <Route path="/mesa/:mesaNumero" element={<PublicMenu />} />
       {/* Fallback backward compatibility for path-based routes */}
       <Route path="/:est" element={<PublicMenu />} />
+      <Route path="/:est/mesa/:mesaNumero" element={<PublicMenu />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

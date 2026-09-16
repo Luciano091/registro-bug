@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useParams } from 'react-router-dom';
 import { MapPin, Clock, Utensils, Plus, Flame, Check, Ticket, Receipt, User } from 'lucide-react';
 import api from '../services/api';
 import { getEstablishmentSlug } from '../services/api';
@@ -26,6 +27,7 @@ const isRunningInNativeApp = () => {
 };
 
 const PublicMenu = () => {
+  const { mesaNumero } = useParams();
   const [config, setConfig] = useState<any>(null);
   const [produtos, setProdutos] = useState<any[]>([]);
   const [categoriasConfiguradas, setCategoriasConfiguradas] = useState<any[]>([]);
@@ -149,6 +151,11 @@ const PublicMenu = () => {
 
   return (
     <div className={`public-menu min-h-screen text-zinc-900 font-sans ${cartCount > 0 ? "pb-36" : "pb-24"} md:pb-12 selection:bg-brand-500/30 selection:text-zinc-900`}>
+      {mesaNumero && (
+        <div className="bg-brand-500 text-white text-center py-2 font-medium sticky top-0 z-[60] text-sm md:text-base shadow-sm">
+          📍 Você está pedindo para a <strong>Mesa {mesaNumero}</strong>
+        </div>
+      )}
       <header className="public-desktop-nav sticky top-0 z-50 hidden border-b border-zinc-200/80 bg-white/95 backdrop-blur-xl md:block">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6 lg:px-8">
           <button onClick={() => setActiveTab('cardapio')} className="flex items-center gap-2.5" aria-label="Ir para o cardápio">
@@ -520,6 +527,7 @@ const PublicMenu = () => {
         <CheckoutModal 
           onClose={() => setIsCheckoutOpen(false)} 
           lojaAberta={config?.loja_aberta}
+          mesaNumero={mesaNumero}
         />
       )}
 
