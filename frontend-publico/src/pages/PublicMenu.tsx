@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { MapPin, Clock, Utensils, Plus, Flame, Check, Ticket, Receipt, User, Gift } from 'lucide-react';
+import { MapPin, Clock, Utensils, Plus, Flame, Check, Ticket, Receipt, User } from 'lucide-react';
 import api from '../services/api';
 import { getEstablishmentSlug } from '../services/api';
 import { ProductModal } from '../components/ProductModal';
@@ -191,12 +191,12 @@ const PublicMenu = () => {
 
       <div className="store-hero w-full border-b border-zinc-200 py-5 md:py-6">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="store-hero-layout">
+          <div className="store-hero-layout relative">
             <div className="store-hero-logo h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-0.5 shadow-sm">
               <img src={config?.logo || "/logo.png"} alt={config?.nome_empresa || "Logo"} className="h-full w-full rounded-[14px] object-cover" />
             </div>
             
-            <div className="store-hero-copy min-w-0">
+            <div className="store-hero-copy min-w-0 pr-16">
               <h1 className="text-xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-2xl md:text-3xl">
                 {config?.nome_empresa || 'Seu Restaurante'}
               </h1>
@@ -225,10 +225,15 @@ const PublicMenu = () => {
                   <Clock size={14} />
                   {config?.tempo_medio_preparo || 30} min
                 </div>
-                <div className="flex min-h-9 items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 text-xs font-semibold text-amber-700">
-                  <Gift size={14} />
-                  2% de cashback
-                </div>
+            </div>
+
+            {/* Logo Cashback 3D - Flutuante na direita */}
+            <div 
+              className="absolute -right-2 top-0 flex cursor-pointer flex-col items-center transition-transform active:scale-95 md:hover:scale-105"
+              onClick={() => setActiveTab('conta')}
+            >
+              <img src="/cashback-badge.png" alt="Ganhe Cashback" className="h-[68px] w-[68px] object-contain drop-shadow-sm" />
+              <span className="-mt-1 text-[10px] font-bold text-amber-700 hover:underline">(Ver mais &rarr;)</span>
             </div>
           </div>
         </div>
