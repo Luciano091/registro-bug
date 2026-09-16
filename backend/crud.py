@@ -409,6 +409,9 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate, estabelecimento_id:
     
     if telefone_limpo:
         db_cliente = db.query(models.Cliente).filter(models.Cliente.telefone == telefone_limpo, models.Cliente.estabelecimento_id == estabelecimento_id).first()
+        if not db_cliente and cliente_id:
+            db_cliente = db.query(models.Cliente).filter(models.Cliente.id == cliente_id).first()
+            
         if not db_cliente:
             db_cliente = models.Cliente(
                 estabelecimento_id=estabelecimento_id,
@@ -419,12 +422,17 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate, estabelecimento_id:
             db.add(db_cliente)
             db.flush()
         else:
+            if telefone_limpo and not db_cliente.telefone:
+                db_cliente.telefone = telefone_limpo
             if pedido.endereco and not db_cliente.endereco:
                 db_cliente.endereco = pedido.endereco
             if pedido.cliente and not db_cliente.nome:
                 db_cliente.nome = pedido.cliente
             db.flush()
         cliente_id = db_cliente.id
+    elif cliente_id:
+        db_cliente = db.query(models.Cliente).filter(models.Cliente.id == cliente_id).first()
+
 
     if pedido.cashback_usado and pedido.cashback_usado > 0:
         if not db_cliente:
@@ -619,7 +627,7 @@ def confirmar_pagamento_pedido(db: Session, pedido_id: int, estabelecimento_id: 
         # Avoid giving cashback on shipping fees or service fees if you prefer, but usually it's on the total.
         # Let's give 2% of the TOTAL (minus any used cashback to avoid infinite loops, but total already discounts cashback).
         # We also need to avoid double-crediting if the payment is somehow confirmed twice, but this function checks `if pedido.pagamento_confirmado_em: return`.
-        reward = round(pedido.total * 0.02, 2)
+        reward = round(float(pedido.total) * 0.02, 2)
         if reward > 0:
             db_cliente = db.query(models.Cliente).filter(models.Cliente.id == pedido.cliente_id).first()
             if db_cliente:
