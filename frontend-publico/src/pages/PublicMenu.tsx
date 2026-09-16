@@ -198,7 +198,7 @@ const PublicMenu = () => {
             
             <div className="flex w-full flex-col min-w-0">
               
-              <div className="flex w-full items-start justify-between gap-2">
+              <div className="flex w-full items-start justify-between gap-1 md:gap-2">
                 <div className="store-hero-copy min-w-0 pt-1">
                   <h1 className="truncate text-xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-2xl md:text-3xl">
                     {config?.nome_empresa || 'Seu Restaurante'}
@@ -219,17 +219,17 @@ const PublicMenu = () => {
                   </div>
                 </div>
 
-                {/* Botão Cashback 3D - Estilo Mockup (Compacto no Mobile) */}
+                {/* Botão Cashback 3D - Estilo Mockup (Ultra Compacto no Mobile) */}
                 <div 
-                  className="flex shrink-0 cursor-pointer items-center gap-1 rounded-full border border-[#ebd5a9] bg-[#fae8c3] py-1 pl-1 pr-2 shadow-sm transition-transform active:scale-95 md:gap-1.5 md:py-1.5 md:pl-1.5 md:pr-3 md:hover:scale-105"
+                  className="flex shrink-0 cursor-pointer items-center gap-0.5 rounded-full border border-[#ebd5a9] bg-[#fae8c3] py-[3px] pl-0.5 pr-1.5 shadow-sm transition-transform active:scale-95 md:gap-1.5 md:py-1.5 md:pl-1.5 md:pr-3 md:hover:scale-105"
                   onClick={() => setActiveTab('conta')}
                 >
-                  <img src="/cashback-badge.png" alt="Cashback" className="h-[28px] w-[28px] object-contain drop-shadow-sm md:h-[42px] md:w-[42px]" />
+                  <img src="/cashback-badge.png" alt="Cashback" className="h-[22px] w-[22px] object-contain drop-shadow-sm md:h-[42px] md:w-[42px]" />
                   <div className="flex flex-col items-start justify-center">
-                    <span className="text-[9px] font-bold leading-none text-[#a16f21] md:text-[13px]">Ganhe</span>
-                    <span className="mt-[2px] text-[9px] font-bold leading-none text-[#a16f21] md:text-[13px]">Cashback</span>
+                    <span className="text-[8px] font-bold leading-none text-[#a16f21] md:text-[13px]">Ganhe</span>
+                    <span className="mt-[1px] text-[8px] font-bold leading-none text-[#a16f21] md:text-[13px]">Cashback</span>
                   </div>
-                  <svg className="ml-0.5 h-3 w-3 text-[#a16f21] md:ml-1 md:h-4 md:w-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                  <svg className="ml-[1px] h-2.5 w-2.5 text-[#a16f21] md:ml-1 md:h-4 md:w-4" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                 </div>
               </div>
 
