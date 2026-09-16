@@ -30,7 +30,7 @@ export const getEstablishmentSlug = () => {
 api.interceptors.request.use((config) => {
   let token = null;
   try {
-    token = localStorage.getItem('adminToken') || localStorage.getItem('cliente_token');
+    token = localStorage.getItem('cliente_token');
   } catch (err) {
     console.warn('LocalStorage bloqueado pelo navegador. Navegando sem token.');
   }
