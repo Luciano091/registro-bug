@@ -230,22 +230,22 @@ const PublicMenu = () => {
           
           <div 
             onClick={() => setActiveTab('conta')}
-            className="mt-5 cursor-pointer overflow-hidden rounded-[1.25rem] bg-[#1a1a1a] p-4 text-white shadow-sm transition-transform active:scale-[0.98] md:hover:scale-[1.01]"
+            className="mt-5 cursor-pointer rounded-[14px] border border-zinc-800/80 bg-[#1c1c1e] px-4 py-3.5 shadow-sm transition-all hover:bg-[#232325] active:scale-[0.99] md:w-max md:pr-10"
           >
-            <div className="flex items-center gap-3.5">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 shadow-inner">
-                <Gift className="h-6 w-6 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-[13px] font-bold uppercase tracking-wide text-amber-400">
-                  Ganhe 2% de Cashback
-                </h3>
-                <p className="mt-0.5 truncate text-[13px] text-zinc-300">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex min-w-0 flex-col justify-center">
+                <div className="flex items-center gap-2">
+                  <Gift className="h-4 w-4 shrink-0 text-amber-500" />
+                  <h3 className="truncate text-sm font-bold tracking-tight text-white">
+                    GANHE 2% DE CASHBACK
+                  </h3>
+                </div>
+                <p className="mt-0.5 truncate pl-6 text-[13px] text-zinc-400">
                   em todas as suas compras
                 </p>
               </div>
-              <div className="shrink-0 text-[11px] font-medium text-zinc-400">
-                Veja como &rarr;
+              <div className="shrink-0 text-[12px] font-medium text-amber-500/80">
+                Veja como <span className="hidden sm:inline">funciona </span>&rarr;
               </div>
             </div>
           </div>
