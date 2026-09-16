@@ -196,7 +196,7 @@ const PublicMenu = () => {
               <img src={config?.logo || "/logo.png"} alt={config?.nome_empresa || "Logo"} className="h-full w-full rounded-[14px] object-cover" />
             </div>
             
-            <div className="store-hero-copy min-w-0 pr-16">
+            <div className="store-hero-copy min-w-0 pr-[72px]">
               <h1 className="text-xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-2xl md:text-3xl">
                 {config?.nome_empresa || 'Seu Restaurante'}
               </h1>
@@ -216,7 +216,7 @@ const PublicMenu = () => {
               </div>
 
             </div>
-            <div className="store-hero-facts flex flex-wrap items-center gap-2">
+            <div className="store-hero-facts flex flex-wrap items-center gap-2 pr-[72px]">
                 <div className="flex min-h-9 items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-3 text-xs font-semibold text-emerald-700">
                   <MapPin size={14} />
                   {!config?.entrega_habilitada ? 'Somente retirada' : config?.entrega_modo === 'bairro' ? 'Taxa por bairro' : config?.entrega_modo === 'distancia' ? 'Taxa por distância' : config?.taxa_entrega === 0 || !config?.taxa_entrega ? 'Entrega grátis' : `Taxa ${Number(config.taxa_entrega).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`}
@@ -229,11 +229,11 @@ const PublicMenu = () => {
 
             {/* Logo Cashback 3D - Flutuante na direita */}
             <div 
-              className="absolute -right-2 top-0 flex cursor-pointer flex-col items-center transition-transform active:scale-95 md:hover:scale-105"
+              className="absolute -right-2 -top-1 flex cursor-pointer flex-col items-center transition-transform active:scale-95 md:hover:scale-105"
               onClick={() => setActiveTab('conta')}
             >
-              <img src="/cashback-badge.png" alt="Ganhe Cashback" className="h-[68px] w-[68px] object-contain drop-shadow-sm" />
-              <span className="-mt-1 text-[10px] font-bold text-amber-700 hover:underline">(Ver mais &rarr;)</span>
+              <img src="/cashback-badge.png" alt="Ganhe Cashback" className="h-[54px] w-[54px] object-contain drop-shadow-sm" />
+              <span className="mt-0 text-[10px] font-bold text-amber-700 hover:underline tracking-tight">(Ver mais &rarr;)</span>
             </div>
           </div>
         </div>
