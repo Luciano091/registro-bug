@@ -238,6 +238,11 @@ const showBrowserNotification = (title: string, body: string) => {
       }
     });
     const intervalOrders = window.setInterval(() => void refreshOrders(), 30000);
+    const refreshSyncedOrder = () => {
+      void refreshOrders();
+      void refreshDashboard();
+    };
+    window.addEventListener('ritmesa:orders-synced', refreshSyncedOrder);
     const refreshVisible = () => {
       if (document.visibilityState === 'visible') void refreshOrders();
     };
@@ -246,6 +251,7 @@ const showBrowserNotification = (title: string, body: string) => {
     return () => {
       stopRealtime();
       window.clearInterval(intervalOrders);
+      window.removeEventListener('ritmesa:orders-synced', refreshSyncedOrder);
       document.removeEventListener('visibilitychange', refreshVisible);
     };
   }, [refreshProdutos, refreshOrders, refreshDashboard]);

@@ -139,7 +139,7 @@ const NewOrder = () => {
         } catch (error: any) {
           if (!error.response || error.message === 'Network Error') {
             await saveOfflineOrder(orderUuid, pedidoData);
-            alert('A conexão caiu. O pedido ficou salvo neste aparelho e aparecerá após a sincronização.');
+            alert('Não foi possível confirmar a resposta do servidor. O pedido ficou salvo neste aparelho para reenviar automaticamente. Mantenha o painel aberto e evite cadastrar o mesmo pedido novamente.');
           } else {
             const detail = error.response?.data?.detail;
             alert(detail || 'O pedido não foi salvo. Revise os dados e tente novamente.');
