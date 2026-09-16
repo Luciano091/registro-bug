@@ -200,36 +200,36 @@ const PublicMenu = () => {
               
               <div className="flex w-full items-start justify-between gap-2">
                 <div className="store-hero-copy min-w-0 pt-1">
-                  <h1 className="text-xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-2xl md:text-3xl">
+                  <h1 className="truncate text-xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-2xl md:text-3xl">
                     {config?.nome_empresa || 'Seu Restaurante'}
                   </h1>
                   
                   <div className="mt-1.5 flex items-center gap-2">
                     {config?.loja_aberta ? (
                       <>
-                        <div className="h-2 w-2 rounded-full bg-emerald-500"></div>
-                        <span className="text-sm font-semibold text-emerald-600">Aberto agora</span>
+                        <div className="h-2 w-2 shrink-0 rounded-full bg-emerald-500"></div>
+                        <span className="whitespace-nowrap text-sm font-semibold text-emerald-600">Aberto agora</span>
                       </>
                     ) : (
                       <>
-                        <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
-                        <span className="text-sm font-bold text-red-500">Fechado</span>
+                        <div className="h-2 w-2 shrink-0 rounded-full bg-red-500"></div>
+                        <span className="whitespace-nowrap text-sm font-bold text-red-500">Fechado</span>
                       </>
                     )}
                   </div>
                 </div>
 
-                {/* Botão Cashback 3D - Estilo Mockup */}
+                {/* Botão Cashback 3D - Estilo Mockup (Compacto no Mobile) */}
                 <div 
-                  className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-[#ebd5a9] bg-[#fae8c3] py-1.5 pl-1.5 pr-3 shadow-sm transition-transform active:scale-95 md:hover:scale-105"
+                  className="flex shrink-0 cursor-pointer items-center gap-1 rounded-full border border-[#ebd5a9] bg-[#fae8c3] py-1 pl-1 pr-2 shadow-sm transition-transform active:scale-95 md:gap-1.5 md:py-1.5 md:pl-1.5 md:pr-3 md:hover:scale-105"
                   onClick={() => setActiveTab('conta')}
                 >
-                  <img src="/cashback-badge.png" alt="Cashback" className="h-[34px] w-[34px] md:h-[42px] md:w-[42px] object-contain drop-shadow-sm" />
+                  <img src="/cashback-badge.png" alt="Cashback" className="h-[28px] w-[28px] object-contain drop-shadow-sm md:h-[42px] md:w-[42px]" />
                   <div className="flex flex-col items-start justify-center">
-                    <span className="text-[11px] font-bold leading-none text-[#a16f21] md:text-[13px]">Ganhe</span>
-                    <span className="mt-[2px] text-[11px] font-bold leading-none text-[#a16f21] md:text-[13px]">Cashback</span>
+                    <span className="text-[9px] font-bold leading-none text-[#a16f21] md:text-[13px]">Ganhe</span>
+                    <span className="mt-[2px] text-[9px] font-bold leading-none text-[#a16f21] md:text-[13px]">Cashback</span>
                   </div>
-                  <svg className="ml-0.5 h-3.5 w-3.5 text-[#a16f21] md:h-4 md:w-4 md:ml-1" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                  <svg className="ml-0.5 h-3 w-3 text-[#a16f21] md:ml-1 md:h-4 md:w-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                 </div>
               </div>
 
