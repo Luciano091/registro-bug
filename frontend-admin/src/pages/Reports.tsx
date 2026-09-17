@@ -147,30 +147,28 @@ const Reports = () => {
               {/* Periodo */}
               <div className="flex flex-col gap-2 w-full sm:w-auto">
                 <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Período</span>
-                {periodo === 'custom' ? (
-                  <div className="flex items-center bg-white border border-zinc-200 rounded-lg p-2 shadow-sm gap-3 px-3">
-                    <Calendar size={16} className="text-zinc-500 shrink-0" />
-                    <input 
-                      type="date" 
-                      value={customStart} 
-                      onChange={(e) => setCustomStart(e.target.value)} 
-                      className="bg-transparent text-sm font-medium text-zinc-800 outline-none cursor-pointer"
-                    />
-                    <span className="text-zinc-400 text-xs font-semibold lowercase">até</span>
-                    <input 
-                      type="date" 
-                      value={customEnd} 
-                      onChange={(e) => setCustomEnd(e.target.value)} 
-                      className="bg-transparent text-sm font-medium text-zinc-800 outline-none cursor-pointer"
-                    />
-                    <Calendar size={16} className="text-zinc-500 shrink-0" />
-                  </div>
-                ) : (
-                  <div className="flex items-center bg-zinc-50 border border-zinc-200 rounded-lg p-2 shadow-sm px-3 w-full sm:w-[280px] text-zinc-400 cursor-not-allowed">
-                     <Calendar size={16} className="shrink-0 mr-3" />
-                     <span className="text-sm font-medium">Datas automáticas</span>
-                  </div>
-                )}
+                <div className="flex items-center bg-white border border-zinc-200 rounded-lg p-2 shadow-sm gap-3 px-3">
+                  <Calendar size={16} className="text-zinc-500 shrink-0" />
+                  <input 
+                    type="date" 
+                    value={customStart} 
+                    onChange={(e) => {
+                      setCustomStart(e.target.value);
+                      setPeriodo('custom');
+                    }} 
+                    className="bg-transparent text-sm font-medium text-zinc-800 outline-none cursor-pointer"
+                  />
+                  <span className="text-zinc-400 text-xs font-semibold lowercase">até</span>
+                  <input 
+                    type="date" 
+                    value={customEnd} 
+                    onChange={(e) => {
+                      setCustomEnd(e.target.value);
+                      setPeriodo('custom');
+                    }} 
+                    className="bg-transparent text-sm font-medium text-zinc-800 outline-none cursor-pointer"
+                  />
+                </div>
               </div>
 
               {/* Visualização */}
@@ -189,7 +187,7 @@ const Reports = () => {
                          setCustomEnd(today.toISOString().split('T')[0]);
                        }
                      }}
-                     className="bg-transparent text-sm font-semibold text-zinc-900 outline-none cursor-pointer appearance-none pr-6 w-full"
+                     className="bg-transparent text-sm font-semibold text-zinc-900 outline-none cursor-pointer appearance-none pr-6 w-full min-w-[130px]"
                      style={{ background: `url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2318181b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E") no-repeat right center`, backgroundSize: '16px' }}
                    >
                      <option value="hoje">Hoje</option>
