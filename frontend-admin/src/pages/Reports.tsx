@@ -139,29 +139,29 @@ const Reports = () => {
     <div className="p-4 md:p-8 max-w-[1600px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-6 custom-scrollbar text-zinc-200 print:hidden">
       
       {/* Header Unificado Profissional */}
-      <header className="mb-8 print:hidden">
-        <div className="bg-white rounded-xl shadow-sm border border-zinc-200/80 p-4 flex flex-col xl:flex-row items-start xl:items-center justify-between gap-6 xl:gap-0 xl:divide-x divide-zinc-200">
+      <header className="mb-6 print:hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-zinc-200/80 p-3 lg:p-4 flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4 xl:gap-0 xl:divide-x divide-zinc-200 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
           
           {/* Seção 1: Título */}
-          <div className="flex items-center gap-4 xl:pr-6 w-full xl:w-auto">
-            <div className="bg-blue-100 text-blue-600 p-3.5 rounded-[14px] shrink-0">
-              <BarChart3 size={28} strokeWidth={2.5} />
+          <div className="flex items-center gap-3 xl:pr-4 w-full xl:w-auto shrink-0">
+            <div className="bg-blue-100 text-blue-600 p-3 rounded-[14px] shrink-0">
+              <BarChart3 size={24} strokeWidth={2.5} />
             </div>
             <div>
-              <h2 className="text-2xl font-bold tracking-tight text-zinc-900 font-heading leading-none">Relatórios</h2>
-              <p className="text-zinc-500 mt-1.5 text-xs">Acompanhe o desempenho completo do seu negócio.</p>
+              <h2 className="text-xl font-bold tracking-tight text-zinc-900 font-heading leading-none">Relatórios</h2>
+              <p className="text-zinc-500 mt-1 text-[11px] hidden sm:block">Acompanhe o desempenho completo.</p>
             </div>
           </div>
 
           {/* Wrapper para Filtros e Ações para fluir lado a lado no desktop */}
-          <div className="flex flex-col xl:flex-row items-start xl:items-center gap-6 xl:gap-0 xl:pl-6 w-full xl:w-auto xl:divide-x divide-zinc-200 pt-2 xl:pt-0">
+          <div className="flex flex-col xl:flex-row items-start xl:items-center gap-4 xl:gap-0 xl:pl-4 w-full xl:w-auto xl:divide-x divide-zinc-200 pt-2 xl:pt-0 shrink-0">
             
             {/* Seção 2: Filtros */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 xl:pr-6 w-full xl:w-auto">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 xl:pr-4 w-full xl:w-auto shrink-0">
               
               {/* Periodo (Aparece apenas quando Personalizado) */}
               {periodo === 'custom' && (
-                <div className="flex flex-col gap-2 w-full sm:w-auto animate-in fade-in slide-in-from-right-4 duration-300 relative">
+                <div className="flex flex-col gap-1.5 w-full sm:w-auto animate-in fade-in slide-in-from-right-4 duration-300 relative">
                   <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Período</span>
                   <button 
                     onClick={() => setShowDatePicker(!showDatePicker)}
@@ -195,7 +195,7 @@ const Reports = () => {
               )}
 
               {/* Visualização */}
-              <div className="flex flex-col gap-2 w-full sm:w-auto">
+              <div className="flex flex-col gap-1.5 w-full sm:w-auto shrink-0">
                 <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Visualização</span>
                 <div className="flex items-center bg-white border border-zinc-200 rounded-lg p-2 shadow-sm px-3">
                    <BarChart3 size={16} className="text-zinc-800 mr-2 shrink-0" />
@@ -213,7 +213,7 @@ const Reports = () => {
                          setShowDatePicker(false);
                        }
                      }}
-                     className="bg-transparent text-sm font-semibold text-zinc-900 outline-none cursor-pointer appearance-none pr-6 w-full min-w-[130px]"
+                     className="bg-transparent text-sm font-semibold text-zinc-900 outline-none cursor-pointer appearance-none pr-6 w-full min-w-[120px]"
                      style={{ background: `url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2318181b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E") no-repeat right center`, backgroundSize: '16px' }}
                    >
                      <option value="hoje">Hoje</option>
@@ -226,16 +226,16 @@ const Reports = () => {
             </div>
             
             {/* Seção 3: Botões */}
-            <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 w-full xl:w-auto pt-6 xl:pt-0 xl:pl-6 mt-auto">
-              <button onClick={exportClientsCSV} disabled={exportingClients} className="flex flex-1 sm:flex-none items-center justify-center gap-2 bg-white text-blue-600 border border-blue-200 hover:bg-blue-50 transition-colors px-4 py-2.5 rounded-lg text-sm font-bold shadow-sm disabled:opacity-50 whitespace-nowrap" title="Exportar Base de Clientes (CRM)">
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 w-full xl:w-auto pt-4 xl:pt-0 xl:pl-4 mt-auto shrink-0">
+              <button onClick={exportClientsCSV} disabled={exportingClients} className="flex flex-1 sm:flex-none items-center justify-center gap-2 bg-white text-blue-600 border border-blue-200 hover:bg-blue-50 transition-colors px-3 py-2 rounded-lg text-sm font-bold shadow-sm disabled:opacity-50 whitespace-nowrap" title="Exportar Base de Clientes (CRM)">
                 <Users size={16} />
                 <span>{exportingClients ? 'Gerando...' : 'Clientes'}</span>
               </button>
-              <button onClick={exportCSV} className="flex flex-1 sm:flex-none items-center justify-center gap-2 bg-white text-emerald-600 border border-emerald-200 hover:bg-emerald-50 transition-colors px-4 py-2.5 rounded-lg text-sm font-bold shadow-sm whitespace-nowrap" title="Exportar para Excel (Contador)">
+              <button onClick={exportCSV} className="flex flex-1 sm:flex-none items-center justify-center gap-2 bg-white text-emerald-600 border border-emerald-200 hover:bg-emerald-50 transition-colors px-3 py-2 rounded-lg text-sm font-bold shadow-sm whitespace-nowrap" title="Exportar para Excel (Contador)">
                 <FileSpreadsheet size={16} />
                 <span>Vendas</span>
               </button>
-              <button onClick={exportPDF} className="flex flex-1 sm:flex-none items-center justify-center gap-2 bg-white text-zinc-700 border border-zinc-200 hover:bg-zinc-50 hover:text-zinc-900 transition-colors px-4 py-2.5 rounded-lg text-sm font-bold shadow-sm whitespace-nowrap">
+              <button onClick={exportPDF} className="flex flex-1 sm:flex-none items-center justify-center gap-2 bg-white text-zinc-700 border border-zinc-200 hover:bg-zinc-50 hover:text-zinc-900 transition-colors px-3 py-2 rounded-lg text-sm font-bold shadow-sm whitespace-nowrap">
                 <Download size={16} />
                 <span>Baixar PDF</span>
               </button>
