@@ -19,6 +19,7 @@ const Reports = () => {
   const [periodo, setPeriodo] = useState('mes');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -139,31 +140,41 @@ const Reports = () => {
           </div>
 
           {/* Wrapper para Filtros e Ações para fluir lado a lado no desktop */}
-          <div className="flex flex-col lg:flex-row items-start lg:items-center gap-6 lg:gap-0 xl:pl-6 w-full xl:w-auto lg:divide-x divide-zinc-200 pt-2 xl:pt-0">
+          <div className="flex flex-col xl:flex-row items-start xl:items-center gap-6 xl:gap-0 xl:pl-6 w-full xl:w-auto xl:divide-x divide-zinc-200 pt-2 xl:pt-0">
             
             {/* Seção 2: Filtros */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 lg:pr-6 w-full lg:w-auto">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 xl:pr-6 w-full xl:w-auto">
               
               {/* Periodo (Aparece apenas quando Personalizado) */}
               {periodo === 'custom' && (
-                <div className="flex flex-col gap-2 w-full sm:w-auto animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="flex flex-col gap-2 w-full sm:w-auto animate-in fade-in slide-in-from-right-4 duration-300 relative">
                   <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Período</span>
-                  <div className="flex items-center bg-white border border-zinc-200 rounded-lg p-2 shadow-sm gap-3 px-3">
-                    <Calendar size={16} className="text-zinc-500 shrink-0" />
-                    <input 
-                      type="date" 
-                      value={customStart} 
-                      onChange={(e) => setCustomStart(e.target.value)} 
-                      className="bg-transparent text-sm font-medium text-zinc-800 outline-none cursor-pointer"
-                    />
-                    <span className="text-zinc-400 text-xs font-semibold lowercase">até</span>
-                    <input 
-                      type="date" 
-                      value={customEnd} 
-                      onChange={(e) => setCustomEnd(e.target.value)} 
-                      className="bg-transparent text-sm font-medium text-zinc-800 outline-none cursor-pointer"
-                    />
-                  </div>
+                  <button 
+                    onClick={() => setShowDatePicker(!showDatePicker)}
+                    className="flex items-center bg-white border border-blue-200 text-blue-700 rounded-lg p-2 shadow-sm gap-2 px-3 hover:bg-blue-50 transition-colors w-full sm:w-auto justify-center"
+                  >
+                    <Calendar size={16} className="shrink-0" />
+                    <span className="text-sm font-bold whitespace-nowrap">
+                      {customStart ? customStart.split('-').reverse().slice(0,2).join('/') : 'Início'} a {customEnd ? customEnd.split('-').reverse().slice(0,2).join('/') : 'Fim'}
+                    </span>
+                  </button>
+
+                  {/* Popover de Datas */}
+                  {showDatePicker && (
+                    <div className="absolute top-full left-0 sm:left-auto sm:right-0 mt-2 p-4 bg-white border border-zinc-200 shadow-xl rounded-xl z-50 flex flex-col gap-4 min-w-[240px] animate-in fade-in zoom-in-95 duration-200">
+                       <div className="flex flex-col gap-1.5">
+                         <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Data Inicial</label>
+                         <input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)} className="bg-zinc-50 border border-zinc-200 rounded-lg p-2 text-sm font-medium text-zinc-800 outline-none focus:border-blue-400"/>
+                       </div>
+                       <div className="flex flex-col gap-1.5">
+                         <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Data Final</label>
+                         <input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} className="bg-zinc-50 border border-zinc-200 rounded-lg p-2 text-sm font-medium text-zinc-800 outline-none focus:border-blue-400"/>
+                       </div>
+                       <button onClick={() => setShowDatePicker(false)} className="mt-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg p-2 text-sm font-bold transition-colors">
+                         Aplicar Filtro
+                       </button>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -181,6 +192,9 @@ const Reports = () => {
                          const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
                          setCustomStart(firstDay.toISOString().split('T')[0]);
                          setCustomEnd(today.toISOString().split('T')[0]);
+                         setShowDatePicker(true);
+                       } else {
+                         setShowDatePicker(false);
                        }
                      }}
                      className="bg-transparent text-sm font-semibold text-zinc-900 outline-none cursor-pointer appearance-none pr-6 w-full min-w-[130px]"
@@ -196,7 +210,7 @@ const Reports = () => {
             </div>
             
             {/* Seção 3: Botões */}
-            <div className="flex items-center gap-3 w-full lg:w-auto pt-6 lg:pt-0 lg:pl-6 mt-auto">
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 w-full xl:w-auto pt-6 xl:pt-0 xl:pl-6 mt-auto">
               <button onClick={exportClientsCSV} disabled={exportingClients} className="flex flex-1 sm:flex-none items-center justify-center gap-2 bg-white text-blue-600 border border-blue-200 hover:bg-blue-50 transition-colors px-4 py-2.5 rounded-lg text-sm font-bold shadow-sm disabled:opacity-50 whitespace-nowrap" title="Exportar Base de Clientes (CRM)">
                 <Users size={16} />
                 <span>{exportingClients ? 'Gerando...' : 'Clientes'}</span>
@@ -205,7 +219,7 @@ const Reports = () => {
                 <FileSpreadsheet size={16} />
                 <span>Vendas</span>
               </button>
-              <button onClick={exportPDF} className="flex flex-1 sm:flex-none items-center justify-center gap-2 bg-[#2d3748] text-white border border-[#2d3748] hover:bg-zinc-800 transition-colors px-4 py-2.5 rounded-lg text-sm font-bold shadow-sm whitespace-nowrap">
+              <button onClick={exportPDF} className="flex flex-1 sm:flex-none items-center justify-center gap-2 bg-white text-zinc-700 border border-zinc-200 hover:bg-zinc-50 hover:text-zinc-900 transition-colors px-4 py-2.5 rounded-lg text-sm font-bold shadow-sm whitespace-nowrap">
                 <Download size={16} />
                 <span>Baixar PDF</span>
               </button>
