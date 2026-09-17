@@ -180,8 +180,8 @@ const Reports = () => {
                          startDate={parseLocalDate(customStart)}
                          endDate={parseLocalDate(customEnd)}
                          onChange={(start, end) => {
-                           if (start) setCustomStart(formatLocalDate(start));
-                           if (end) setCustomEnd(formatLocalDate(end));
+                           setCustomStart(start ? formatLocalDate(start) : '');
+                           setCustomEnd(end ? formatLocalDate(end) : '');
                          }}
                        />
                        <div className="flex justify-end pt-2 border-t border-zinc-100 mt-2">

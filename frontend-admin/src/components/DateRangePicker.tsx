@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, isSameDay, addDays, isAfter, isBefore } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 
 interface DateRangePickerProps {
   startDate: Date | null;
@@ -73,11 +72,32 @@ export function DateRangePicker({ startDate, endDate, onChange }: DateRangePicke
 
   const weekDays = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
+  const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({length: 10}, (_, i) => currentYear - 5 + i);
+
   return (
     <div className="w-[280px] bg-white rounded-xl">
-      <div className="flex justify-between items-center mb-4 px-2">
+      <div className="flex justify-between items-center mb-4 px-1">
         <button onClick={prevMonth} className="p-1.5 hover:bg-zinc-100 rounded-full text-zinc-600 transition-colors"><ChevronLeft size={18}/></button>
-        <span className="font-bold text-sm text-zinc-800 capitalize">{format(currentMonth, 'MMMM yyyy', { locale: ptBR })}</span>
+        
+        <div className="flex items-center gap-1">
+          <select 
+            value={currentMonth.getMonth()} 
+            onChange={(e) => setCurrentMonth(new Date(currentMonth.getFullYear(), parseInt(e.target.value), 1))}
+            className="font-bold text-sm text-zinc-800 bg-transparent outline-none cursor-pointer hover:bg-zinc-50 rounded px-1 py-0.5 appearance-none text-center"
+          >
+            {months.map((m, i) => <option key={i} value={i}>{m}</option>)}
+          </select>
+          <select 
+            value={currentMonth.getFullYear()} 
+            onChange={(e) => setCurrentMonth(new Date(parseInt(e.target.value), currentMonth.getMonth(), 1))}
+            className="font-bold text-sm text-zinc-800 bg-transparent outline-none cursor-pointer hover:bg-zinc-50 rounded px-1 py-0.5 appearance-none text-center"
+          >
+            {years.map(y => <option key={y} value={y}>{y}</option>)}
+          </select>
+        </div>
+
         <button onClick={nextMonth} className="p-1.5 hover:bg-zinc-100 rounded-full text-zinc-600 transition-colors"><ChevronRight size={18}/></button>
       </div>
       <div className="flex justify-between mb-2">
