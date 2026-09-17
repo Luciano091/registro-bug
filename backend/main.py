@@ -1196,6 +1196,53 @@ def get_dashboard_relatorios(periodo: str = "mes", start: str = None, end: str =
         "pedidos_raw": pedidos_raw
     }
 
+@app.get("/clientes/exportar")
+def exportar_clientes_crm(db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("relatorios.visualizar"))):
+    pedidos = db.query(models.Pedido).filter(
+        models.Pedido.estabelecimento_id == estabelecimento_id,
+        models.Pedido.telefone.isnot(None),
+        models.Pedido.telefone != ""
+    ).order_by(models.Pedido.data.desc()).all()
+    
+    clientes_dict = {}
+    for p in pedidos:
+        tel = p.telefone.strip()
+        if not tel:
+            continue
+        if tel not in clientes_dict:
+            clientes_dict[tel] = {
+                "nome": p.cliente or "Sem nome",
+                "telefone": tel,
+                "ultima_compra": p.data,
+                "total_gasto": 0.0,
+                "total_pedidos": 0
+            }
+        clientes_dict[tel]["total_gasto"] += float(p.total)
+        clientes_dict[tel]["total_pedidos"] += 1
+        
+    agora = models.get_now()
+    resultado = []
+    for tel, dados in clientes_dict.items():
+        if dados["ultima_compra"]:
+            delta = (agora.date() - dados["ultima_compra"].date())
+            dias = delta.days
+        else:
+            dias = 0
+            
+        dados["ultima_compra_str"] = dados["ultima_compra"].strftime("%d/%m/%Y") if dados["ultima_compra"] else ""
+        dados["dias_ausente"] = dias
+        # Clean up the object to be easily consumed
+        resultado.append({
+            "nome": dados["nome"],
+            "telefone": dados["telefone"],
+            "ultima_compra": dados["ultima_compra_str"],
+            "dias_ausente": dados["dias_ausente"],
+            "total_pedidos": dados["total_pedidos"],
+            "total_gasto": round(dados["total_gasto"], 2)
+        })
+        
+    return sorted(resultado, key=lambda x: x["dias_ausente"])
+
 @app.get("/debug/relatorios")
 def debug_relatorios(db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("relatorios.visualizar"))):
     import traceback

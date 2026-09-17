@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Calendar, DollarSign, Package, Receipt, TrendingUp, TrendingDown, Download, FileSpreadsheet } from 'lucide-react';
+import { Calendar, DollarSign, Package, Receipt, TrendingUp, TrendingDown, Download, FileSpreadsheet, Users } from 'lucide-react';
 import api from '../services/api';
 
 const CAT_COLORS = ['#f97316', '#3b82f6', '#f59e0b', '#8b5cf6', '#10b981'];
@@ -79,6 +79,44 @@ const Reports = () => {
     document.body.removeChild(link);
   };
 
+  const [exportingClients, setExportingClients] = useState(false);
+  const exportClientsCSV = async () => {
+    setExportingClients(true);
+    try {
+      const response = await api.get('/clientes/exportar');
+      const clientes = response.data;
+      if (!clientes || clientes.length === 0) {
+        alert("Nenhum cliente com telefone encontrado na sua base.");
+        return;
+      }
+      
+      const headers = ["Cliente", "Telefone", "Ultima Compra", "Dias Ausente", "Qtd. Pedidos", "Total Gasto (R$)"];
+      const rows = clientes.map((c: any) => [
+        `"${(c.nome || '').replace(/"/g, '""')}"`,
+        c.telefone,
+        c.ultima_compra,
+        c.dias_ausente,
+        c.total_pedidos,
+        c.total_gasto.toFixed(2).replace('.', ',')
+      ]);
+      
+      const csvContent = [headers.join(';'), ...rows.map((r: any[]) => r.join(';'))].join('\n');
+      const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `clientes_campanha.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error(error);
+      alert("Erro ao exportar base de clientes.");
+    } finally {
+      setExportingClients(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full min-h-[600px]">
@@ -154,10 +192,14 @@ const Reports = () => {
              </select>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <button onClick={exportClientsCSV} disabled={exportingClients} className="flex items-center gap-2 bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30 hover:text-blue-300 transition-colors px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-md disabled:opacity-50" title="Exportar Base de Clientes (CRM)">
+              <Users size={16} />
+              <span className="hidden md:inline">{exportingClients ? 'Gerando...' : 'Exportar Clientes'}</span>
+            </button>
             <button onClick={exportCSV} className="flex items-center gap-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30 hover:text-emerald-300 transition-colors px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-md" title="Exportar para Excel (Contador)">
               <FileSpreadsheet size={16} />
-              <span className="hidden md:inline">Exportar Excel</span>
+              <span className="hidden md:inline">Exportar Vendas</span>
             </button>
             <button onClick={exportPDF} className="flex items-center gap-2 bg-dark-900/60 border border-white/5 hover:bg-white/5 transition-colors px-4 py-2 rounded-lg text-sm text-zinc-200 backdrop-blur-md">
               <Download size={16} />
