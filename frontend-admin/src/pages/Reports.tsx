@@ -130,29 +130,29 @@ const Reports = () => {
           <p className="text-zinc-300 mt-1 text-sm">Acompanhe o desempenho completo do seu negócio.</p>
         </div>
         
-        <div className="flex flex-col xl:flex-row items-start xl:items-center gap-3 w-full xl:w-auto mt-4 md:mt-0">
+        <div className="flex flex-wrap items-center justify-end gap-3 w-full lg:w-auto">
           
-          {/* Filtros */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full xl:w-auto">
+          {/* Grupo 1: Filtros de Data */}
+          <div className="flex flex-wrap items-center gap-2">
             {periodo === 'custom' && (
-              <div className="flex items-center bg-white border border-zinc-200 rounded-lg p-1.5 shadow-sm gap-2 px-3 w-full sm:w-auto">
+              <div className="flex items-center bg-white border border-zinc-200 rounded-lg p-1.5 shadow-sm gap-2 px-3">
                 <input 
                   type="date" 
                   value={customStart} 
                   onChange={(e) => setCustomStart(e.target.value)} 
-                  className="bg-transparent text-sm text-zinc-700 outline-none cursor-pointer w-full sm:w-auto"
+                  className="bg-transparent text-sm text-zinc-700 outline-none cursor-pointer"
                 />
                 <span className="text-zinc-400 text-xs font-medium">até</span>
                 <input 
                   type="date" 
                   value={customEnd} 
                   onChange={(e) => setCustomEnd(e.target.value)} 
-                  className="bg-transparent text-sm text-zinc-700 outline-none cursor-pointer w-full sm:w-auto"
+                  className="bg-transparent text-sm text-zinc-700 outline-none cursor-pointer"
                 />
               </div>
             )}
 
-            <div className="flex items-center bg-white border border-zinc-200 rounded-lg p-1 shadow-sm shrink-0 w-full sm:w-auto">
+            <div className="flex items-center bg-white border border-zinc-200 rounded-lg p-1 shadow-sm shrink-0">
                <Calendar size={16} className="text-zinc-400 ml-2 mr-1 shrink-0" />
                <select 
                  value={periodo} 
@@ -165,7 +165,7 @@ const Reports = () => {
                      setCustomEnd(today.toISOString().split('T')[0]);
                    }
                  }}
-                 className="bg-transparent text-sm font-medium text-zinc-700 py-1.5 px-2 outline-none cursor-pointer w-full"
+                 className="bg-transparent text-sm font-medium text-zinc-700 py-1.5 px-2 outline-none cursor-pointer"
                >
                  <option value="hoje">Hoje</option>
                  <option value="7d">Últimos 7 Dias</option>
@@ -175,17 +175,17 @@ const Reports = () => {
             </div>
           </div>
           
-          {/* Botões de Ação */}
-          <div className="flex items-center gap-2 w-full xl:w-auto overflow-x-auto pb-2 xl:pb-0 hide-scrollbar">
-            <button onClick={exportClientsCSV} disabled={exportingClients} className="flex items-center justify-center gap-2 bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition-colors px-4 py-2 rounded-lg text-sm font-semibold shadow-sm disabled:opacity-50 flex-1 xl:flex-none whitespace-nowrap shrink-0" title="Exportar Base de Clientes (CRM)">
+          {/* Grupo 2: Botões de Exportação */}
+          <div className="flex items-center gap-2">
+            <button onClick={exportClientsCSV} disabled={exportingClients} className="flex items-center justify-center gap-2 bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition-colors px-4 py-2 rounded-lg text-sm font-semibold shadow-sm disabled:opacity-50" title="Exportar Base de Clientes (CRM)">
               <Users size={16} className="shrink-0" />
               <span>{exportingClients ? 'Gerando...' : 'Clientes'}</span>
             </button>
-            <button onClick={exportCSV} className="flex items-center justify-center gap-2 bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 transition-colors px-4 py-2 rounded-lg text-sm font-semibold shadow-sm flex-1 xl:flex-none whitespace-nowrap shrink-0" title="Exportar para Excel (Contador)">
+            <button onClick={exportCSV} className="flex items-center justify-center gap-2 bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 transition-colors px-4 py-2 rounded-lg text-sm font-semibold shadow-sm" title="Exportar para Excel (Contador)">
               <FileSpreadsheet size={16} className="shrink-0" />
               <span>Vendas</span>
             </button>
-            <button onClick={exportPDF} className="flex items-center justify-center gap-2 bg-white text-zinc-700 border border-zinc-200 hover:bg-zinc-50 hover:text-zinc-900 transition-colors px-4 py-2 rounded-lg text-sm font-semibold shadow-sm flex-1 xl:flex-none whitespace-nowrap shrink-0">
+            <button onClick={exportPDF} className="flex items-center justify-center gap-2 bg-white text-zinc-700 border border-zinc-200 hover:bg-zinc-50 hover:text-zinc-900 transition-colors px-4 py-2 rounded-lg text-sm font-semibold shadow-sm">
               <Download size={16} className="shrink-0" />
               <span>Baixar PDF</span>
             </button>
