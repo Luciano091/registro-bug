@@ -123,72 +123,82 @@ const Reports = () => {
     <>
     <div className="p-4 md:p-8 max-w-[1600px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-6 custom-scrollbar text-zinc-200 print:hidden">
       
-      {/* Header sempre visível */}
-      <header className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 mb-8 print:hidden">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight text-white font-heading">Relatórios</h2>
-          <p className="text-zinc-300 mt-1 text-sm">Acompanhe o desempenho completo do seu negócio.</p>
-        </div>
+      {/* Header Profissional */}
+      <header className="flex flex-col gap-5 mb-8 print:hidden">
         
-        <div className="flex flex-wrap items-center justify-end gap-3 w-full lg:w-auto">
-          
-          {/* Grupo 1: Filtros de Data */}
-          <div className="flex flex-wrap items-center gap-2">
-            {periodo === 'custom' && (
-              <div className="flex items-center bg-white border border-zinc-200 rounded-lg p-1.5 shadow-sm gap-2 px-3">
-                <input 
-                  type="date" 
-                  value={customStart} 
-                  onChange={(e) => setCustomStart(e.target.value)} 
-                  className="bg-transparent text-sm text-zinc-700 outline-none cursor-pointer"
-                />
-                <span className="text-zinc-400 text-xs font-medium">até</span>
-                <input 
-                  type="date" 
-                  value={customEnd} 
-                  onChange={(e) => setCustomEnd(e.target.value)} 
-                  className="bg-transparent text-sm text-zinc-700 outline-none cursor-pointer"
-                />
-              </div>
-            )}
-
-            <div className="flex items-center bg-white border border-zinc-200 rounded-lg p-1 shadow-sm shrink-0">
-               <Calendar size={16} className="text-zinc-400 ml-2 mr-1 shrink-0" />
-               <select 
-                 value={periodo} 
-                 onChange={(e) => {
-                   setPeriodo(e.target.value);
-                   if (e.target.value === 'custom') {
-                     const today = new Date();
-                     const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-                     setCustomStart(firstDay.toISOString().split('T')[0]);
-                     setCustomEnd(today.toISOString().split('T')[0]);
-                   }
-                 }}
-                 className="bg-transparent text-sm font-medium text-zinc-700 py-1.5 px-2 outline-none cursor-pointer"
-               >
-                 <option value="hoje">Hoje</option>
-                 <option value="7d">Últimos 7 Dias</option>
-                 <option value="mes">Este Mês</option>
-                 <option value="custom">Personalizado</option>
-               </select>
-            </div>
+        {/* Topo: Título e Ações */}
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight text-zinc-900 font-heading">Relatórios</h2>
+            <p className="text-zinc-500 mt-1 text-sm">Acompanhe o desempenho completo do seu negócio.</p>
           </div>
           
-          {/* Grupo 2: Botões de Exportação */}
-          <div className="flex items-center gap-2">
-            <button onClick={exportClientsCSV} disabled={exportingClients} className="flex items-center justify-center gap-2 bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition-colors px-4 py-2 rounded-lg text-sm font-semibold shadow-sm disabled:opacity-50" title="Exportar Base de Clientes (CRM)">
-              <Users size={16} className="shrink-0" />
-              <span>{exportingClients ? 'Gerando...' : 'Clientes'}</span>
-            </button>
-            <button onClick={exportCSV} className="flex items-center justify-center gap-2 bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 transition-colors px-4 py-2 rounded-lg text-sm font-semibold shadow-sm" title="Exportar para Excel (Contador)">
-              <FileSpreadsheet size={16} className="shrink-0" />
-              <span>Vendas</span>
-            </button>
-            <button onClick={exportPDF} className="flex items-center justify-center gap-2 bg-white text-zinc-700 border border-zinc-200 hover:bg-zinc-50 hover:text-zinc-900 transition-colors px-4 py-2 rounded-lg text-sm font-semibold shadow-sm">
-              <Download size={16} className="shrink-0" />
-              <span>Baixar PDF</span>
-            </button>
+          {/* Toolbar de Filtros e Ações */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full xl:w-auto">
+            
+            {/* Filtros */}
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+              {periodo === 'custom' && (
+                <div className="flex items-center bg-white border border-zinc-200 rounded-lg p-1.5 shadow-sm gap-2 px-3">
+                  <input 
+                    type="date" 
+                    value={customStart} 
+                    onChange={(e) => setCustomStart(e.target.value)} 
+                    className="bg-transparent text-sm text-zinc-700 outline-none cursor-pointer"
+                  />
+                  <span className="text-zinc-400 text-xs font-medium">até</span>
+                  <input 
+                    type="date" 
+                    value={customEnd} 
+                    onChange={(e) => setCustomEnd(e.target.value)} 
+                    className="bg-transparent text-sm text-zinc-700 outline-none cursor-pointer"
+                  />
+                </div>
+              )}
+
+              <div className="flex items-center bg-white border border-zinc-200 rounded-lg p-1 shadow-sm shrink-0">
+                 <Calendar size={16} className="text-zinc-400 ml-2 mr-1 shrink-0" />
+                 <select 
+                   value={periodo} 
+                   onChange={(e) => {
+                     setPeriodo(e.target.value);
+                     if (e.target.value === 'custom') {
+                       const today = new Date();
+                       const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+                       setCustomStart(firstDay.toISOString().split('T')[0]);
+                       setCustomEnd(today.toISOString().split('T')[0]);
+                     }
+                   }}
+                   className="bg-transparent text-sm font-medium text-zinc-700 py-1.5 px-2 outline-none cursor-pointer pr-1"
+                 >
+                   <option value="hoje">Hoje</option>
+                   <option value="7d">Últimos 7 Dias</option>
+                   <option value="mes">Este Mês</option>
+                   <option value="custom">Personalizado</option>
+                 </select>
+              </div>
+            </div>
+
+            {/* Divisor Visual (apenas desktop) */}
+            <div className="hidden sm:block w-px h-8 bg-zinc-200"></div>
+            
+            {/* Ações */}
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <button onClick={exportClientsCSV} disabled={exportingClients} className="flex flex-1 sm:flex-none items-center justify-center gap-2 bg-white text-blue-600 border border-blue-200 hover:bg-blue-50 transition-colors px-4 py-2 rounded-lg text-sm font-semibold shadow-sm disabled:opacity-50" title="Exportar Base de Clientes (CRM)">
+                <Users size={16} className="shrink-0" />
+                <span>{exportingClients ? 'Gerando...' : 'Clientes'}</span>
+              </button>
+              <button onClick={exportCSV} className="flex flex-1 sm:flex-none items-center justify-center gap-2 bg-white text-emerald-600 border border-emerald-200 hover:bg-emerald-50 transition-colors px-4 py-2 rounded-lg text-sm font-semibold shadow-sm" title="Exportar para Excel (Contador)">
+                <FileSpreadsheet size={16} className="shrink-0" />
+                <span>Vendas</span>
+              </button>
+              <button onClick={exportPDF} className="flex flex-1 sm:flex-none items-center justify-center gap-2 bg-zinc-900 text-white border border-zinc-900 hover:bg-zinc-800 transition-colors px-4 py-2 rounded-lg text-sm font-semibold shadow-sm">
+                <Download size={16} className="shrink-0" />
+                <span className="hidden sm:inline">Baixar PDF</span>
+                <span className="sm:hidden">PDF</span>
+              </button>
+            </div>
+            
           </div>
         </div>
       </header>
