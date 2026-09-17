@@ -117,95 +117,95 @@ const Reports = () => {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-full min-h-[600px]">
-        <div className="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
-  if (hasError || !data) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full min-h-[600px] text-zinc-300 gap-4">
-        <p className="text-lg">Ocorreu um erro ao buscar os dados do relatório.</p>
-        <p className="text-sm">Por favor, verifique sua conexão ou tente novamente mais tarde.</p>
-        <button onClick={() => setPeriodo(periodo === 'custom' ? 'mes' : periodo)} className="px-4 py-2 mt-4 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors">Tentar Novamente</button>
-      </div>
-    );
-  }
-
-  // Calculate Pagamento max for progress bars
-  const totalPagamentos = data.vendas_pagamento.reduce((acc: any, curr: any) => acc + curr.value, 0);
+  const totalPagamentos = data?.vendas_pagamento?.reduce((acc: any, curr: any) => acc + curr.value, 0) || 0;
 
   return (
     <>
     <div className="p-4 md:p-8 max-w-[1600px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-6 custom-scrollbar text-zinc-200 print:hidden">
       
-      {/* Header */}
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 print:hidden">
+      {/* Header sempre visível */}
+      <header className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 mb-8 print:hidden">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-white font-heading">Relatórios</h2>
           <p className="text-zinc-300 mt-1 text-sm">Acompanhe o desempenho completo do seu negócio.</p>
         </div>
         
-        <div className="flex items-center gap-3 w-full md:w-auto flex-wrap">
-          {periodo === 'custom' && (
-            <div className="flex items-center bg-white border border-zinc-200 rounded-lg p-1.5 shadow-sm gap-2 px-3">
-              <input 
-                type="date" 
-                value={customStart} 
-                onChange={(e) => setCustomStart(e.target.value)} 
-                className="bg-transparent text-sm text-zinc-700 outline-none cursor-pointer"
-              />
-              <span className="text-zinc-400 text-xs font-medium">até</span>
-              <input 
-                type="date" 
-                value={customEnd} 
-                onChange={(e) => setCustomEnd(e.target.value)} 
-                className="bg-transparent text-sm text-zinc-700 outline-none cursor-pointer"
-              />
-            </div>
-          )}
+        <div className="flex flex-col md:flex-row items-start md:items-center gap-3 w-full xl:w-auto">
+          
+          {/* Filtros */}
+          <div className="flex items-center gap-2 flex-wrap md:flex-nowrap w-full md:w-auto">
+            {periodo === 'custom' && (
+              <div className="flex items-center bg-white border border-zinc-200 rounded-lg p-1.5 shadow-sm gap-2 px-3">
+                <input 
+                  type="date" 
+                  value={customStart} 
+                  onChange={(e) => setCustomStart(e.target.value)} 
+                  className="bg-transparent text-sm text-zinc-700 outline-none cursor-pointer"
+                />
+                <span className="text-zinc-400 text-xs font-medium">até</span>
+                <input 
+                  type="date" 
+                  value={customEnd} 
+                  onChange={(e) => setCustomEnd(e.target.value)} 
+                  className="bg-transparent text-sm text-zinc-700 outline-none cursor-pointer"
+                />
+              </div>
+            )}
 
-          <div className="flex items-center bg-white border border-zinc-200 rounded-lg p-1 shadow-sm">
-             <Calendar size={16} className="text-zinc-400 ml-2 mr-1" />
-             <select 
-               value={periodo} 
-               onChange={(e) => {
-                 setPeriodo(e.target.value);
-                 if (e.target.value === 'custom') {
-                   const today = new Date();
-                   const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-                   setCustomStart(firstDay.toISOString().split('T')[0]);
-                   setCustomEnd(today.toISOString().split('T')[0]);
-                 }
-               }}
-               className="bg-transparent text-sm font-medium text-zinc-700 py-1.5 px-2 outline-none cursor-pointer"
-             >
-               <option value="hoje">Hoje</option>
-               <option value="7d">Últimos 7 Dias</option>
-               <option value="mes">Este Mês</option>
-               <option value="custom">Personalizado</option>
-             </select>
+            <div className="flex items-center bg-white border border-zinc-200 rounded-lg p-1 shadow-sm shrink-0">
+               <Calendar size={16} className="text-zinc-400 ml-2 mr-1" />
+               <select 
+                 value={periodo} 
+                 onChange={(e) => {
+                   setPeriodo(e.target.value);
+                   if (e.target.value === 'custom') {
+                     const today = new Date();
+                     const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+                     setCustomStart(firstDay.toISOString().split('T')[0]);
+                     setCustomEnd(today.toISOString().split('T')[0]);
+                   }
+                 }}
+                 className="bg-transparent text-sm font-medium text-zinc-700 py-1.5 px-2 outline-none cursor-pointer"
+               >
+                 <option value="hoje">Hoje</option>
+                 <option value="7d">Últimos 7 Dias</option>
+                 <option value="mes">Este Mês</option>
+                 <option value="custom">Personalizado</option>
+               </select>
+            </div>
           </div>
           
-          <div className="flex flex-wrap gap-2">
-            <button onClick={exportClientsCSV} disabled={exportingClients} className="flex items-center gap-2 bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition-colors px-4 py-2 rounded-lg text-sm font-semibold shadow-sm disabled:opacity-50" title="Exportar Base de Clientes (CRM)">
+          {/* Botões de Ação */}
+          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+            <button onClick={exportClientsCSV} disabled={exportingClients} className="flex items-center justify-center gap-2 bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition-colors px-4 py-2 rounded-lg text-sm font-semibold shadow-sm disabled:opacity-50 flex-1 md:flex-none" title="Exportar Base de Clientes (CRM)">
               <Users size={16} />
-              <span className="hidden md:inline">{exportingClients ? 'Gerando...' : 'Exportar Clientes'}</span>
+              <span className="md:inline">{exportingClients ? 'Gerando...' : 'Clientes'}</span>
             </button>
-            <button onClick={exportCSV} className="flex items-center gap-2 bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 transition-colors px-4 py-2 rounded-lg text-sm font-semibold shadow-sm" title="Exportar para Excel (Contador)">
+            <button onClick={exportCSV} className="flex items-center justify-center gap-2 bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 transition-colors px-4 py-2 rounded-lg text-sm font-semibold shadow-sm flex-1 md:flex-none" title="Exportar para Excel (Contador)">
               <FileSpreadsheet size={16} />
-              <span className="hidden md:inline">Exportar Vendas</span>
+              <span className="md:inline">Vendas</span>
             </button>
-            <button onClick={exportPDF} className="flex items-center gap-2 bg-white text-zinc-700 border border-zinc-200 hover:bg-zinc-50 hover:text-zinc-900 transition-colors px-4 py-2 rounded-lg text-sm font-semibold shadow-sm">
+            <button onClick={exportPDF} className="flex items-center justify-center gap-2 bg-white text-zinc-700 border border-zinc-200 hover:bg-zinc-50 hover:text-zinc-900 transition-colors px-4 py-2 rounded-lg text-sm font-semibold shadow-sm flex-1 md:flex-none">
               <Download size={16} />
               <span className="hidden md:inline">Baixar PDF</span>
+              <span className="md:hidden">PDF</span>
             </button>
           </div>
         </div>
       </header>
+
+      {/* Conteúdo Dinâmico */}
+      {isLoading ? (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      ) : hasError || !data ? (
+        <div className="flex flex-col items-center justify-center min-h-[400px] text-zinc-500 gap-4">
+          <p className="text-lg">Ocorreu um erro ao buscar os dados do relatório.</p>
+          <button onClick={() => setPeriodo(periodo === 'custom' ? 'mes' : periodo)} className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors font-semibold">Tentar Novamente</button>
+        </div>
+      ) : (
+        <>
 
       {/* Row 1: KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -444,9 +444,12 @@ const Reports = () => {
         </div>
 
       </div>
+      </>
+      )}
     </div>
 
     {/* DOCUMENTO OFICIAL PARA IMPRESSÃO (PDF) */}
+    {!isLoading && !hasError && data && (
     <div className="hidden print:block w-full bg-white text-black p-8 font-sans" style={{ color: '#000' }}>
       {/* Cabeçalho */}
       <div className="border-b-2 border-black pb-4 mb-8 flex justify-between items-end">
@@ -592,6 +595,7 @@ const Reports = () => {
         Gerado pelo Ritmesa. Documento de uso interno e confidencial.
       </div>
     </div>
+    )}
     </>
   );
 };
