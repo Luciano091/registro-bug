@@ -1198,6 +1198,7 @@ def get_dashboard_relatorios(periodo: str = "mes", start: str = None, end: str =
 
 @app.get("/clientes/exportar")
 def exportar_clientes_crm(db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("relatorios.visualizar"))):
+    import re
     pedidos = db.query(models.Pedido).filter(
         models.Pedido.estabelecimento_id == estabelecimento_id,
         models.Pedido.telefone.isnot(None),
@@ -1206,13 +1207,17 @@ def exportar_clientes_crm(db: Session = Depends(get_db), estabelecimento_id: int
     
     clientes_dict = {}
     for p in pedidos:
-        tel = p.telefone.strip()
+        # Remove anything that is not a number to group correctly
+        raw_tel = p.telefone.strip() if p.telefone else ""
+        tel = re.sub(r'\D', '', raw_tel)
+        
         if not tel:
             continue
+            
         if tel not in clientes_dict:
             clientes_dict[tel] = {
                 "nome": p.cliente or "Sem nome",
-                "telefone": tel,
+                "telefone": raw_tel, # Keep the original format for display
                 "ultima_compra": p.data,
                 "total_gasto": 0.0,
                 "total_pedidos": 0
