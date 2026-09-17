@@ -144,32 +144,28 @@ const Reports = () => {
             {/* Seção 2: Filtros */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 lg:pr-6 w-full lg:w-auto">
               
-              {/* Periodo */}
-              <div className="flex flex-col gap-2 w-full sm:w-auto">
-                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Período</span>
-                <div className="flex items-center bg-white border border-zinc-200 rounded-lg p-2 shadow-sm gap-3 px-3">
-                  <Calendar size={16} className="text-zinc-500 shrink-0" />
-                  <input 
-                    type="date" 
-                    value={customStart} 
-                    onChange={(e) => {
-                      setCustomStart(e.target.value);
-                      setPeriodo('custom');
-                    }} 
-                    className="bg-transparent text-sm font-medium text-zinc-800 outline-none cursor-pointer"
-                  />
-                  <span className="text-zinc-400 text-xs font-semibold lowercase">até</span>
-                  <input 
-                    type="date" 
-                    value={customEnd} 
-                    onChange={(e) => {
-                      setCustomEnd(e.target.value);
-                      setPeriodo('custom');
-                    }} 
-                    className="bg-transparent text-sm font-medium text-zinc-800 outline-none cursor-pointer"
-                  />
+              {/* Periodo (Aparece apenas quando Personalizado) */}
+              {periodo === 'custom' && (
+                <div className="flex flex-col gap-2 w-full sm:w-auto animate-in fade-in slide-in-from-right-4 duration-300">
+                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Período</span>
+                  <div className="flex items-center bg-white border border-zinc-200 rounded-lg p-2 shadow-sm gap-3 px-3">
+                    <Calendar size={16} className="text-zinc-500 shrink-0" />
+                    <input 
+                      type="date" 
+                      value={customStart} 
+                      onChange={(e) => setCustomStart(e.target.value)} 
+                      className="bg-transparent text-sm font-medium text-zinc-800 outline-none cursor-pointer"
+                    />
+                    <span className="text-zinc-400 text-xs font-semibold lowercase">até</span>
+                    <input 
+                      type="date" 
+                      value={customEnd} 
+                      onChange={(e) => setCustomEnd(e.target.value)} 
+                      className="bg-transparent text-sm font-medium text-zinc-800 outline-none cursor-pointer"
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Visualização */}
               <div className="flex flex-col gap-2 w-full sm:w-auto">
