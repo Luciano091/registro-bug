@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Calendar, DollarSign, Package, Receipt, TrendingUp, TrendingDown, Download, FileSpreadsheet, Users } from 'lucide-react';
+import { BarChart3, Calendar, DollarSign, Package, Receipt, TrendingUp, TrendingDown, Download, FileSpreadsheet, Users } from 'lucide-react';
 import api from '../services/api';
 
 const CAT_COLORS = ['#f97316', '#3b82f6', '#f59e0b', '#8b5cf6', '#10b981'];
@@ -123,79 +123,102 @@ const Reports = () => {
     <>
     <div className="p-4 md:p-8 max-w-[1600px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-6 custom-scrollbar text-zinc-200 print:hidden">
       
-      {/* Header Profissional */}
-      <header className="flex flex-col gap-5 mb-8 print:hidden">
-        
-        {/* Linha 1: Título e Ações */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight text-zinc-900 font-heading">Relatórios</h2>
-            <p className="text-zinc-500 mt-1 text-sm">Acompanhe o desempenho completo do seu negócio.</p>
-          </div>
+      {/* Header Unificado Profissional */}
+      <header className="mb-8 print:hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-zinc-200/80 p-4 flex flex-col xl:flex-row items-start xl:items-center justify-between gap-6 xl:gap-0 xl:divide-x divide-zinc-200">
           
-          {/* Ações (Exportações) */}
-          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-            <button onClick={exportClientsCSV} disabled={exportingClients} className="flex flex-1 md:flex-none items-center justify-center gap-2 bg-white text-blue-600 border border-blue-200 hover:bg-blue-50 transition-colors px-4 py-2 rounded-lg text-sm font-semibold shadow-sm disabled:opacity-50 whitespace-nowrap" title="Exportar Base de Clientes (CRM)">
-              <Users size={16} />
-              <span>{exportingClients ? 'Gerando...' : 'Clientes'}</span>
-            </button>
-            <button onClick={exportCSV} className="flex flex-1 md:flex-none items-center justify-center gap-2 bg-white text-emerald-600 border border-emerald-200 hover:bg-emerald-50 transition-colors px-4 py-2 rounded-lg text-sm font-semibold shadow-sm whitespace-nowrap" title="Exportar para Excel (Contador)">
-              <FileSpreadsheet size={16} />
-              <span>Vendas</span>
-            </button>
-            <button onClick={exportPDF} className="flex flex-1 md:flex-none items-center justify-center gap-2 bg-zinc-900 text-white border border-zinc-900 hover:bg-zinc-800 transition-colors px-4 py-2 rounded-lg text-sm font-semibold shadow-sm whitespace-nowrap">
-              <Download size={16} />
-              <span className="hidden sm:inline">Baixar PDF</span>
-              <span className="sm:hidden">PDF</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Linha 2: Filtros */}
-        <div className="flex flex-wrap items-center gap-3 bg-zinc-50 p-2.5 rounded-xl border border-zinc-200/60 shadow-sm w-full">
-          
-          <div className="flex items-center bg-white border border-zinc-200 rounded-lg p-1 shadow-sm shrink-0">
-             <Calendar size={16} className="text-zinc-400 ml-2 mr-1" />
-             <select 
-               value={periodo} 
-               onChange={(e) => {
-                 setPeriodo(e.target.value);
-                 if (e.target.value === 'custom') {
-                   const today = new Date();
-                   const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-                   setCustomStart(firstDay.toISOString().split('T')[0]);
-                   setCustomEnd(today.toISOString().split('T')[0]);
-                 }
-               }}
-               className="bg-transparent text-sm font-semibold text-zinc-700 py-1.5 px-2 outline-none cursor-pointer pr-1"
-             >
-               <option value="hoje">Hoje</option>
-               <option value="7d">Últimos 7 Dias</option>
-               <option value="mes">Este Mês</option>
-               <option value="custom">Personalizado</option>
-             </select>
-          </div>
-
-          {periodo === 'custom' && (
-            <div className="flex items-center bg-white border border-zinc-200 rounded-lg p-1.5 shadow-sm gap-2 px-3">
-              <input 
-                type="date" 
-                value={customStart} 
-                onChange={(e) => setCustomStart(e.target.value)} 
-                className="bg-transparent text-sm text-zinc-700 outline-none cursor-pointer"
-              />
-              <span className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">até</span>
-              <input 
-                type="date" 
-                value={customEnd} 
-                onChange={(e) => setCustomEnd(e.target.value)} 
-                className="bg-transparent text-sm text-zinc-700 outline-none cursor-pointer"
-              />
+          {/* Seção 1: Título */}
+          <div className="flex items-center gap-4 xl:pr-6 w-full xl:w-auto">
+            <div className="bg-blue-100 text-blue-600 p-3.5 rounded-[14px] shrink-0">
+              <BarChart3 size={28} strokeWidth={2.5} />
             </div>
-          )}
-          
-        </div>
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight text-zinc-900 font-heading leading-none">Relatórios</h2>
+              <p className="text-zinc-500 mt-1.5 text-xs">Acompanhe o desempenho completo do seu negócio.</p>
+            </div>
+          </div>
 
+          {/* Wrapper para Filtros e Ações para fluir lado a lado no desktop */}
+          <div className="flex flex-col lg:flex-row items-start lg:items-center gap-6 lg:gap-0 xl:pl-6 w-full xl:w-auto lg:divide-x divide-zinc-200 pt-2 xl:pt-0">
+            
+            {/* Seção 2: Filtros */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 lg:pr-6 w-full lg:w-auto">
+              
+              {/* Periodo */}
+              <div className="flex flex-col gap-2 w-full sm:w-auto">
+                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Período</span>
+                {periodo === 'custom' ? (
+                  <div className="flex items-center bg-white border border-zinc-200 rounded-lg p-2 shadow-sm gap-3 px-3">
+                    <Calendar size={16} className="text-zinc-500 shrink-0" />
+                    <input 
+                      type="date" 
+                      value={customStart} 
+                      onChange={(e) => setCustomStart(e.target.value)} 
+                      className="bg-transparent text-sm font-medium text-zinc-800 outline-none cursor-pointer"
+                    />
+                    <span className="text-zinc-400 text-xs font-semibold lowercase">até</span>
+                    <input 
+                      type="date" 
+                      value={customEnd} 
+                      onChange={(e) => setCustomEnd(e.target.value)} 
+                      className="bg-transparent text-sm font-medium text-zinc-800 outline-none cursor-pointer"
+                    />
+                    <Calendar size={16} className="text-zinc-500 shrink-0" />
+                  </div>
+                ) : (
+                  <div className="flex items-center bg-zinc-50 border border-zinc-200 rounded-lg p-2 shadow-sm px-3 w-full sm:w-[280px] text-zinc-400 cursor-not-allowed">
+                     <Calendar size={16} className="shrink-0 mr-3" />
+                     <span className="text-sm font-medium">Datas automáticas</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Visualização */}
+              <div className="flex flex-col gap-2 w-full sm:w-auto">
+                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Visualização</span>
+                <div className="flex items-center bg-white border border-zinc-200 rounded-lg p-2 shadow-sm px-3">
+                   <BarChart3 size={16} className="text-zinc-800 mr-2 shrink-0" />
+                   <select 
+                     value={periodo} 
+                     onChange={(e) => {
+                       setPeriodo(e.target.value);
+                       if (e.target.value === 'custom') {
+                         const today = new Date();
+                         const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+                         setCustomStart(firstDay.toISOString().split('T')[0]);
+                         setCustomEnd(today.toISOString().split('T')[0]);
+                       }
+                     }}
+                     className="bg-transparent text-sm font-semibold text-zinc-900 outline-none cursor-pointer appearance-none pr-6 w-full"
+                     style={{ background: `url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2318181b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E") no-repeat right center`, backgroundSize: '16px' }}
+                   >
+                     <option value="hoje">Hoje</option>
+                     <option value="7d">Últimos 7 Dias</option>
+                     <option value="mes">Este Mês</option>
+                     <option value="custom">Personalizado</option>
+                   </select>
+                </div>
+              </div>
+            </div>
+            
+            {/* Seção 3: Botões */}
+            <div className="flex items-center gap-3 w-full lg:w-auto pt-6 lg:pt-0 lg:pl-6 mt-auto">
+              <button onClick={exportClientsCSV} disabled={exportingClients} className="flex flex-1 sm:flex-none items-center justify-center gap-2 bg-white text-blue-600 border border-blue-200 hover:bg-blue-50 transition-colors px-4 py-2.5 rounded-lg text-sm font-bold shadow-sm disabled:opacity-50 whitespace-nowrap" title="Exportar Base de Clientes (CRM)">
+                <Users size={16} />
+                <span>{exportingClients ? 'Gerando...' : 'Clientes'}</span>
+              </button>
+              <button onClick={exportCSV} className="flex flex-1 sm:flex-none items-center justify-center gap-2 bg-white text-emerald-600 border border-emerald-200 hover:bg-emerald-50 transition-colors px-4 py-2.5 rounded-lg text-sm font-bold shadow-sm whitespace-nowrap" title="Exportar para Excel (Contador)">
+                <FileSpreadsheet size={16} />
+                <span>Vendas</span>
+              </button>
+              <button onClick={exportPDF} className="flex flex-1 sm:flex-none items-center justify-center gap-2 bg-[#2d3748] text-white border border-[#2d3748] hover:bg-zinc-800 transition-colors px-4 py-2.5 rounded-lg text-sm font-bold shadow-sm whitespace-nowrap">
+                <Download size={16} />
+                <span>Baixar PDF</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
       </header>
 
       {/* Conteúdo Dinâmico */}
