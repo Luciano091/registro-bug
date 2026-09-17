@@ -130,30 +130,30 @@ const Reports = () => {
           <p className="text-zinc-300 mt-1 text-sm">Acompanhe o desempenho completo do seu negócio.</p>
         </div>
         
-        <div className="flex flex-col md:flex-row items-start md:items-center gap-3 w-full xl:w-auto">
+        <div className="flex flex-col xl:flex-row items-start xl:items-center gap-3 w-full xl:w-auto mt-4 md:mt-0">
           
           {/* Filtros */}
-          <div className="flex items-center gap-2 flex-wrap md:flex-nowrap w-full md:w-auto">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full xl:w-auto">
             {periodo === 'custom' && (
-              <div className="flex items-center bg-white border border-zinc-200 rounded-lg p-1.5 shadow-sm gap-2 px-3">
+              <div className="flex items-center bg-white border border-zinc-200 rounded-lg p-1.5 shadow-sm gap-2 px-3 w-full sm:w-auto">
                 <input 
                   type="date" 
                   value={customStart} 
                   onChange={(e) => setCustomStart(e.target.value)} 
-                  className="bg-transparent text-sm text-zinc-700 outline-none cursor-pointer"
+                  className="bg-transparent text-sm text-zinc-700 outline-none cursor-pointer w-full sm:w-auto"
                 />
                 <span className="text-zinc-400 text-xs font-medium">até</span>
                 <input 
                   type="date" 
                   value={customEnd} 
                   onChange={(e) => setCustomEnd(e.target.value)} 
-                  className="bg-transparent text-sm text-zinc-700 outline-none cursor-pointer"
+                  className="bg-transparent text-sm text-zinc-700 outline-none cursor-pointer w-full sm:w-auto"
                 />
               </div>
             )}
 
-            <div className="flex items-center bg-white border border-zinc-200 rounded-lg p-1 shadow-sm shrink-0">
-               <Calendar size={16} className="text-zinc-400 ml-2 mr-1" />
+            <div className="flex items-center bg-white border border-zinc-200 rounded-lg p-1 shadow-sm shrink-0 w-full sm:w-auto">
+               <Calendar size={16} className="text-zinc-400 ml-2 mr-1 shrink-0" />
                <select 
                  value={periodo} 
                  onChange={(e) => {
@@ -165,7 +165,7 @@ const Reports = () => {
                      setCustomEnd(today.toISOString().split('T')[0]);
                    }
                  }}
-                 className="bg-transparent text-sm font-medium text-zinc-700 py-1.5 px-2 outline-none cursor-pointer"
+                 className="bg-transparent text-sm font-medium text-zinc-700 py-1.5 px-2 outline-none cursor-pointer w-full"
                >
                  <option value="hoje">Hoje</option>
                  <option value="7d">Últimos 7 Dias</option>
@@ -176,19 +176,18 @@ const Reports = () => {
           </div>
           
           {/* Botões de Ação */}
-          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-            <button onClick={exportClientsCSV} disabled={exportingClients} className="flex items-center justify-center gap-2 bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition-colors px-4 py-2 rounded-lg text-sm font-semibold shadow-sm disabled:opacity-50 flex-1 md:flex-none" title="Exportar Base de Clientes (CRM)">
-              <Users size={16} />
-              <span className="md:inline">{exportingClients ? 'Gerando...' : 'Clientes'}</span>
+          <div className="flex items-center gap-2 w-full xl:w-auto overflow-x-auto pb-2 xl:pb-0 hide-scrollbar">
+            <button onClick={exportClientsCSV} disabled={exportingClients} className="flex items-center justify-center gap-2 bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition-colors px-4 py-2 rounded-lg text-sm font-semibold shadow-sm disabled:opacity-50 flex-1 xl:flex-none whitespace-nowrap shrink-0" title="Exportar Base de Clientes (CRM)">
+              <Users size={16} className="shrink-0" />
+              <span>{exportingClients ? 'Gerando...' : 'Clientes'}</span>
             </button>
-            <button onClick={exportCSV} className="flex items-center justify-center gap-2 bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 transition-colors px-4 py-2 rounded-lg text-sm font-semibold shadow-sm flex-1 md:flex-none" title="Exportar para Excel (Contador)">
-              <FileSpreadsheet size={16} />
-              <span className="md:inline">Vendas</span>
+            <button onClick={exportCSV} className="flex items-center justify-center gap-2 bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 transition-colors px-4 py-2 rounded-lg text-sm font-semibold shadow-sm flex-1 xl:flex-none whitespace-nowrap shrink-0" title="Exportar para Excel (Contador)">
+              <FileSpreadsheet size={16} className="shrink-0" />
+              <span>Vendas</span>
             </button>
-            <button onClick={exportPDF} className="flex items-center justify-center gap-2 bg-white text-zinc-700 border border-zinc-200 hover:bg-zinc-50 hover:text-zinc-900 transition-colors px-4 py-2 rounded-lg text-sm font-semibold shadow-sm flex-1 md:flex-none">
-              <Download size={16} />
-              <span className="hidden md:inline">Baixar PDF</span>
-              <span className="md:hidden">PDF</span>
+            <button onClick={exportPDF} className="flex items-center justify-center gap-2 bg-white text-zinc-700 border border-zinc-200 hover:bg-zinc-50 hover:text-zinc-900 transition-colors px-4 py-2 rounded-lg text-sm font-semibold shadow-sm flex-1 xl:flex-none whitespace-nowrap shrink-0">
+              <Download size={16} className="shrink-0" />
+              <span>Baixar PDF</span>
             </button>
           </div>
         </div>
