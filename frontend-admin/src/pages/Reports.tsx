@@ -2,6 +2,20 @@ import { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { BarChart3, Calendar, DollarSign, Package, Receipt, TrendingUp, TrendingDown, Download, FileSpreadsheet, Users } from 'lucide-react';
 import api from '../services/api';
+import { DateRangePicker } from '../components/DateRangePicker';
+
+const parseLocalDate = (dateString: string) => {
+  if (!dateString) return null;
+  const [y, m, d] = dateString.split('-');
+  return new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
+};
+
+const formatLocalDate = (date: Date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
 
 const CAT_COLORS = ['#f97316', '#3b82f6', '#f59e0b', '#8b5cf6', '#10b981'];
 
@@ -159,20 +173,22 @@ const Reports = () => {
                     </span>
                   </button>
 
-                  {/* Popover de Datas */}
+                  {/* Popover de Datas Visual */}
                   {showDatePicker && (
-                    <div className="absolute top-full left-0 sm:left-auto sm:right-0 mt-2 p-4 bg-white border border-zinc-200 shadow-xl rounded-xl z-50 flex flex-col gap-4 min-w-[240px] animate-in fade-in zoom-in-95 duration-200">
-                       <div className="flex flex-col gap-1.5">
-                         <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Data Inicial</label>
-                         <input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)} className="bg-zinc-50 border border-zinc-200 rounded-lg p-2 text-sm font-medium text-zinc-800 outline-none focus:border-blue-400"/>
+                    <div className="absolute top-full left-0 sm:left-auto sm:right-0 mt-2 p-4 bg-white border border-zinc-200 shadow-xl rounded-2xl z-50 flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-200">
+                       <DateRangePicker 
+                         startDate={parseLocalDate(customStart)}
+                         endDate={parseLocalDate(customEnd)}
+                         onChange={(start, end) => {
+                           if (start) setCustomStart(formatLocalDate(start));
+                           if (end) setCustomEnd(formatLocalDate(end));
+                         }}
+                       />
+                       <div className="flex justify-end pt-2 border-t border-zinc-100 mt-2">
+                         <button onClick={() => setShowDatePicker(false)} className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-2.5 text-sm font-bold transition-colors w-full sm:w-auto">
+                           Aplicar
+                         </button>
                        </div>
-                       <div className="flex flex-col gap-1.5">
-                         <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Data Final</label>
-                         <input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} className="bg-zinc-50 border border-zinc-200 rounded-lg p-2 text-sm font-medium text-zinc-800 outline-none focus:border-blue-400"/>
-                       </div>
-                       <button onClick={() => setShowDatePicker(false)} className="mt-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg p-2 text-sm font-bold transition-colors">
-                         Aplicar Filtro
-                       </button>
                     </div>
                   )}
                 </div>
