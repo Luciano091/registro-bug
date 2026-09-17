@@ -151,27 +151,25 @@ const Reports = () => {
         
         <div className="flex items-center gap-3 w-full md:w-auto flex-wrap">
           {periodo === 'custom' && (
-            <div className="flex items-center bg-dark-900/60 border border-white/5 rounded-lg p-1.5 backdrop-blur-md gap-2 px-3">
+            <div className="flex items-center bg-white border border-zinc-200 rounded-lg p-1.5 shadow-sm gap-2 px-3">
               <input 
                 type="date" 
                 value={customStart} 
                 onChange={(e) => setCustomStart(e.target.value)} 
-                className="bg-transparent text-sm text-zinc-200 outline-none cursor-pointer"
-                style={{ colorScheme: 'dark' }}
+                className="bg-transparent text-sm text-zinc-700 outline-none cursor-pointer"
               />
-              <span className="text-zinc-400 text-xs">até</span>
+              <span className="text-zinc-400 text-xs font-medium">até</span>
               <input 
                 type="date" 
                 value={customEnd} 
                 onChange={(e) => setCustomEnd(e.target.value)} 
-                className="bg-transparent text-sm text-zinc-200 outline-none cursor-pointer"
-                style={{ colorScheme: 'dark' }}
+                className="bg-transparent text-sm text-zinc-700 outline-none cursor-pointer"
               />
             </div>
           )}
 
-          <div className="flex items-center bg-dark-900/60 border border-white/5 rounded-lg p-1 backdrop-blur-md">
-             <Calendar size={16} className="text-zinc-300 ml-2 mr-1" />
+          <div className="flex items-center bg-white border border-zinc-200 rounded-lg p-1 shadow-sm">
+             <Calendar size={16} className="text-zinc-400 ml-2 mr-1" />
              <select 
                value={periodo} 
                onChange={(e) => {
@@ -183,7 +181,7 @@ const Reports = () => {
                    setCustomEnd(today.toISOString().split('T')[0]);
                  }
                }}
-               className="bg-transparent text-sm text-zinc-200 py-1.5 px-2 outline-none cursor-pointer"
+               className="bg-transparent text-sm font-medium text-zinc-700 py-1.5 px-2 outline-none cursor-pointer"
              >
                <option value="hoje">Hoje</option>
                <option value="7d">Últimos 7 Dias</option>
@@ -193,15 +191,15 @@ const Reports = () => {
           </div>
           
           <div className="flex flex-wrap gap-2">
-            <button onClick={exportClientsCSV} disabled={exportingClients} className="flex items-center gap-2 bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30 hover:text-blue-300 transition-colors px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-md disabled:opacity-50" title="Exportar Base de Clientes (CRM)">
+            <button onClick={exportClientsCSV} disabled={exportingClients} className="flex items-center gap-2 bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition-colors px-4 py-2 rounded-lg text-sm font-semibold shadow-sm disabled:opacity-50" title="Exportar Base de Clientes (CRM)">
               <Users size={16} />
               <span className="hidden md:inline">{exportingClients ? 'Gerando...' : 'Exportar Clientes'}</span>
             </button>
-            <button onClick={exportCSV} className="flex items-center gap-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30 hover:text-emerald-300 transition-colors px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-md" title="Exportar para Excel (Contador)">
+            <button onClick={exportCSV} className="flex items-center gap-2 bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 transition-colors px-4 py-2 rounded-lg text-sm font-semibold shadow-sm" title="Exportar para Excel (Contador)">
               <FileSpreadsheet size={16} />
               <span className="hidden md:inline">Exportar Vendas</span>
             </button>
-            <button onClick={exportPDF} className="flex items-center gap-2 bg-dark-900/60 border border-white/5 hover:bg-white/5 transition-colors px-4 py-2 rounded-lg text-sm text-zinc-200 backdrop-blur-md">
+            <button onClick={exportPDF} className="flex items-center gap-2 bg-white text-zinc-700 border border-zinc-200 hover:bg-zinc-50 hover:text-zinc-900 transition-colors px-4 py-2 rounded-lg text-sm font-semibold shadow-sm">
               <Download size={16} />
               <span className="hidden md:inline">Baixar PDF</span>
             </button>
