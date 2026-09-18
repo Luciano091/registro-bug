@@ -16,13 +16,13 @@ def simulate_ifood_order(db: Session = Depends(database.get_db)):
     """
     Endpoint para simular o recebimento de um pedido (Webhook) da API do iFood.
     """
-    estabelecimento = db.query(models.Estabelecimento).first()
-    if not estabelecimento:
-        raise HTTPException(status_code=404, detail="Estabelecimento não encontrado.")
-        
-    produto = db.query(models.Produto).filter(models.Produto.estabelecimento_id == estabelecimento.id).first()
+    produto = db.query(models.Produto).first()
     if not produto:
         raise HTTPException(status_code=400, detail="Nenhum produto cadastrado para simular.")
+        
+    estabelecimento = db.query(models.Estabelecimento).filter(models.Estabelecimento.id == produto.estabelecimento_id).first()
+    if not estabelecimento:
+        raise HTTPException(status_code=404, detail="Estabelecimento não encontrado.")
         
     mock_ifood_order_id = "ifood-" + str(uuid.uuid4())[:13]
     

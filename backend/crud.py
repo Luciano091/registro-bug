@@ -569,7 +569,9 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate, estabelecimento_id:
         desconto=desconto,
         cashback_usado=cashback_usado,
         total=total,
-        status="Recebido"
+        status="Recebido",
+        origem=pedido.origem,
+        ifood_order_id=pedido.ifood_order_id
     )
     
     db.add(db_pedido)
