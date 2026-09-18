@@ -57,7 +57,33 @@ export const CheckoutModal = ({ onClose, lojaAberta = true, mesaNumero }: Checko
     }
   }, []);
 
-  useEffect(() => { setCupomAplicado(null); setCupomErro(''); }, [cartTotal]);
+  useEffect(() => {
+    if (!cupomCodigo.trim()) {
+      setCupomAplicado(null);
+      setCupomErro('');
+      return;
+    }
+    
+    // Auto-validate on open or cart change
+    const autoValidate = async () => {
+      setValidandoCupom(true); setCupomErro('');
+      try {
+        const response = await api.post(`/public/${getEstablishmentSlug()}/cupons/validar`, { codigo: cupomCodigo, subtotal: cartTotal });
+        setCupomAplicado(response.data);
+      } catch (error: any) {
+        setCupomAplicado(null);
+        // Only show error if the user typed it or if it failed mid-checkout.
+        // For auto-apply, a silent fail or small text is better, but we will keep the original error logic.
+        setCupomErro(error.response?.data?.detail || 'Não foi possível validar o cupom.');
+      } finally {
+        setValidandoCupom(false);
+      }
+    };
+    
+    // Throttle slightly to prevent spam if cart changes quickly
+    const timer = setTimeout(autoValidate, 300);
+    return () => clearTimeout(timer);
+  }, [cartTotal, cupomCodigo]);
 
   useEffect(() => {
     api.get(`/public/${getEstablishmentSlug()}/entrega/configuracao`).then(({ data }) => {

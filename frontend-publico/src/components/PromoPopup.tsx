@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { TicketPercent, X } from 'lucide-react';
 import { getEstablishmentSlug } from '../services/api';
 import api from '../services/api';
+import { saveCouponCode } from '../services/couponStorage';
 
 export const PromoPopup = () => {
   const [cupom, setCupom] = useState<any>(null);
@@ -65,7 +66,11 @@ export const PromoPopup = () => {
             </p>
             
             <button 
-              onClick={() => setShow(false)}
+              onClick={() => {
+                saveCouponCode(cupom.codigo);
+                alert(`Cupom ${cupom.codigo} resgatado com sucesso!\nEle será aplicado automaticamente no final da sua compra.`);
+                setShow(false);
+              }}
               className="w-full bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold text-lg py-3.5 rounded-2xl transition-colors shadow-lg shadow-red-600/20"
             >
               Pegar cupom
