@@ -323,11 +323,14 @@ const Orders = () => {
                 </tr>
               ) : (
                 filteredOrders.map(order => (
-                  <tr key={order.id} className="hover:bg-white/5 transition-colors group">
+                  <tr key={order.id} className={`hover:bg-white/5 transition-colors group ${order.origem === 'ifood' ? 'bg-red-500/5' : ''}`}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
                         <span className="text-brand-500/70 text-sm font-bold">#</span>
                         <span className="font-bold text-white text-lg">{shortOrderNumber(order.numero)}</span>
+                        {order.origem === 'ifood' && (
+                          <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full ml-2">iFood</span>
+                        )}
                       </div>
                       <span className="text-xs text-zinc-400 mt-1 block">Há pouco tempo</span>
                     </td>
@@ -435,8 +438,11 @@ const Orders = () => {
             {/* Header */}
             <div className="px-6 py-4 border-b border-white/5 flex justify-between items-center bg-black/20">
               <div>
-                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                <h3 className="text-xl font-bold font-heading text-white flex items-center gap-2">
                   Pedido #{shortOrderNumber(selectedOrder.numero)}
+                  {selectedOrder.origem === 'ifood' && (
+                    <span className="bg-red-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full ml-2">iFood</span>
+                  )}
                 </h3>
                 <p className="text-sm text-zinc-300 mt-0.5">{selectedOrder.cliente}</p>
               </div>

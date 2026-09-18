@@ -109,6 +109,9 @@ app.add_middleware(
 async def health_check():
     return {"status": "ok"}
 
+from ifood import router as ifood_router
+app.include_router(ifood_router)
+
 @app.websocket("/ws/operacao")
 async def operation_events(websocket: WebSocket):
     await websocket.accept()

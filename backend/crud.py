@@ -842,7 +842,7 @@ def get_fila_cozinha(db: Session, estabelecimento_id: int, setor_id: int = None)
         for item in pedido.itens:
             if item.status_producao not in ("pendente", "em_preparo", "pronto") or (setor_id and item.setor_producao_id != setor_id): continue
             itens.append({"id": item.id, "origem": "pedido", "produto_nome": item.produto_nome or (item.produto.nome if item.produto else "Produto"), "quantidade": item.quantidade, "observacao": item.observacao, "opcoes": [{"grupo": opcao.grupo_nome, "opcao": opcao.opcao_nome, "quantidade": opcao.quantidade} for opcao in item.opcoes], "status": item.status_producao, "setor_producao_id": item.setor_producao_id, "criado_em": item.criado_em or pedido.data, "iniciado_em": item.iniciado_em, "pronto_em": item.pronto_em})
-        if itens: tickets.append({"chave": f"pedido-{pedido.id}", "origem": "pedido", "referencia": f"Pedido #{pedido.numero.split('-')[-1]}", "cliente": pedido.cliente, "tipo": pedido.tipo_entrega, "mesa": None, "criado_em": pedido.data, "itens": itens})
+        if itens: tickets.append({"chave": f"pedido-{pedido.id}", "origem": "pedido", "origem_venda": pedido.origem, "referencia": f"Pedido #{pedido.numero.split('-')[-1]}", "cliente": pedido.cliente, "tipo": pedido.tipo_entrega, "mesa": None, "criado_em": pedido.data, "itens": itens})
     comandas = db.query(models.Comanda).filter(models.Comanda.estabelecimento_id == estabelecimento_id, models.Comanda.status == "aberta").order_by(models.Comanda.aberta_em).all()
     for comanda in comandas:
         itens = []

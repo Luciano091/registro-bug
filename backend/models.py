@@ -246,6 +246,7 @@ class Pedido(Base):
     total = Column(Numeric(10, 2, asdecimal=False), default=0.0)
     observacao = Column(String, nullable=True)
     origem = Column(String, nullable=False, default="balcao")
+    ifood_order_id = Column(String, nullable=True, unique=True, index=True)
     comanda_id = Column(Integer, ForeignKey("comandas.id"), nullable=True, unique=True, index=True)
     data = Column(DateTime, default=get_now)
 
@@ -401,6 +402,12 @@ class Configuracao(Base):
     whatsapp_auto_reply_text = Column(String, nullable=True)
     whatsapp_phone_number_id = Column(String, nullable=True, index=True)
     senha_admin = Column(String, default="burger123")
+    
+    # iFood Integration Fields
+    ifood_client_id = Column(String, nullable=True)
+    ifood_client_secret = Column(String, nullable=True)
+    ifood_merchant_id = Column(String, nullable=True)
+    ifood_status = Column(String, default="desconectado") # desconectado, conectado, erro
 
 class AreaEntrega(Base):
     __tablename__ = "areas_entrega"

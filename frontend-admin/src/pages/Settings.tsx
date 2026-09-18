@@ -121,6 +121,86 @@ const Settings = () => {
           
         </div>
         
+        {/* Integração iFood Section */}
+        <div className="glass border border-white/5 rounded-3xl p-6 md:p-8 mt-6 relative overflow-hidden group hover:border-red-500/30 transition-colors">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-red-500/5 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none group-hover:bg-red-500/10 transition-colors"></div>
+          
+          <div className="flex items-center gap-3 mb-6 relative z-10">
+            <div className="p-2.5 bg-red-500/10 rounded-xl text-red-500 flex items-center justify-center font-black">
+              iFood
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-white font-heading">Integração iFood (Hub de Pedidos)</h3>
+              <p className="text-zinc-300 text-sm">Conecte sua conta do Portal do Parceiro para receber pedidos direto na Cozinha.</p>
+            </div>
+            {config.ifood_status === 'conectado' ? (
+              <span className="ml-auto bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full text-xs font-bold border border-emerald-500/20">Conectado</span>
+            ) : (
+              <span className="ml-auto bg-zinc-500/10 text-zinc-400 px-3 py-1 rounded-full text-xs font-bold border border-white/5">Desconectado</span>
+            )}
+          </div>
+
+          <div className="space-y-4 relative z-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-zinc-300 mb-2">
+                  Client ID
+                </label>
+                <input 
+                  type="text" 
+                  name="ifood_client_id" 
+                  value={(config as any).ifood_client_id || ''} 
+                  onChange={handleChange}
+                  placeholder="Ex: a1b2c3d4-..."
+                  className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/50 transition-all text-white font-mono text-sm"
+                />
+              </div>
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-zinc-300 mb-2">
+                  Client Secret
+                </label>
+                <input 
+                  type="password" 
+                  name="ifood_client_secret" 
+                  value={(config as any).ifood_client_secret || ''} 
+                  onChange={handleChange}
+                  placeholder="*****************"
+                  className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/50 transition-all text-white font-mono text-sm"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="flex items-center gap-2 text-sm font-medium text-zinc-300 mb-2">
+                Merchant ID (ID da Loja)
+              </label>
+              <input 
+                type="text" 
+                name="ifood_merchant_id" 
+                value={(config as any).ifood_merchant_id || ''} 
+                onChange={handleChange}
+                placeholder="Ex: 12345678-..."
+                className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/50 transition-all text-white font-mono text-sm"
+              />
+            </div>
+            
+            <div className="flex justify-end pt-4 border-t border-white/5 mt-4">
+              <button 
+                onClick={async () => {
+                   try {
+                     await api.post('/ifood/simulate-order');
+                     alert('Pedido iFood simulado com sucesso! Verifique a aba de Pedidos e KDS.');
+                   } catch(e) {
+                     alert('Erro ao simular pedido iFood.');
+                   }
+                }}
+                className="bg-white text-zinc-900 hover:bg-zinc-200 transition-colors px-4 py-2 rounded-lg font-bold text-sm"
+              >
+                Simular Pedido Teste
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Security Section */}
         <div className="glass border border-white/5 rounded-3xl p-6 md:p-8 relative overflow-hidden group hover:border-brand-500/30 transition-colors">
           <div className="absolute top-0 right-0 w-64 h-64 bg-brand-500/5 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none group-hover:bg-brand-500/10 transition-colors"></div>

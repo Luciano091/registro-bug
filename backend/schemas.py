@@ -284,6 +284,8 @@ class PedidoBase(BaseModel):
     motivo_cancelamento: Optional[str] = None
     estornado: bool = False
     cashback_usado: float = 0.0
+    origem: str = "balcao"
+    ifood_order_id: Optional[str] = None
 
 class PedidoCreate(PedidoBase):
     itens: List[ItemPedidoCreate]
@@ -439,6 +441,7 @@ class CozinhaItem(BaseModel):
 class CozinhaTicket(BaseModel):
     chave: str
     origem: str
+    origem_venda: Optional[str] = None
     referencia: str
     cliente: Optional[str] = None
     tipo: str
@@ -468,6 +471,10 @@ class ConfiguracaoBase(BaseModel):
     whatsapp_auto_reply_text: Optional[str] = None
     whatsapp_phone_number_id: Optional[str] = None
     senha_admin: Optional[str] = None
+    ifood_client_id: Optional[str] = None
+    ifood_client_secret: Optional[str] = None
+    ifood_merchant_id: Optional[str] = None
+    ifood_status: str = "desconectado"
 
 class ConfiguracaoCreate(ConfiguracaoBase):
     pass
