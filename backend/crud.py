@@ -1665,5 +1665,6 @@ def get_cupom_destaque(db: Session, estabelecimento_id: int):
         models.Cupom.estabelecimento_id == estabelecimento_id,
         models.Cupom.ativo == True,
         (models.Cupom.inicio == None) | (models.Cupom.inicio <= now),
-        (models.Cupom.fim == None) | (models.Cupom.fim >= now)
+        (models.Cupom.fim == None) | (models.Cupom.fim >= now),
+        (models.Cupom.limite_usos == None) | (models.Cupom.limite_usos > models.Cupom.usos)
     ).order_by(models.Cupom.valor.desc()).first()
