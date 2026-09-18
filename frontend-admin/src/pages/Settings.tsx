@@ -16,7 +16,11 @@ const Settings = () => {
     tempo_medio_preparo: 0,
     whatsapp_auto_reply_enabled: false,
     whatsapp_auto_reply_text: '',
-    senha_admin: ''
+    senha_admin: '',
+    ifood_client_id: '',
+    ifood_client_secret: '',
+    ifood_merchant_id: '',
+    ifood_status: 'desconectado'
   });
 
   useEffect(() => {
