@@ -11,6 +11,8 @@ import { PedidosView } from './PedidosView';
 import { ContaView } from './ContaView';
 import { CheckoutModal } from '../components/CheckoutModal';
 import { LojaFechadaModal } from '../components/LojaFechadaModal';
+import { PromoPopup } from '../components/PromoPopup';
+import { PwaInstallPrompt } from '../components/PwaInstallPrompt';
 import { useCart } from '../contexts/CartContext';
 
 type CapacitorBridge = {
@@ -151,6 +153,9 @@ const PublicMenu = () => {
 
   return (
     <div className={`public-menu min-h-screen text-zinc-900 font-sans ${cartCount > 0 ? "pb-36" : "pb-24"} md:pb-12 selection:bg-brand-500/30 selection:text-zinc-900`}>
+      <PromoPopup />
+      {!isNativeApp && <PwaInstallPrompt />}
+      
       {mesaNumero && (
         <div className="bg-brand-500 text-white text-center py-2 font-medium sticky top-0 z-[60] text-sm md:text-base shadow-sm">
           📍 Você está pedindo para a <strong>Mesa {mesaNumero}</strong>

@@ -181,6 +181,14 @@ def public_validate_coupon(slug: str, payload: schemas.CupomValidar, db: Session
         raise HTTPException(status_code=400, detail=str(exc))
     return schemas.CupomValidado(codigo=cupom.codigo, desconto=desconto, total=max(0, payload.subtotal - desconto), descricao=cupom.descricao)
 
+@app.get("/public/{slug}/cupons/destaque", response_model=schemas.CupomConsultado)
+def public_highlight_coupon(slug: str, db: Session = Depends(get_db)):
+    estabelecimento = require_public_establishment(slug, db)
+    cupom = crud.get_cupom_destaque(db, estabelecimento.id)
+    if not cupom:
+        raise HTTPException(status_code=404, detail="Nenhum cupom em destaque.")
+    return cupom
+
 @app.post("/public/{slug}/cupons/consultar", response_model=schemas.CupomConsultado)
 def public_consult_coupon(slug: str, payload: schemas.CupomConsultar, db: Session = Depends(get_db)):
     estabelecimento = require_public_establishment(slug, db)

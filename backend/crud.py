@@ -1656,3 +1656,14 @@ def processar_pedido_mesa(db: Session, mesa_numero: str, estabelecimento_id: int
     db.refresh(comanda)
     
     return comanda
+
+def get_cupom_destaque(db: Session, estabelecimento_id: int):
+    # Returns the best active cupom (highest value)
+    import datetime
+    now = datetime.datetime.now()
+    return db.query(models.Cupom).filter(
+        models.Cupom.estabelecimento_id == estabelecimento_id,
+        models.Cupom.ativo == True,
+        (models.Cupom.inicio == None) | (models.Cupom.inicio <= now),
+        (models.Cupom.fim == None) | (models.Cupom.fim >= now)
+    ).order_by(models.Cupom.valor.desc()).first()
