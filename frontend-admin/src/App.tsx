@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Home, PlusCircle, ListOrdered, Utensils, BarChart3, Settings as SettingsIcon, ChevronLeft, ChevronRight, Wallet, LogOut, Menu as MenuIcon, X, Package, Store, Users, Armchair, ChefHat, Truck } from 'lucide-react';
+import { Home, PlusCircle, ListOrdered, Utensils, BarChart3, Settings as SettingsIcon, ChevronLeft, ChevronRight, Wallet, LogOut, Menu as MenuIcon, X, Package, Store, Users, Armchair, ChefHat, Truck, MessageSquare } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import NewOrder from './pages/NewOrder';
 import Orders from './pages/Orders';
@@ -15,6 +15,7 @@ import Team from './pages/Team';
 import Salon from './pages/Salon';
 import Kitchen from './pages/Kitchen';
 import Deliveries from './pages/Deliveries';
+import Inbox from './pages/Inbox';
 
 import Login from './pages/Login';
 import ResetPassword from './pages/ResetPassword';
@@ -180,6 +181,7 @@ function AppContent() {
             {can(session, 'dashboard.visualizar') && <NavLink to="/" icon={Home} isCollapsed={isCollapsed}>Dashboard</NavLink>}
             {can(session, 'pedidos.criar') && <NavLink to="/novo-pedido" icon={PlusCircle} isCollapsed={isCollapsed}>Novo Pedido</NavLink>}
             {can(session, 'pedidos.visualizar') && session?.perfil !== 'entregador' && <NavLink to="/pedidos" icon={ListOrdered} isCollapsed={isCollapsed}>Pedidos</NavLink>}
+            {can(session, 'pedidos.visualizar') && <NavLink to="/atendimento" icon={MessageSquare} isCollapsed={isCollapsed}>Atendimento</NavLink>}
             {can(session, 'salao.operar') && <NavLink to="/salao" icon={Armchair} isCollapsed={isCollapsed}>Salão</NavLink>}
             {can(session, 'cozinha.operar') && <NavLink to="/cozinha" icon={ChefHat} isCollapsed={isCollapsed}>Cozinha</NavLink>}
             {can(session, 'entregas.visualizar') && <NavLink to="/entregas" icon={Truck} isCollapsed={isCollapsed}>Entregas</NavLink>}
@@ -239,6 +241,7 @@ function AppContent() {
             <Route path="/" element={<ProtectedRoute user={session}><HomeRoute user={session} /></ProtectedRoute>} />
             <Route path="/novo-pedido" element={<ProtectedRoute permission="pedidos.criar" user={session}><NewOrder /></ProtectedRoute>} />
             <Route path="/pedidos" element={<ProtectedRoute permission="pedidos.visualizar" user={session}><Orders /></ProtectedRoute>} />
+            <Route path="/atendimento" element={<ProtectedRoute permission="pedidos.visualizar" user={session}><Inbox /></ProtectedRoute>} />
             <Route path="/salao" element={<ProtectedRoute permission="salao.operar" user={session}><Salon /></ProtectedRoute>} />
             <Route path="/cozinha" element={<ProtectedRoute permission="cozinha.operar" user={session}><Kitchen /></ProtectedRoute>} />
             <Route path="/entregas" element={<ProtectedRoute permission="entregas.visualizar" user={session}><Deliveries /></ProtectedRoute>} />
@@ -265,6 +268,7 @@ function AppContent() {
               </button>
             </div>
             <nav className="flex flex-col gap-4 overflow-y-auto">
+              {can(session, 'pedidos.visualizar') && <Link to="/atendimento" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><MessageSquare className="text-brand-400" /> Atendimento / Chat</Link>}
               {can(session, 'salao.operar') && <Link to="/salao" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><Armchair className="text-brand-400" /> Salão e comandas</Link>}
               {can(session, 'cozinha.operar') && <Link to="/cozinha" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><ChefHat className="text-brand-400" /> Painel de cozinha</Link>}
               {can(session, 'entregas.visualizar') && <Link to="/entregas" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><Truck className="text-brand-400" /> Entregas</Link>}
