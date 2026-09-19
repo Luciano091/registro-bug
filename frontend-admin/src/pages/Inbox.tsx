@@ -4,6 +4,7 @@ import api from '../services/api';
 
 const statusColors: any = {
   'novo': 'bg-emerald-500 text-white',
+  'recebido': 'bg-emerald-500 text-white',
   'enviado': 'bg-emerald-500 text-white',
   'em_preparo': 'bg-amber-500 text-white',
   'pronto': 'bg-blue-500 text-white',
@@ -12,6 +13,7 @@ const statusColors: any = {
 };
 const statusLabels: any = {
   'novo': 'Nova',
+  'recebido': 'Nova',
   'enviado': 'Nova',
   'em_preparo': 'Em preparo',
   'pronto': 'Pronto',
@@ -71,7 +73,7 @@ export default function Inbox() {
               >
                 <div className="flex justify-between items-start mb-1">
                   <strong className="text-slate-800 text-sm truncate pr-2">{pedido.cliente_nome || 'Cliente avulso'}</strong>
-                  <span className="text-xs text-slate-400 shrink-0">{formatTime(pedido.criado_em)}</span>
+                  <span className="text-xs text-slate-400 shrink-0">{formatTime(pedido.data)}</span>
                 </div>
                 <div className="flex justify-between items-center mt-1">
                   <p className="text-sm text-slate-500 truncate max-w-[60%]">
