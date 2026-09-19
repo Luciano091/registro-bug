@@ -36,7 +36,7 @@ export default function Inbox() {
   const formatTime = (iso: string) => new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
   return (
-    <div className="flex h-[calc(100vh-90px)] overflow-hidden bg-[#f0f2f5] rounded-3xl border border-slate-200 shadow-sm mt-2">
+    <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-[#f0f2f5] -m-4 md:-m-8">
       {/* Sidebar List */}
       <div className="w-1/3 min-w-[300px] bg-white flex flex-col border-r border-slate-200">
         <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
