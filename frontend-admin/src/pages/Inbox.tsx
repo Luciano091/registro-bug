@@ -36,7 +36,7 @@ export default function Inbox() {
   const formatTime = (iso: string) => new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
   return (
-    <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-[#f0f2f5] -m-4 md:-m-8">
+    <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-[#f0f2f5]">
       {/* Sidebar List */}
       <div className="w-1/3 min-w-[300px] bg-white flex flex-col border-r border-slate-200">
         <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
@@ -119,7 +119,7 @@ export default function Inbox() {
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
             <div className="flex justify-center mb-6">
               <span className="bg-white/60 text-slate-500 text-xs px-3 py-1 rounded-lg shadow-sm">
-                Hoje, {formatTime(selectedPedido.criado_em)}
+                Hoje, {formatTime(selectedPedido.data)}
               </span>
             </div>
 
@@ -133,7 +133,7 @@ export default function Inbox() {
                   Olá! Recebemos seu pedido #{selectedPedido.id} no nosso sistema. <br/><br/>
                   Total: <strong>R$ {selectedPedido.total.toFixed(2)}</strong>.
                 </p>
-                <div className="text-right mt-1"><span className="text-[10px] text-slate-400">{formatTime(selectedPedido.criado_em)}</span></div>
+                <div className="text-right mt-1"><span className="text-[10px] text-slate-400">{formatTime(selectedPedido.data)}</span></div>
               </div>
             </div>
 
