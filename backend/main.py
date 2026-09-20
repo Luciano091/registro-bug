@@ -181,15 +181,13 @@ def public_validate_coupon(slug: str, payload: schemas.CupomValidar, db: Session
         raise HTTPException(status_code=400, detail=str(exc))
     return schemas.CupomValidado(codigo=cupom.codigo, desconto=desconto, total=max(0, payload.subtotal - desconto), descricao=cupom.descricao)
 
-@app.get("/public/{slug}/cupons/destaque", response_model=schemas.CupomConsultado)
+@app.get("/public/{slug}/cupons/destaque", response_model=schemas.CupomConsultado | None)
 def public_highlight_coupon(slug: str, db: Session = Depends(get_db)):
     estabelecimento = require_public_establishment(slug, db)
     cupom = crud.get_cupom_destaque(db, estabelecimento.id)
-    if not cupom:
-        raise HTTPException(status_code=404, detail="Nenhum cupom em destaque.")
     return cupom
 
-@app.post("/public/{slug}/cupons/consultar", response_model=schemas.CupomConsultado)
+@app.post("/public/{slug}/cupons/consultar", response_model=schemas.CupomConsultado | None)
 def public_consult_coupon(slug: str, payload: schemas.CupomConsultar, db: Session = Depends(get_db)):
     estabelecimento = require_public_establishment(slug, db)
     try:
@@ -270,7 +268,6 @@ def update_coupon(cupom_id: int, payload: schemas.CupomCreate, db: Session = Dep
         cupom = crud.save_cupom(db, payload, usuario.estabelecimento_id, cupom_id)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
-    if not cupom:
         raise HTTPException(status_code=404, detail="Cupom não encontrado.")
     crud.create_audit_log(db, usuario.estabelecimento_id, "cupom.atualizado", usuario.usuario_id, "cupom", cupom.id)
     return cupom

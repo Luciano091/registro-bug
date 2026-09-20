@@ -19,10 +19,12 @@ export const PromoPopup = () => {
     const fetchCupom = async () => {
       try {
         const { data } = await api.get(`/public/${getEstablishmentSlug()}/cupons/destaque`);
-        setCupom(data);
-        // Pequeno atraso para dar tempo da tela carregar antes de mostrar o popup
-        setTimeout(() => setShow(true), 1500);
-        sessionStorage.setItem('promo_popup_seen', 'true');
+        if (data) {
+          setCupom(data);
+          // Pequeno atraso para dar tempo da tela carregar antes de mostrar o popup
+          setTimeout(() => setShow(true), 1500);
+          sessionStorage.setItem('promo_popup_seen', 'true');
+        }
       } catch (e) {
         // Sem cupons em destaque ou erro
       } finally {
