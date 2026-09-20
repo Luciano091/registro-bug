@@ -143,9 +143,9 @@ const Menu = () => {
   })));
 
     const preferredOrder = [
+    'Hambúrguer Artesanal',
     'Hambúrguer',
     'Hambúrguer Tradicional',
-    'Hamburguer artesanal',
     'Hamburguer',
     'Acompanhamento',
     'Lanches',
