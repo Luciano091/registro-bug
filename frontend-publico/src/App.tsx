@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { registerPushTokenIfNative } from './services/pushRegistration';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';

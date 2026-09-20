@@ -1,3 +1,4 @@
+import { registerPushTokenIfNative } from '../services/pushRegistration';
 import { useState, useEffect } from 'react';
 import { User, Save, Phone, MapPin, LogOut, ArrowLeft, Gift, Wallet } from 'lucide-react';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
