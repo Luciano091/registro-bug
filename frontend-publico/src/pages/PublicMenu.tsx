@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { MapPin, Clock, Utensils, Plus, Flame, Check, Ticket, Receipt, User } from 'lucide-react';
+import { MapPin, Clock, Utensils, Truck, ChevronRight, Gift, Plus, Flame, Check, Ticket, Receipt, User } from 'lucide-react';
 import api from '../services/api';
 import { getEstablishmentSlug } from '../services/api';
 import { ProductModal } from '../components/ProductModal';
@@ -194,67 +194,92 @@ const PublicMenu = () => {
         <div className="animate-in fade-in duration-300">
           {/* HEADER / HERO */}
 
-      <div className="store-hero w-full border-b border-zinc-200 py-5 md:py-6">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="store-hero-layout items-start md:items-center">
-            <div className="store-hero-logo shrink-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-0.5 shadow-sm">
-              <img src={config?.logo || "/logo.png"} alt={config?.nome_empresa || "Logo"} className="h-full w-full rounded-[14px] object-cover" />
+      <div className="w-full bg-[#111] pt-6 pb-6 md:pt-10 md:pb-8 relative overflow-hidden rounded-b-[32px] md:rounded-b-[48px] shadow-2xl">
+        {/* Background Image / Glow */}
+        <div className="absolute inset-0 z-0 opacity-80 pointer-events-none">
+           <div className="absolute inset-0 bg-gradient-to-br from-[#2a1205] via-[#111] to-[#111]"></div>
+           <div className="absolute -right-20 -top-20 w-80 h-80 bg-orange-500/20 rounded-full blur-[80px]"></div>
+           <div className="absolute left-0 bottom-0 w-full h-1/2 bg-gradient-to-t from-[#111] to-transparent"></div>
+        </div>
+
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 relative z-10">
+          
+          {/* Top Section: Logo + Title + Status */}
+          <div className="flex items-center gap-4">
+            <div className="shrink-0 rounded-[20px] border border-white/10 bg-black/50 p-1 shadow-xl backdrop-blur-md">
+              <img src={config?.logo || "/logo.png"} alt={config?.nome_empresa || "Logo"} className="h-[80px] w-[80px] rounded-[16px] object-cover md:h-[100px] md:w-[100px]" />
             </div>
             
-            <div className="flex w-full flex-col min-w-0">
-              
-              <div className="flex w-full items-start justify-between gap-3 md:gap-4">
-                <div className="store-hero-copy min-w-0">
-                  <h1 className="truncate text-xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-2xl md:text-3xl">
-                    {config?.nome_empresa || 'Seu Restaurante'}
-                  </h1>
-                  
-                  <div className="mt-1.5 flex items-center gap-2">
-                    {config?.loja_aberta ? (
-                      <>
-                        <div className="h-2 w-2 shrink-0 rounded-full bg-emerald-500"></div>
-                        <span className="whitespace-nowrap text-sm font-semibold text-emerald-600">Aberto agora</span>
-                      </>
-                    ) : (
-                      <>
-                        <div className="h-2 w-2 shrink-0 rounded-full bg-red-500"></div>
-                        <span className="whitespace-nowrap text-sm font-bold text-red-500">Fechado</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* Botão Cashback 3D - Estilo Mockup (Ultra Compacto no Mobile) */}
-                <div 
-                  className="flex shrink-0 cursor-pointer items-center gap-0.5 rounded-full border border-[#ebd5a9] bg-[#fae8c3] py-[3px] pl-0.5 pr-1.5 shadow-sm transition-transform active:scale-95 md:gap-1.5 md:py-1.5 md:pl-1.5 md:pr-3 md:hover:scale-105"
-                  onClick={() => setActiveTab('conta')}
-                >
-                  <img src="/cashback-badge.png" alt="Cashback" className="h-[22px] w-[22px] object-contain drop-shadow-sm md:h-[42px] md:w-[42px]" />
-                  <div className="flex flex-col items-start justify-center">
-                    <span className="text-[8px] font-bold leading-none text-[#a16f21] md:text-[13px]">Ganhe</span>
-                    <span className="mt-[1px] text-[8px] font-bold leading-none text-[#a16f21] md:text-[13px]">Cashback</span>
-                  </div>
-                  <svg className="ml-[1px] h-2.5 w-2.5 text-[#a16f21] md:ml-1 md:h-4 md:w-4" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-                </div>
+            <div className="flex flex-col min-w-0">
+              <div className="flex items-center gap-1.5 -ml-1">
+                <svg className="w-5 h-5 text-yellow-500 mb-0.5 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+                <h1 className="truncate text-[22px] font-black tracking-tight text-white md:text-4xl drop-shadow-md">
+                  {config?.nome_empresa || 'Seu Restaurante'}
+                </h1>
               </div>
-
               
-
+              <div className="mt-1 flex flex-col items-start gap-1.5">
+                {config?.loja_aberta ? (
+                  <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-2.5 py-0.5 border border-emerald-500/30">
+                    <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400 animate-pulse"></div>
+                    <span className="text-[11px] font-bold text-emerald-300 tracking-wide uppercase">Aberto agora</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5 rounded-full bg-red-600 px-2.5 py-0.5 shadow-sm">
+                    <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-white"></div>
+                    <span className="text-[12px] font-bold text-white tracking-wide">Fechado</span>
+                  </div>
+                )}
+                
+                <span className="text-[13px] text-zinc-400 mt-1 line-clamp-2 leading-snug md:text-base">
+                  {config?.descricao || 'Sabor em cada pedido. Experimente nossos clássicos e se surpreenda.'}
+                </span>
+              </div>
             </div>
           </div>
-          <div className="mt-4 md:mt-5">
-            {/* Informações (Pílulas) - Linha Inteira Abaixo */}
-              <div className="store-hero-facts mt-1 md:mt-3 flex flex-wrap items-center gap-2">
-                <div className="flex min-h-9 items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-3 text-xs font-semibold text-emerald-700">
-                  <MapPin size={14} />
-                  {!config?.entrega_habilitada ? 'Somente retirada' : config?.entrega_modo === 'bairro' ? 'Taxa por bairro' : config?.entrega_modo === 'distancia' ? 'Taxa por distância' : config?.taxa_entrega === 0 || !config?.taxa_entrega ? 'Entrega grátis' : `Taxa ${Number(config.taxa_entrega).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`}
-                </div>
-                <div className="flex min-h-9 items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-600">
-                  <Clock size={14} />
-                  {config?.tempo_medio_preparo || 30} min
-                </div>
-              </div>
+
+          {/* Middle Section: Facts with vertical divider */}
+          <div className="mt-6 flex items-center justify-start gap-5 px-1">
+             {/* Delivery Tag */}
+             <div className="flex items-center gap-3">
+               <Truck className="w-7 h-7 text-white opacity-90" strokeWidth={1.5} />
+               <div className="flex flex-col">
+                 <span className="text-[14px] font-bold text-white">
+                   {!config?.entrega_habilitada ? 'Somente retirada' : config?.taxa_entrega === 0 || !config?.taxa_entrega ? 'Entrega grátis' : `Taxa ${Number(config.taxa_entrega).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`}
+                 </span>
+                 <span className="text-[11px] text-zinc-400">
+                   {config?.entrega_modo === 'bairro' ? 'na sua região' : 'para você'}
+                 </span>
+               </div>
+             </div>
+             
+             {/* Divider */}
+             <div className="h-8 w-px bg-white/10"></div>
+             
+             {/* Time Tag */}
+             <div className="flex items-center gap-3">
+               <Clock className="w-7 h-7 text-white opacity-90" strokeWidth={1.5} />
+               <div className="flex flex-col">
+                 <span className="text-[14px] font-bold text-white">{config?.tempo_medio_preparo || 30} min</span>
+                 <span className="text-[11px] text-zinc-400">tempo médio</span>
+               </div>
+             </div>
           </div>
+
+          {/* Bottom Section: Cashback Full Width Banner */}
+          <div 
+            onClick={() => setActiveTab('conta')}
+            className="mt-6 flex w-full cursor-pointer items-center justify-between rounded-xl bg-gradient-to-r from-[#fae8c3] to-[#f4d193] px-4 py-3.5 shadow-[0_4px_12px_rgba(0,0,0,0.4)] transition-transform active:scale-[0.98] md:hover:scale-[1.01]"
+          >
+            <div className="flex items-center gap-3">
+              <Gift className="w-6 h-6 text-orange-600" />
+              <span className="text-[14px] md:text-sm font-medium text-[#8a550d]">
+                Ganhe <strong className="text-orange-700">cashback</strong> em todos os seus pedidos!
+              </span>
+            </div>
+            <ChevronRight className="w-5 h-5 text-orange-600/60" />
+          </div>
+
         </div>
       </div>
 
