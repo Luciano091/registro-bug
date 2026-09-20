@@ -226,7 +226,7 @@ const PublicMenu = () => {
                         <>
                           B
                           <span className="relative inline-block mx-[0.5px]">
-                            <Crown className="w-[18px] h-[18px] text-[#facc15] fill-[#facc15] absolute -top-[16px] left-1/2 -translate-x-[50%] rotate-[12deg] drop-shadow-sm" strokeWidth={1} />
+                            <Crown className="w-[16px] h-[16px] text-[#facc15] fill-[#facc15] absolute -top-[9px] left-1/2 -translate-x-[45%] rotate-[12deg] drop-shadow-sm" strokeWidth={1} />
                             ı
                           </span>
                           s<span className="text-[#facc15]">Burger</span>
