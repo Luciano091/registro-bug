@@ -139,8 +139,7 @@ const Menu = () => {
   };
 
   const categoriasUnicas = Array.from(new Set(produtos.map(p => {
-    const cat = p.categoria.trim();
-    return cat.charAt(0).toUpperCase() + cat.slice(1).toLowerCase();
+    return p.categoria.trim();
   })));
 
     const preferredOrder = [
