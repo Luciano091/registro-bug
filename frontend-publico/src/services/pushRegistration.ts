@@ -4,7 +4,8 @@ import api from './api';
 const FirebaseToken = registerPlugin<any>('FirebaseToken');
 
 export async function registerPushTokenIfNative() {
-  if (!Capacitor.isNativePlatform()) return;
+  const isNativeApp = Capacitor.isNativePlatform() || navigator.userAgent.includes('BisBurgerApp');
+  if (!isNativeApp) return;
   
   const token = localStorage.getItem('cliente_token');
   if (!token) return;
