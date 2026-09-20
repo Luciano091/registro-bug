@@ -218,7 +218,7 @@ const PublicMenu = () => {
             {/* Right Column */}
             <div className="flex flex-col min-w-0 flex-1">
               <div className="flex items-center">
-                <h1 className="truncate text-[26px] font-black tracking-tight text-white md:text-4xl drop-shadow-md">
+                <h1 className="text-[26px] font-black tracking-tight text-white md:text-4xl drop-shadow-md relative py-1">
                   {(() => {
                     const name = config?.nome_empresa || 'BisBurger';
                     if (name.toLowerCase() === 'bisburger') {
@@ -226,8 +226,8 @@ const PublicMenu = () => {
                         <>
                           B
                           <span className="relative inline-block mx-[0.5px]">
-                            <Crown className="w-[16px] h-[16px] text-[#facc15] fill-[#facc15] absolute -top-[13px] left-1/2 -translate-x-[40%] rotate-[15deg] drop-shadow-sm" strokeWidth={1} />
-                            i
+                            <Crown className="w-[18px] h-[18px] text-[#facc15] fill-[#facc15] absolute -top-[16px] left-1/2 -translate-x-[50%] rotate-[12deg] drop-shadow-sm" strokeWidth={1} />
+                            ı
                           </span>
                           s<span className="text-[#facc15]">Burger</span>
                         </>
