@@ -349,7 +349,7 @@ const PublicMenu = () => {
                 )}
               </div>
               <div className={promocoesAtivas.length > 1
-                ? 'hide-scrollbar -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-3 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8'
+                ? 'hide-scrollbar -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 scroll-px-4 pb-3 sm:-mx-6 sm:px-6 sm:scroll-px-6 lg:-mx-8 lg:px-8 lg:scroll-px-8'
                 : 'grid gap-4 lg:max-w-4xl'}>
                 {promocoesAtivas.map(promocao => (
                   <div 
