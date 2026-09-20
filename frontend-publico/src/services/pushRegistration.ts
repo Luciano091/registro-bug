@@ -11,8 +11,17 @@ export async function registerPushTokenIfNative() {
   if (!token) return;
 
   try {
-    alert('Pedindo token pro Firebase...');
-    const { token: fcmToken } = await FirebaseToken.getToken();
+    
+    alert('Pedindo token pro Firebase... Plugin existe? ' + !!FirebaseToken);
+    
+    // Timeout promise
+    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout! Firebase não respondeu após 10 segundos.')), 10000));
+    
+    const { token: fcmToken } = await Promise.race([
+      FirebaseToken.getToken(),
+      timeout
+    ]) as any;
+
     if (fcmToken) {
       await api.put('/clientes/push', {
         token: fcmToken,
@@ -22,7 +31,7 @@ export async function registerPushTokenIfNative() {
       console.log('FCM Token registered successfully');
     }
   } catch (error) {
-    alert('Erro no FCM: ' + JSON.stringify(error));
+    alert('Erro no FCM: ' + String(error));
     console.error('Failed to register FCM token', error);
   }
 }
