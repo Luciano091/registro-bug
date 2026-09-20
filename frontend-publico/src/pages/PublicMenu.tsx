@@ -267,8 +267,12 @@ const PublicMenu = () => {
                 </span>
               </div>
               
-              {/* Facts (Truck & Clock) inside the right column */}
-              <div className="mt-3 flex items-center justify-center gap-4 w-full">
+                          </div>
+          </div>
+
+                    {/* Middle Section: Facts (FULL WIDTH, CENTERED) */}
+          <div className="mt-5 flex w-full items-center justify-center gap-4">
+
                  {/* Delivery Tag */}
                  <div className="flex items-center gap-2">
                    <Truck className="w-4 h-4 shrink-0 text-white opacity-90" strokeWidth={1.5} />
@@ -293,10 +297,7 @@ const PublicMenu = () => {
                      <span className="text-[9px] text-zinc-400 leading-tight">tempo médio</span>
                    </div>
                  </div>
-              </div>
-              
-            </div>
-          </div>
+                        </div>
 
           {/* Bottom Section: Cashback Full Width Banner */}
           <div 
