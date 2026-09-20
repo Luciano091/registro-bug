@@ -628,16 +628,6 @@ def assign_delivery(pedido_id: int, payload: schemas.EntregaAtribuir, background
     numero = pedido.numero.split("-")[-1]
     background_tasks.add_task(push_notifications.send_push_notifications, tokens, "Entrega atribuída", f"O pedido #{numero} foi atribuído a você.", {"tipo": "pedido_atribuido", "pedido_id": pedido.id})
     background_tasks.add_task(realtime.operation_hub.publish, usuario.estabelecimento_id, "entrega.atualizada", pedido.id)
-    if payload.status == "em_rota" and pedido.cliente_id:
-        cliente = crud.get_cliente_by_id(db, pedido.cliente_id)
-        if cliente and getattr(cliente, "push_token", None):
-            customer_tokens = [cliente.push_token]
-            background_tasks.add_task(
-                push_notifications.send_push_notifications, 
-                customer_tokens, 
-                "", "", # No standard title/body, handled by custom data payload
-                {"type": "delivery_progress", "title": f"O pedido #{pedido.numero.split('-')[-1]} saiu para entrega!", "progress": "80"}
-            )
 
     return pedido
 
@@ -651,16 +641,6 @@ def accept_delivery(pedido_id: int, background_tasks: BackgroundTasks, db: Sessi
         raise HTTPException(status_code=404, detail="Pedido de entrega não encontrado.")
     crud.create_audit_log(db, usuario.estabelecimento_id, "entrega.aceita", usuario.usuario_id, "pedido", pedido.id)
     background_tasks.add_task(realtime.operation_hub.publish, usuario.estabelecimento_id, "entrega.atualizada", pedido.id)
-    if payload.status == "em_rota" and pedido.cliente_id:
-        cliente = crud.get_cliente_by_id(db, pedido.cliente_id)
-        if cliente and getattr(cliente, "push_token", None):
-            customer_tokens = [cliente.push_token]
-            background_tasks.add_task(
-                push_notifications.send_push_notifications, 
-                customer_tokens, 
-                "", "", # No standard title/body, handled by custom data payload
-                {"type": "delivery_progress", "title": f"O pedido #{pedido.numero.split('-')[-1]} saiu para entrega!", "progress": "80"}
-            )
 
     return pedido
 
@@ -681,9 +661,10 @@ def update_delivery_status(pedido_id: int, payload: schemas.EntregaStatusUpdate,
             background_tasks.add_task(
                 push_notifications.send_push_notifications, 
                 customer_tokens, 
-                "", "", # No standard title/body, handled by custom data payload
+                "", "", 
                 {"type": "delivery_progress", "title": f"O pedido #{pedido.numero.split('-')[-1]} saiu para entrega!", "progress": "80"}
             )
+
 
     if payload.status == "falha":
         tokens = crud.get_push_tokens(db, usuario.estabelecimento_id, perfil="entregador")
