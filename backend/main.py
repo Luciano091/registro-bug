@@ -374,6 +374,10 @@ def auth_google(token_data: dict, db: Session = Depends(get_db)):
                     foto_url=foto
                 )
                 cliente = crud.create_cliente(db, novo_cliente)
+                # Vincular ao estabelecimento padrão (BisBurger)
+                cliente.estabelecimento_id = 1
+                db.commit()
+                db.refresh(cliente)
                 
         # Generate JWT for cliente
         access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
