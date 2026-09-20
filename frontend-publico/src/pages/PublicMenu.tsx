@@ -208,11 +208,11 @@ const PublicMenu = () => {
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 relative z-10">
           
           {/* Top Section: Logo (Left) + Text/Facts (Right) */}
-          <div className="flex items-start gap-4">
+          <div className="flex items-start gap-3 md:gap-4">
             
             {/* Logo */}
             <div className="shrink-0 rounded-[20px] border border-white/10 bg-black/50 p-1 shadow-xl backdrop-blur-md mt-1">
-              <img src={config?.logo || "/logo.png"} alt={config?.nome_empresa || "Logo"} className="h-[96px] w-[96px] rounded-[16px] object-cover md:h-[120px] md:w-[120px]" />
+              <img src={config?.logo || "/logo.png"} alt={config?.nome_empresa || "Logo"} className="h-[84px] w-[84px] rounded-[14px] object-cover md:h-[120px] md:w-[120px]" />
             </div>
             
             {/* Right Column */}
@@ -243,15 +243,15 @@ const PublicMenu = () => {
               </div>
               
               {/* Facts (Truck & Clock) inside the right column */}
-              <div className="mt-3 flex items-center justify-start gap-3">
+              <div className="mt-3 flex items-center justify-start gap-2.5">
                  {/* Delivery Tag */}
                  <div className="flex items-center gap-2">
-                   <Truck className="w-5 h-5 shrink-0 text-white opacity-90" strokeWidth={1.5} />
+                   <Truck className="w-4 h-4 shrink-0 text-white opacity-90" strokeWidth={1.5} />
                    <div className="flex flex-col">
-                     <span className="text-[12px] font-bold text-white whitespace-nowrap leading-tight">
+                     <span className="text-[11px] font-bold text-white whitespace-nowrap leading-tight">
                        {!config?.entrega_habilitada ? 'Retirada' : config?.taxa_entrega === 0 || !config?.taxa_entrega ? 'Entrega grátis' : `Taxa ${Number(config.taxa_entrega).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`}
                      </span>
-                     <span className="text-[10px] text-zinc-400 leading-tight">
+                     <span className="text-[9px] text-zinc-400 leading-tight">
                        {config?.entrega_modo === 'bairro' ? 'na região' : 'em Cajueiro-AL'}
                      </span>
                    </div>
@@ -262,10 +262,10 @@ const PublicMenu = () => {
                  
                  {/* Time Tag */}
                  <div className="flex items-center gap-2">
-                   <Clock className="w-5 h-5 shrink-0 text-white opacity-90" strokeWidth={1.5} />
+                   <Clock className="w-4 h-4 shrink-0 text-white opacity-90" strokeWidth={1.5} />
                    <div className="flex flex-col">
-                     <span className="text-[12px] font-bold text-white whitespace-nowrap leading-tight">{config?.tempo_medio_preparo || 30} min</span>
-                     <span className="text-[10px] text-zinc-400 leading-tight">tempo médio</span>
+                     <span className="text-[11px] font-bold text-white whitespace-nowrap leading-tight">{config?.tempo_medio_preparo || 30} min</span>
+                     <span className="text-[9px] text-zinc-400 leading-tight">tempo médio</span>
                    </div>
                  </div>
               </div>
@@ -276,11 +276,11 @@ const PublicMenu = () => {
           {/* Bottom Section: Cashback Full Width Banner */}
           <div 
             onClick={() => setActiveTab('conta')}
-            className="mt-6 flex w-full cursor-pointer items-center justify-between rounded-xl bg-gradient-to-r from-[#fae8c3] to-[#f4d193] px-4 py-3 shadow-[0_4px_12px_rgba(0,0,0,0.4)] transition-transform active:scale-[0.98] md:hover:scale-[1.01]"
+            className="mt-5 flex w-full cursor-pointer items-center justify-between rounded-xl bg-gradient-to-r from-[#fae8c3] to-[#f4d193] px-4 py-3 shadow-[0_4px_12px_rgba(0,0,0,0.4)] transition-transform active:scale-[0.98] md:hover:scale-[1.01]"
           >
             <div className="flex items-center gap-3">
               <Gift className="w-6 h-6 text-orange-600 shrink-0" />
-              <span className="text-[13px] leading-tight md:text-sm font-medium text-[#8a550d]">
+              <span className="text-[12px] leading-tight md:text-sm font-medium text-[#8a550d]">
                 Ganhe <strong className="text-orange-700">2% de cashback</strong> em todos os seus pedidos!
               </span>
             </div>
