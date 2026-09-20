@@ -143,12 +143,17 @@ const Menu = () => {
     return cat.charAt(0).toUpperCase() + cat.slice(1).toLowerCase();
   })));
 
-  const preferredOrder = [
+    const preferredOrder = [
+    'Hambúrguer',
+    'Hambúrguer Tradicional',
     'Hamburguer artesanal',
     'Hamburguer',
-    'Frituras',
-    'Combo',
-    'Bebidas'
+    'Acompanhamento',
+    'Lanches',
+    'Porções',
+    'Bebidas',
+    'Bebida',
+    'Sobremesas'
   ];
 
   categoriasUnicas.sort((a, b) => {
