@@ -1,0 +1,24 @@
+import { Capacitor, registerPlugin } from '@capacitor/core';
+import api from './api';
+
+const FirebaseToken = registerPlugin<any>('FirebaseToken');
+
+export async function registerPushTokenIfNative() {
+  if (!Capacitor.isNativePlatform()) return;
+  
+  const token = localStorage.getItem('cliente_token');
+  if (!token) return;
+
+  try {
+    const { token: fcmToken } = await FirebaseToken.getToken();
+    if (fcmToken) {
+      await api.post('/dispositivos/push', {
+        token: fcmToken,
+        plataforma: Capacitor.getPlatform()
+      });
+      console.log('FCM Token registered successfully');
+    }
+  } catch (error) {
+    console.error('Failed to register FCM token', error);
+  }
+}

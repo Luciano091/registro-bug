@@ -72,21 +72,25 @@ def send_push_notifications(tokens: Iterable[str], title: str, body: str, data: 
     sent = 0
     invalid_tokens = []
     for token in unique_tokens:
-        payload = {
-            "message": {
-                "token": token,
-                "notification": {"title": title, "body": body},
-                "data": message_data,
-                "android": {
-                    "priority": "high",
-                    "notification": {
-                        "channel_id": "ritmesa_delivery_alerts",
-                        "sound": "default",
-                        "default_vibrate_timings": True,
-                        "click_action": "OPEN_DELIVERIES",
-                    },
-                },
+        message_dict = {
+            "token": token,
+            "data": message_data,
+            "android": {
+                "priority": "high"
             }
+        }
+        
+        if title or body:
+            message_dict["notification"] = {"title": title, "body": body}
+            message_dict["android"]["notification"] = {
+                "channel_id": "ritmesa_delivery_alerts",
+                "sound": "default",
+                "default_vibrate_timings": True,
+                "click_action": "OPEN_DELIVERIES",
+            }
+            
+        payload = {
+            "message": message_dict
         }
         try:
             response = requests.post(endpoint, headers=headers, json=payload, timeout=15)

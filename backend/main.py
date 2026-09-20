@@ -615,7 +615,17 @@ def assign_delivery(pedido_id: int, payload: schemas.EntregaAtribuir, background
     tokens = crud.get_push_tokens(db, usuario.estabelecimento_id, usuario_id=payload.entregador_id)
     numero = pedido.numero.split("-")[-1]
     background_tasks.add_task(push_notifications.send_push_notifications, tokens, "Entrega atribuída", f"O pedido #{numero} foi atribuído a você.", {"tipo": "pedido_atribuido", "pedido_id": pedido.id})
-    background_tasks.add_task(realtime.operation_hub.publish, usuario.estabelecimento_id, "entrega.atualizada", pedido.id)
+        background_tasks.add_task(realtime.operation_hub.publish, usuario.estabelecimento_id, "entrega.atualizada", pedido.id)
+    if payload.status == "em_rota" and pedido.usuario_id:
+        customer_tokens = crud.get_push_tokens(db, usuario.estabelecimento_id, usuario_id=pedido.usuario_id)
+        if customer_tokens:
+            background_tasks.add_task(
+                push_notifications.send_push_notifications, 
+                customer_tokens, 
+                "", "", # No standard title/body, handled by custom data payload
+                {"type": "delivery_progress", "title": f"O pedido #{pedido.numero.split('-')[-1]} saiu para entrega!", "progress": "80"}
+            )
+
     return pedido
 
 @app.post("/entregas/{pedido_id}/aceitar", response_model=schemas.PedidoEntregaResumo)
@@ -627,7 +637,17 @@ def accept_delivery(pedido_id: int, background_tasks: BackgroundTasks, db: Sessi
     if not pedido:
         raise HTTPException(status_code=404, detail="Pedido de entrega não encontrado.")
     crud.create_audit_log(db, usuario.estabelecimento_id, "entrega.aceita", usuario.usuario_id, "pedido", pedido.id)
-    background_tasks.add_task(realtime.operation_hub.publish, usuario.estabelecimento_id, "entrega.atualizada", pedido.id)
+        background_tasks.add_task(realtime.operation_hub.publish, usuario.estabelecimento_id, "entrega.atualizada", pedido.id)
+    if payload.status == "em_rota" and pedido.usuario_id:
+        customer_tokens = crud.get_push_tokens(db, usuario.estabelecimento_id, usuario_id=pedido.usuario_id)
+        if customer_tokens:
+            background_tasks.add_task(
+                push_notifications.send_push_notifications, 
+                customer_tokens, 
+                "", "", # No standard title/body, handled by custom data payload
+                {"type": "delivery_progress", "title": f"O pedido #{pedido.numero.split('-')[-1]} saiu para entrega!", "progress": "80"}
+            )
+
     return pedido
 
 @app.put("/entregas/{pedido_id}/status", response_model=schemas.PedidoEntregaResumo)
@@ -639,7 +659,17 @@ def update_delivery_status(pedido_id: int, payload: schemas.EntregaStatusUpdate,
     except ValueError as exc: raise HTTPException(status_code=400, detail=str(exc))
     if not pedido: raise HTTPException(status_code=404, detail="Entrega não encontrada.")
     crud.create_audit_log(db, usuario.estabelecimento_id, f"entrega.{payload.status}", usuario.usuario_id, "pedido", pedido.id)
-    background_tasks.add_task(realtime.operation_hub.publish, usuario.estabelecimento_id, "entrega.atualizada", pedido.id)
+        background_tasks.add_task(realtime.operation_hub.publish, usuario.estabelecimento_id, "entrega.atualizada", pedido.id)
+    if payload.status == "em_rota" and pedido.usuario_id:
+        customer_tokens = crud.get_push_tokens(db, usuario.estabelecimento_id, usuario_id=pedido.usuario_id)
+        if customer_tokens:
+            background_tasks.add_task(
+                push_notifications.send_push_notifications, 
+                customer_tokens, 
+                "", "", # No standard title/body, handled by custom data payload
+                {"type": "delivery_progress", "title": f"O pedido #{pedido.numero.split('-')[-1]} saiu para entrega!", "progress": "80"}
+            )
+
     if payload.status == "falha":
         tokens = crud.get_push_tokens(db, usuario.estabelecimento_id, perfil="entregador")
         numero = pedido.numero.split("-")[-1]

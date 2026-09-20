@@ -1,3 +1,4 @@
+import { registerPushTokenIfNative } from './services/pushRegistration';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { NetworkProvider } from './contexts/NetworkContext';
@@ -35,6 +36,10 @@ function AppRouter() {
 }
 
 function App() {
+  useEffect(() => {
+    registerPushTokenIfNative();
+  }, []);
+
   return (
     <GoogleOAuthProvider clientId={googleClientId} locale="pt-BR">
       <NetworkProvider>

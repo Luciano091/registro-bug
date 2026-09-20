@@ -73,6 +73,7 @@ export const ContaView = () => {
       if (data.cliente.endereco) localStorage.setItem('user_endereco', data.cliente.endereco);
       
       setNome(data.cliente.nome);
+      registerPushTokenIfNative();
       setEmail(data.cliente.email);
       setFoto(data.cliente.foto_url || '');
       if (data.cliente.telefone) setTelefone(data.cliente.telefone);

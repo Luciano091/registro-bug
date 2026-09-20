@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "836965237182",
+    "project_id": "ritmesa-40d1e",
+    "storage_bucket": "ritmesa-40d1e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:836965237182:android:477fffa373e130577a79ef",
+        "android_client_info": {
+          "package_name": "br.com.ritmesa.bisburger"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "836965237182-kmgamm79oo3ft7kgifqom9ulj5u37mt2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBArcszjAbfoqGo5nSVcIHf5DOYrFUbcSA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "836965237182-kmgamm79oo3ft7kgifqom9ulj5u37mt2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:836965237182:android:80c17edfc778aee27a79ef",
+        "android_client_info": {
+          "package_name": "br.com.ritmesa.entregador"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "836965237182-kmgamm79oo3ft7kgifqom9ulj5u37mt2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBArcszjAbfoqGo5nSVcIHf5DOYrFUbcSA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "836965237182-kmgamm79oo3ft7kgifqom9ulj5u37mt2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

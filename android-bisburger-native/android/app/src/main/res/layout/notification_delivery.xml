@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="80dp"
+    android:padding="12dp"
+    android:background="#222222">
+
+    <ImageView
+        android:id="@+id/notif_icon"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:src="@mipmap/ic_launcher"
+        android:layout_centerVertical="true" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_toEndOf="@id/notif_icon"
+        android:layout_marginStart="16dp"
+        android:layout_centerVertical="true"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/notif_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Estamos chegando com seu BisBurger!"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:textSize="15sp" />
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp">
+
+            <ProgressBar
+                android:id="@+id/notif_progress"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="6dp"
+                android:layout_centerVertical="true"
+                android:layout_marginEnd="40dp"
+                android:max="100"
+                android:progress="80"
+                android:progressDrawable="@drawable/custom_progress_bar" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:text="🚚 📍"
+                android:textSize="16sp" />
+        </RelativeLayout>
+    </LinearLayout>
+</RelativeLayout>
