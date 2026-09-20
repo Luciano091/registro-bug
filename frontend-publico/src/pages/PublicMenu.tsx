@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { MapPin, Clock, Utensils, Truck, ChevronRight, Gift, Plus, Flame, Check, Ticket, Receipt, User } from 'lucide-react';
+import { MapPin, Clock, Utensils, Truck, ChevronRight, Gift, Crown, Plus, Flame, Check, Ticket, Receipt, User } from 'lucide-react';
 import api from '../services/api';
 import { getEstablishmentSlug } from '../services/api';
 import { ProductModal } from '../components/ProductModal';
@@ -212,7 +212,7 @@ const PublicMenu = () => {
             
             <div className="flex flex-col min-w-0">
               <div className="flex items-center gap-1.5 -ml-1">
-                <svg className="w-5 h-5 text-yellow-500 mb-0.5 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+                <Crown className="w-5 h-5 text-yellow-500 mb-0.5 shrink-0 fill-yellow-500" />
                 <h1 className="truncate text-[22px] font-black tracking-tight text-white md:text-4xl drop-shadow-md">
                   {config?.nome_empresa || 'Seu Restaurante'}
                 </h1>
@@ -242,9 +242,9 @@ const PublicMenu = () => {
           <div className="mt-6 flex items-center justify-start gap-5 px-1">
              {/* Delivery Tag */}
              <div className="flex items-center gap-3">
-               <Truck className="w-7 h-7 text-white opacity-90" strokeWidth={1.5} />
+               <Truck className="w-7 h-7 shrink-0 text-white opacity-90" strokeWidth={1.5} />
                <div className="flex flex-col">
-                 <span className="text-[14px] font-bold text-white">
+                 <span className="text-[14px] font-bold text-white whitespace-nowrap">
                    {!config?.entrega_habilitada ? 'Somente retirada' : config?.taxa_entrega === 0 || !config?.taxa_entrega ? 'Entrega grátis' : `Taxa ${Number(config.taxa_entrega).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`}
                  </span>
                  <span className="text-[11px] text-zinc-400">
@@ -258,9 +258,9 @@ const PublicMenu = () => {
              
              {/* Time Tag */}
              <div className="flex items-center gap-3">
-               <Clock className="w-7 h-7 text-white opacity-90" strokeWidth={1.5} />
+               <Clock className="w-7 h-7 shrink-0 text-white opacity-90" strokeWidth={1.5} />
                <div className="flex flex-col">
-                 <span className="text-[14px] font-bold text-white">{config?.tempo_medio_preparo || 30} min</span>
+                 <span className="text-[14px] font-bold text-white whitespace-nowrap">{config?.tempo_medio_preparo || 30} min</span>
                  <span className="text-[11px] text-zinc-400">tempo médio</span>
                </div>
              </div>
@@ -273,7 +273,7 @@ const PublicMenu = () => {
           >
             <div className="flex items-center gap-3">
               <Gift className="w-6 h-6 text-orange-600" />
-              <span className="text-[14px] md:text-sm font-medium text-[#8a550d]">
+              <span className="text-[13px] leading-tight md:text-sm font-medium text-[#8a550d]">
                 Ganhe <strong className="text-orange-700">cashback</strong> em todos os seus pedidos!
               </span>
             </div>
