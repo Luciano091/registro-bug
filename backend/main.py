@@ -19,6 +19,7 @@ from google.auth.transport import requests as google_requests
 from database import engine, get_db, SessionLocal
 
 models.Base.metadata.create_all(bind=engine)
+migrate_categories.run_migration()
 
 # Migração incremental para transformar a base existente em multiestabelecimento.
 from sqlalchemy import inspect, text
