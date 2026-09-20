@@ -670,6 +670,18 @@ def update_delivery_status(pedido_id: int, payload: schemas.EntregaStatusUpdate,
             )
 
 
+
+    if payload.status == "entregue" and pedido.cliente_id:
+        cliente = crud.get_cliente(db, pedido.cliente_id)
+        if cliente and getattr(cliente, "push_token", None):
+            customer_tokens = [cliente.push_token]
+            background_tasks.add_task(
+                push_notifications.send_push_notifications, 
+                customer_tokens, 
+                "", "", 
+                {"type": "delivery_progress", "title": "Pedido Finalizado! Bom apetite!", "progress": "100"}
+            )
+
     if payload.status == "falha":
         tokens = crud.get_push_tokens(db, usuario.estabelecimento_id, perfil="entregador")
         numero = pedido.numero.split("-")[-1]
@@ -795,6 +807,18 @@ def update_pedido_status(pedido_id: int, status: str, background_tasks: Backgrou
         numero = db_pedido.numero.split("-")[-1]
         background_tasks.add_task(push_notifications.send_push_notifications, tokens, "Nova entrega disponível", f"Pedido #{numero} está pronto para retirada.", {"tipo": "pedido_pronto", "pedido_id": db_pedido.id})
     background_tasks.add_task(realtime.operation_hub.publish, estabelecimento_id, "pedido.atualizado", db_pedido.id)
+
+    if db_pedido.status == "Finalizado" and db_pedido.cliente_id:
+        cliente = crud.get_cliente(db, db_pedido.cliente_id)
+        if cliente and getattr(cliente, "push_token", None):
+            customer_tokens = [cliente.push_token]
+            background_tasks.add_task(
+                push_notifications.send_push_notifications, 
+                customer_tokens, 
+                "", "", 
+                {"type": "delivery_progress", "title": "Pedido Finalizado! Bom apetite!", "progress": "100"}
+            )
+
         
     if db_pedido.telefone:
         formattedTotal = f"R$ {db_pedido.total:.2f}".replace(".", ",")
