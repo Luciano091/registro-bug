@@ -169,7 +169,7 @@ const Menu = () => {
 
   let filtered = produtos.map(p => ({
     ...p,
-    categoriaNormalizada: p.categoria.trim().charAt(0).toUpperCase() + p.categoria.trim().slice(1).toLowerCase()
+    categoriaNormalizada: p.categoria.trim()
   }));
 
   if (activeCategory !== 'Todos') {
