@@ -203,8 +203,8 @@ const PublicMenu = () => {
             
             <div className="flex w-full flex-col min-w-0">
               
-              <div className="flex w-full items-start justify-between gap-1 md:gap-2">
-                <div className="store-hero-copy min-w-0 pt-1">
+              <div className="flex w-full items-start justify-between gap-3 md:gap-4">
+                <div className="store-hero-copy min-w-0">
                   <h1 className="truncate text-xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-2xl md:text-3xl">
                     {config?.nome_empresa || 'Seu Restaurante'}
                   </h1>
@@ -238,7 +238,12 @@ const PublicMenu = () => {
                 </div>
               </div>
 
-              {/* Informações (Pílulas) - Linha Inteira Abaixo */}
+              
+
+            </div>
+          </div>
+          <div className="mt-4 md:mt-5">
+            {/* Informações (Pílulas) - Linha Inteira Abaixo */}
               <div className="store-hero-facts mt-1 md:mt-3 flex flex-wrap items-center gap-2">
                 <div className="flex min-h-9 items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-3 text-xs font-semibold text-emerald-700">
                   <MapPin size={14} />
@@ -249,8 +254,6 @@ const PublicMenu = () => {
                   {config?.tempo_medio_preparo || 30} min
                 </div>
               </div>
-
-            </div>
           </div>
         </div>
       </div>
