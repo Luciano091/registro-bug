@@ -93,6 +93,7 @@ class Cliente(Base):
     foto_url = Column(String, nullable=True)
     telefone = Column(String, nullable=True)
     endereco = Column(String, nullable=True)
+    push_token = Column(Text, nullable=True)
     data_cadastro = Column(DateTime, default=get_now)
     saldo_cashback = Column(Float, default=0.0)
     
@@ -229,6 +230,7 @@ class Pedido(Base):
     cliente = Column(String, index=True)
     telefone = Column(String, nullable=True)
     endereco = Column(String, nullable=True)
+    push_token = Column(Text, nullable=True)
     bairro = Column(String, nullable=True)
     latitude_entrega = Column(Float, nullable=True)
     longitude_entrega = Column(Float, nullable=True)
@@ -385,6 +387,7 @@ class Configuracao(Base):
     nome_empresa = Column(String, default="BisBurger")
     telefone = Column(String, nullable=True)
     endereco = Column(String, nullable=True)
+    push_token = Column(Text, nullable=True)
     logo = Column(String, nullable=True)
     taxa_entrega = Column(Numeric(10, 2, asdecimal=False), default=5.0)
     entrega_habilitada = Column(Boolean, nullable=False, default=True)

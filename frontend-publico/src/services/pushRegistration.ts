@@ -12,7 +12,7 @@ export async function registerPushTokenIfNative() {
   try {
     const { token: fcmToken } = await FirebaseToken.getToken();
     if (fcmToken) {
-      await api.post('/dispositivos/push', {
+      await api.put('/clientes/push', {
         token: fcmToken,
         plataforma: Capacitor.getPlatform()
       });

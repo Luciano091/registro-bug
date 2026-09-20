@@ -588,6 +588,18 @@ def delivery_board(db: Session = Depends(get_db), usuario: auth.UsuarioAutentica
 def delivery_drivers(db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("entregas.visualizar"))):
     return crud.get_entregadores(db, usuario.estabelecimento_id)
 
+
+@app.put("/clientes/push")
+def update_cliente_push_token(payload: schemas.DispositivoPushCreate, db: Session = Depends(get_db), cliente_id: str = Depends(auth.get_current_cliente_optional)):
+    if not cliente_id:
+        raise HTTPException(status_code=401, detail="Acesso não autorizado")
+    cliente = crud.get_cliente_by_id(db, int(cliente_id))
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    cliente.push_token = payload.token.strip()
+    db.commit()
+    return {"status": "ok"}
+
 @app.post("/dispositivos/push", response_model=schemas.DispositivoPush)
 def register_push_device(payload: schemas.DispositivoPushCreate, db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.get_current_user)):
     try:
@@ -616,9 +628,10 @@ def assign_delivery(pedido_id: int, payload: schemas.EntregaAtribuir, background
     numero = pedido.numero.split("-")[-1]
     background_tasks.add_task(push_notifications.send_push_notifications, tokens, "Entrega atribuída", f"O pedido #{numero} foi atribuído a você.", {"tipo": "pedido_atribuido", "pedido_id": pedido.id})
     background_tasks.add_task(realtime.operation_hub.publish, usuario.estabelecimento_id, "entrega.atualizada", pedido.id)
-    if payload.status == "em_rota" and pedido.usuario_id:
-        customer_tokens = crud.get_push_tokens(db, usuario.estabelecimento_id, usuario_id=pedido.usuario_id)
-        if customer_tokens:
+    if payload.status == "em_rota" and pedido.cliente_id:
+        cliente = crud.get_cliente_by_id(db, pedido.cliente_id)
+        if cliente and getattr(cliente, "push_token", None):
+            customer_tokens = [cliente.push_token]
             background_tasks.add_task(
                 push_notifications.send_push_notifications, 
                 customer_tokens, 
@@ -638,9 +651,10 @@ def accept_delivery(pedido_id: int, background_tasks: BackgroundTasks, db: Sessi
         raise HTTPException(status_code=404, detail="Pedido de entrega não encontrado.")
     crud.create_audit_log(db, usuario.estabelecimento_id, "entrega.aceita", usuario.usuario_id, "pedido", pedido.id)
     background_tasks.add_task(realtime.operation_hub.publish, usuario.estabelecimento_id, "entrega.atualizada", pedido.id)
-    if payload.status == "em_rota" and pedido.usuario_id:
-        customer_tokens = crud.get_push_tokens(db, usuario.estabelecimento_id, usuario_id=pedido.usuario_id)
-        if customer_tokens:
+    if payload.status == "em_rota" and pedido.cliente_id:
+        cliente = crud.get_cliente_by_id(db, pedido.cliente_id)
+        if cliente and getattr(cliente, "push_token", None):
+            customer_tokens = [cliente.push_token]
             background_tasks.add_task(
                 push_notifications.send_push_notifications, 
                 customer_tokens, 
@@ -660,9 +674,10 @@ def update_delivery_status(pedido_id: int, payload: schemas.EntregaStatusUpdate,
     if not pedido: raise HTTPException(status_code=404, detail="Entrega não encontrada.")
     crud.create_audit_log(db, usuario.estabelecimento_id, f"entrega.{payload.status}", usuario.usuario_id, "pedido", pedido.id)
     background_tasks.add_task(realtime.operation_hub.publish, usuario.estabelecimento_id, "entrega.atualizada", pedido.id)
-    if payload.status == "em_rota" and pedido.usuario_id:
-        customer_tokens = crud.get_push_tokens(db, usuario.estabelecimento_id, usuario_id=pedido.usuario_id)
-        if customer_tokens:
+    if payload.status == "em_rota" and pedido.cliente_id:
+        cliente = crud.get_cliente_by_id(db, pedido.cliente_id)
+        if cliente and getattr(cliente, "push_token", None):
+            customer_tokens = [cliente.push_token]
             background_tasks.add_task(
                 push_notifications.send_push_notifications, 
                 customer_tokens, 
