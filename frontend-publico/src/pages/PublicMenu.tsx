@@ -217,10 +217,23 @@ const PublicMenu = () => {
             
             {/* Right Column */}
             <div className="flex flex-col min-w-0 flex-1">
-              <div className="flex items-center gap-1.5 -ml-1">
-                <Crown className="w-5 h-5 text-yellow-500 mb-0.5 shrink-0 fill-yellow-500" />
-                <h1 className="truncate text-[22px] font-black tracking-tight text-white md:text-4xl drop-shadow-md">
-                  {config?.nome_empresa || 'BisBurger'}
+              <div className="flex items-center">
+                <h1 className="truncate text-[24px] font-black tracking-tight text-white md:text-4xl drop-shadow-md">
+                  {(() => {
+                    const name = config?.nome_empresa || 'BisBurger';
+                    const iIndex = name.toLowerCase().indexOf('i');
+                    if (iIndex === -1) return name;
+                    return (
+                      <>
+                        {name.substring(0, iIndex)}
+                        <span className="relative inline-block">
+                          <Crown className="w-[14px] h-[14px] text-[#facc15] fill-[#facc15] absolute -top-[11px] left-1/2 -translate-x-1/2 rotate-12 drop-shadow-sm" strokeWidth={1} />
+                          {name[iIndex]}
+                        </span>
+                        {name.substring(iIndex + 1)}
+                      </>
+                    );
+                  })()}
                 </h1>
               </div>
               
