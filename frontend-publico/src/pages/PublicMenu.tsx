@@ -268,7 +268,7 @@ const PublicMenu = () => {
               </div>
               
               {/* Facts (Truck & Clock) inside the right column */}
-              <div className="mt-3 flex items-center justify-start gap-2.5">
+              <div className="mt-3 flex items-center justify-center gap-4 w-full">
                  {/* Delivery Tag */}
                  <div className="flex items-center gap-2">
                    <Truck className="w-4 h-4 shrink-0 text-white opacity-90" strokeWidth={1.5} />
