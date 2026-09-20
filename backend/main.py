@@ -593,7 +593,7 @@ def delivery_drivers(db: Session = Depends(get_db), usuario: auth.UsuarioAutenti
 def update_cliente_push_token(payload: schemas.DispositivoPushCreate, db: Session = Depends(get_db), cliente_id: str = Depends(auth.get_current_cliente_optional)):
     if not cliente_id:
         raise HTTPException(status_code=401, detail="Acesso não autorizado")
-    cliente = crud.get_cliente_by_id(db, int(cliente_id))
+    cliente = crud.get_cliente(db, int(cliente_id))
     if not cliente:
         raise HTTPException(status_code=404, detail="Cliente não encontrado")
     cliente.push_token = payload.token.strip()
@@ -655,7 +655,7 @@ def update_delivery_status(pedido_id: int, payload: schemas.EntregaStatusUpdate,
     crud.create_audit_log(db, usuario.estabelecimento_id, f"entrega.{payload.status}", usuario.usuario_id, "pedido", pedido.id)
     background_tasks.add_task(realtime.operation_hub.publish, usuario.estabelecimento_id, "entrega.atualizada", pedido.id)
     if payload.status == "em_rota" and pedido.cliente_id:
-        cliente = crud.get_cliente_by_id(db, pedido.cliente_id)
+        cliente = crud.get_cliente(db, pedido.cliente_id)
         if cliente and getattr(cliente, "push_token", None):
             customer_tokens = [cliente.push_token]
             background_tasks.add_task(
