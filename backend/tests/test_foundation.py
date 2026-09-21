@@ -6,6 +6,7 @@ import datetime
 from pathlib import Path
 
 from sqlalchemy import create_engine
+from sqlalchemy import event
 from sqlalchemy.orm import sessionmaker
 
 BACKEND = Path(__file__).resolve().parents[1]
@@ -266,6 +267,68 @@ class FoundationTests(unittest.TestCase):
         self.assertFalse(crud.dentro_do_horario("0", "11:00", "14:00", monday_evening))
         tuesday_after_midnight = datetime.datetime(2026, 9, 8, 1, 0)
         self.assertTrue(crud.dentro_do_horario("0", "18:00", "02:00", tuesday_after_midnight))
+
+    def test_product_catalog_eager_loads_public_relationships(self):
+        establishment = self.create_establishment("Cardapio", "cardapio", "cardapio@teste.com")
+        category = crud.save_categoria(
+            self.db, schemas.CategoriaCreate(nome="Lanches", ordem=1), establishment.id,
+        )
+        product = crud.create_produto(
+            self.db,
+            schemas.ProdutoCreate(
+                nome="X-Burger", categoria=category.nome, categoria_id=category.id, preco=20,
+            ),
+            establishment.id,
+        )
+        group = crud.save_grupo_opcao(
+            self.db,
+            schemas.GrupoOpcaoCreate(
+                nome="Ponto", opcoes=[schemas.OpcaoProdutoCreate(nome="Bem passado")],
+            ),
+            establishment.id,
+        )
+        crud.set_produto_grupos(self.db, product.id, [group.id], establishment.id)
+        establishment_id = establishment.id
+        self.db.expire_all()
+
+        statements = []
+
+        def count_statement(*_args):
+            statements.append(1)
+
+        event.listen(self.engine, "before_cursor_execute", count_statement)
+        try:
+            products = crud.get_produtos(self.db, establishment_id, somente_ativos=True)
+            self.assertEqual(products[0].categoria_obj.nome, "Lanches")
+            self.assertEqual(products[0].grupos_opcoes[0].opcoes[0].nome, "Bem passado")
+        finally:
+            event.remove(self.engine, "before_cursor_execute", count_statement)
+
+        self.assertEqual(len(statements), 1)
+
+    def test_public_configuration_uses_one_query_and_reports_open_cash(self):
+        establishment = self.create_establishment("Loja", "loja", "loja@teste.com")
+
+        statements = []
+
+        def count_statement(*_args):
+            statements.append(1)
+
+        event.listen(self.engine, "before_cursor_execute", count_statement)
+        try:
+            config, is_open = crud.get_configuracao_publica(self.db, " LOJA ")
+        finally:
+            event.remove(self.engine, "before_cursor_execute", count_statement)
+
+        self.assertEqual(config.estabelecimento_id, establishment.id)
+        self.assertFalse(is_open)
+        self.assertEqual(len(statements), 1)
+
+        crud.abrir_caixa(
+            self.db, schemas.CaixaCreate(operador="Caixa", saldo_inicial=0), establishment.id,
+        )
+        _, is_open = crud.get_configuracao_publica(self.db, "loja")
+        self.assertTrue(is_open)
 
     def test_scheduled_promotions_and_coupons_are_calculated_on_server(self):
         establishment = self.create_establishment("Pizzaria", "ofertas", "ofertas@teste.com")

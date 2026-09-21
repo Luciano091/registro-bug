@@ -9,7 +9,13 @@ import unicodedata
 
 # --- Produtos ---
 def get_produtos(db: Session, estabelecimento_id: int, skip: int = 0, limit: int = 100, somente_ativos: bool = False, canal: str = None):
-    query = db.query(models.Produto).filter(models.Produto.estabelecimento_id == estabelecimento_id)
+    # O cardapio publico serializa categoria, grupos e opcoes de cada produto.
+    # Carregar essas relacoes na mesma consulta evita uma nova ida ao banco para
+    # cada produto/grupo (N+1), especialmente cara no banco remoto de producao.
+    query = db.query(models.Produto).options(
+        joinedload(models.Produto.categoria_obj),
+        joinedload(models.Produto.grupos_opcoes).joinedload(models.GrupoOpcao.opcoes),
+    ).filter(models.Produto.estabelecimento_id == estabelecimento_id)
     if somente_ativos:
         query = query.filter(models.Produto.ativo == True)
     produtos = query.offset(skip).limit(limit).all()
@@ -1159,6 +1165,31 @@ def get_configuracao(db: Session, estabelecimento_id: int = None):
         db.commit()
         db.refresh(config)
     return config
+
+def get_configuracao_publica(db: Session, slug: str):
+    caixa_aberto = db.query(models.Caixa.id).filter(
+        models.Caixa.estabelecimento_id == models.Configuracao.estabelecimento_id,
+        models.Caixa.status == "aberto",
+    ).exists()
+    result = db.query(
+        models.Configuracao,
+        caixa_aberto.label("loja_aberta"),
+    ).join(
+        models.Estabelecimento,
+        models.Estabelecimento.id == models.Configuracao.estabelecimento_id,
+    ).filter(
+        models.Estabelecimento.slug == slug.strip().lower(),
+        models.Estabelecimento.status.in_(("ativo", "trial")),
+    ).first()
+    if result:
+        return result
+
+    # Mantem o bootstrap dos cadastros legados que ainda nao tenham configuracao.
+    estabelecimento = get_estabelecimento_by_slug(db, slug)
+    if not estabelecimento:
+        return None
+    config = get_configuracao(db, estabelecimento.id)
+    return config, get_caixa_aberto(db, estabelecimento.id) is not None
 
 def update_configuracao(db: Session, config: schemas.ConfiguracaoCreate, estabelecimento_id: int):
     import auth

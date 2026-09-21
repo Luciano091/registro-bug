@@ -1008,11 +1008,12 @@ def admin_delivery_quote(payload: schemas.EntregaCotacaoRequest, db: Session = D
 
 @app.get("/public/{slug}/configuracao", response_model=schemas.ConfiguracaoPublica)
 def public_configuracao(slug: str, db: Session = Depends(get_db)):
-    estabelecimento = require_public_establishment(slug, db)
-    config = crud.get_configuracao(db, estabelecimento.id)
-    caixa_aberto = crud.get_caixa_aberto(db, estabelecimento.id)
+    result = crud.get_configuracao_publica(db, slug)
+    if not result:
+        raise HTTPException(status_code=404, detail="Estabelecimento indisponível.")
+    config, loja_aberta = result
     config_dict = {c.name: getattr(config, c.name) for c in config.__table__.columns}
-    config_dict["loja_aberta"] = caixa_aberto is not None
+    config_dict["loja_aberta"] = loja_aberta
     return config_dict
 
 @app.get("/configuracao", response_model=schemas.Configuracao)
