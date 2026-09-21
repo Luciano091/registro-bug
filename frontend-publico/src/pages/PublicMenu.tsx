@@ -547,36 +547,36 @@ const PublicMenu = () => {
       </main>
 
       {/* AVISO IMPORTANTE */}
-      <div className="mx-auto mt-10 max-w-6xl px-4 sm:px-6 lg:px-8">
-        <div className="bg-white border border-zinc-200 rounded-2xl p-5 text-center flex flex-col items-center shadow-sm">
-          <span className="bg-amber-100 text-amber-700 text-[10px] font-bold px-2.5 py-1 rounded-full mb-3 uppercase tracking-widest">
-            Aviso Importante
+      <div className="mx-auto mt-6 max-w-4xl px-4 sm:px-6 lg:px-8">
+        <div className="bg-amber-50/80 border border-amber-100/80 rounded-xl p-3 text-center flex flex-col sm:flex-row items-center justify-center gap-2 shadow-sm">
+          <span className="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0">
+            Aviso
           </span>
-          <p className="text-zinc-500 text-xs md:text-sm max-w-lg leading-relaxed">
+          <p className="text-amber-900/70 text-[11px] leading-tight font-medium">
             Consulte a descrição dos produtos, ingredientes e adicionais antes de finalizar seu pedido.
           </p>
         </div>
       </div>
 
       {/* RODAPÉ */}
-      <footer className="mt-8 pb-6">
+      <footer className="mt-6 pb-6">
         <div className="mx-auto flex max-w-6xl flex-col items-center px-6 text-center opacity-80">
-          <h4 className="mb-1.5 text-base font-semibold text-zinc-500">{config?.nome_empresa || 'Seu Restaurante'}</h4>
+          <h4 className="mb-1 text-sm font-semibold text-zinc-500">{config?.nome_empresa || 'Seu Restaurante'}</h4>
           {config?.endereco && (
-            <p className="text-zinc-400 text-xs flex items-center justify-center gap-1.5 font-medium">
-              <MapPin size={12} />
+            <p className="text-zinc-400 text-[11px] flex items-center justify-center gap-1 font-medium">
+              <MapPin size={10} />
               {config.endereco}
             </p>
           )}
-          <div className="mt-3 flex items-center gap-1.5 text-[11px] text-zinc-400">
-            <img src="/brand/ritmesa-mark.png" alt="" className="w-4 h-4 object-contain" />
+          <div className="mt-2 flex items-center gap-1.5 text-[11px] text-zinc-400">
+            <img src="/brand/ritmesa-mark.png" alt="" className="w-3.5 h-3.5 object-contain" />
             Pedidos com tecnologia <a href="https://www.ritmesa.com.br/" target="_blank" rel="noopener noreferrer" className="text-zinc-500 font-bold hover:underline">Ritmesa</a>
           </div>
           {getEstablishmentSlug() === 'bisburger' && !isNativeApp && (
-            <div className="mt-5">
-              <a href="/app-bisburger.apk?v=1.0.3" download="BisBurger.apk" className="inline-flex items-center gap-2 rounded-full bg-slate-200 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-300">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-                Baixar App BisBurger (APK)
+            <div className="mt-4">
+              <a href="/app-bisburger.apk?v=1.0.3" download="BisBurger.apk" className="inline-flex items-center gap-1.5 rounded-full bg-slate-200 px-3 py-1.5 text-[11px] font-bold text-slate-700 hover:bg-slate-300 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                Baixar App (APK)
               </a>
             </div>
           )}
