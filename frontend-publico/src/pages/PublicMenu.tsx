@@ -152,7 +152,7 @@ const PublicMenu = () => {
   }, {});
 
   return (
-    <div className={`public-menu min-h-screen text-zinc-900 font-sans ${cartCount > 0 ? "pb-36" : "pb-24"} md:pb-12 selection:bg-brand-500/30 selection:text-zinc-900`}>
+    <div className={`public-menu min-h-screen text-zinc-900 font-sans ${cartCount > 0 ? "pb-[6.5rem]" : "pb-20"} md:pb-8 selection:bg-brand-500/30 selection:text-zinc-900`}>
       <PromoPopup />
       {!isNativeApp && <PwaInstallPrompt />}
       
@@ -546,37 +546,25 @@ const PublicMenu = () => {
         </div>
       </main>
 
-      {/* AVISO IMPORTANTE */}
-      <div className="mx-auto mt-6 max-w-4xl px-4 sm:px-6 lg:px-8">
-        <div className="bg-amber-50/80 border border-amber-100/80 rounded-xl p-3 text-center flex flex-col sm:flex-row items-center justify-center gap-2 shadow-sm">
-          <span className="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0">
-            Aviso
-          </span>
-          <p className="text-amber-900/70 text-[11px] leading-tight font-medium">
-            Consulte a descrição dos produtos, ingredientes e adicionais antes de finalizar seu pedido.
-          </p>
-        </div>
-      </div>
-
       {/* RODAPÉ */}
-      <footer className="mt-6 pb-6">
-        <div className="mx-auto flex max-w-6xl flex-col items-center px-6 text-center opacity-80">
-          <h4 className="mb-1 text-sm font-semibold text-zinc-500">{config?.nome_empresa || 'Seu Restaurante'}</h4>
+      <footer className="mt-4 pb-4">
+        <div className="mx-auto flex max-w-6xl flex-col items-center px-6 text-center opacity-70">
+          <h4 className="text-xs font-semibold text-zinc-500">{config?.nome_empresa || 'Seu Restaurante'}</h4>
           {config?.endereco && (
-            <p className="text-zinc-400 text-[11px] flex items-center justify-center gap-1 font-medium">
+            <p className="mt-0.5 text-zinc-400 text-[10px] flex items-center justify-center gap-1 font-medium">
               <MapPin size={10} />
               {config.endereco}
             </p>
           )}
-          <div className="mt-2 flex items-center gap-1.5 text-[11px] text-zinc-400">
-            <img src="/brand/ritmesa-mark.png" alt="" className="w-3.5 h-3.5 object-contain" />
+          <div className="mt-1.5 flex items-center gap-1 text-[10px] text-zinc-400">
+            <img src="/brand/ritmesa-mark.png" alt="" className="w-3 h-3 object-contain" />
             Pedidos com tecnologia <a href="https://www.ritmesa.com.br/" target="_blank" rel="noopener noreferrer" className="text-zinc-500 font-bold hover:underline">Ritmesa</a>
           </div>
           {getEstablishmentSlug() === 'bisburger' && !isNativeApp && (
-            <div className="mt-4">
-              <a href="/app-bisburger.apk?v=1.0.3" download="BisBurger.apk" className="inline-flex items-center gap-1.5 rounded-full bg-slate-200 px-3 py-1.5 text-[11px] font-bold text-slate-700 hover:bg-slate-300 transition-colors">
+            <div className="mt-3">
+              <a href="/app-bisburger.apk?v=1.0.3" download="BisBurger.apk" className="inline-flex items-center gap-1.5 rounded-full bg-slate-200/80 px-3 py-1.5 text-[10px] font-bold text-slate-700 hover:bg-slate-300 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-                Baixar App (APK)
+                Baixar App
               </a>
             </div>
           )}
