@@ -176,7 +176,9 @@ export const ContaView = () => {
           <button type="button" onClick={() => setGuestStep('details')} className="flex min-h-11 w-full items-center justify-center rounded-xl px-3 text-sm font-semibold text-zinc-700 transition-colors hover:bg-zinc-50 hover:text-zinc-900">Continuar sem conta</button>
           <div className="mt-auto flex flex-col items-center pt-8 text-center">
             <p className="font-heading text-xl font-bold tracking-tight text-zinc-800">BisBurger</p>
-            <p className="mt-1 text-[11px] text-zinc-400">Pedidos com tecnologia Ritmesa</p>
+            <p className="mt-1 text-[11px] text-zinc-400">
+              Pedidos com tecnologia <a href="https://www.ritmesa.com.br/" target="_blank" rel="noopener noreferrer" className="font-bold hover:underline">Ritmesa</a>
+            </p>
           </div>
         </section>
       )}

@@ -570,7 +570,7 @@ const PublicMenu = () => {
           )}
           <div className="mt-3 flex items-center gap-1.5 text-[11px] text-zinc-400">
             <img src="/brand/ritmesa-mark.png" alt="" className="w-4 h-4 object-contain" />
-            Pedidos com tecnologia <strong className="text-zinc-500">Ritmesa</strong>
+            Pedidos com tecnologia <a href="https://www.ritmesa.com.br/" target="_blank" rel="noopener noreferrer" className="text-zinc-500 font-bold hover:underline">Ritmesa</a>
           </div>
           {getEstablishmentSlug() === 'bisburger' && !isNativeApp && (
             <div className="mt-5">
