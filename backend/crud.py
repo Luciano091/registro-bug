@@ -168,9 +168,8 @@ def delete_categoria(db: Session, categoria_id: int, estabelecimento_id: int):
     categoria = get_categoria(db, categoria_id, estabelecimento_id)
     if not categoria:
         return None
-    categoria.ativo = False
+    db.delete(categoria)
     db.commit()
-    db.refresh(categoria)
     return categoria
 
 def get_cupons(db: Session, estabelecimento_id: int):
