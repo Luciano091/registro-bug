@@ -50,7 +50,7 @@ const NewOrder = () => {
   
   const [itens, setItens] = useState<{ id: number, produto: any, quantidade: number, opcoes: any[], precoUnitario: number }[]>([]);
   const [optionsProduct, setOptionsProduct] = useState<any | null>(null);
-  const produtosDisponiveveis = produtosCache;
+  const produtosDisponiveveis = produtosCache.filter((p: any) => p.ativo !== false);
   
   const [activeCategory, setActiveCategory] = useState('Todos');
   const [search, setSearch] = useState('');
