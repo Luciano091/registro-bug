@@ -17,10 +17,11 @@ import models, schemas, crud, whatsapp_api, auth, push_notifications, realtime
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from database import engine, get_db, SessionLocal
-import migrate_categories
 
 models.Base.metadata.create_all(bind=engine)
-migrate_categories.run_migration()
+
+# `migrate_categories` foi uma correção pontual da base antiga. Executá-la
+# em toda inicialização recriava categorias que o usuário havia excluído.
 
 # Migração incremental para transformar a base existente em multiestabelecimento.
 from sqlalchemy import inspect, text
