@@ -16,7 +16,7 @@ Reimplementação gradual do aplicativo do cliente em Kotlin e Jetpack Compose. 
 - Toque na notificação de entrega abre diretamente o acompanhamento.
 - Marcadores de desempenho no Logcat com a tag `BisBurgerStartup`.
 
-Versão candidata validada em aparelho físico. Antes de substituir o APK público, ainda deve ser confirmado um pedido novo completo após o deploy do backend, incluindo o disparo automático em `em_rota` e `entregue`.
+Versão 2.0.0 validada em aparelho físico com um pedido real completo. As notificações automáticas de `em_rota` e `entregue` foram recebidas pelo cliente autenticado.
 
 ## Validação local
 
@@ -43,4 +43,4 @@ O marcador `catalog_visible` informa o tempo desde o início do processo Android
 
 ## Regra de publicação
 
-O aplicativo híbrido permanece como versão segura. O nativo usa a assinatura existente, mas só deve substituir o APK público depois da validação automática de `em_rota → entregue` com um pedido vinculado ao cliente autenticado.
+O aplicativo nativo usa a assinatura existente. A publicação exige build de release assinado e validação do fluxo completo de pedido, incluindo `em_rota → entregue` com um cliente autenticado.
