@@ -74,6 +74,7 @@ fun CheckoutSheet(
     couponDiscount: Double = 0.0,
     couponError: String? = null,
     couponLoading: Boolean = false,
+    suggestedCouponCode: String = "",
     useCashback: Boolean = false,
     onApplyCoupon: (String) -> Unit = {},
     onRemoveCoupon: () -> Unit = {},
@@ -286,7 +287,7 @@ fun CheckoutSheet(
 
             // --- CUPOM E CASHBACK ---
             Text("Cupons e Cashback", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 18.dp))
-            var typedCoupon by remember { mutableStateOf("") }
+            var typedCoupon by remember(suggestedCouponCode) { mutableStateOf(suggestedCouponCode) }
             
             if (couponCode.isNotBlank() && couponDiscount > 0) {
                 StatusBox("Cupom $couponCode aplicado! Desconto de ${money(couponDiscount)}", success = true)

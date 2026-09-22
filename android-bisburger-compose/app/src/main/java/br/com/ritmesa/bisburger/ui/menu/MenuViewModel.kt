@@ -16,6 +16,7 @@ import br.com.ritmesa.bisburger.data.model.DeliveryQuote
 import br.com.ritmesa.bisburger.data.model.DeliveryQuoteRequest
 import br.com.ritmesa.bisburger.data.model.TrackedOrder
 import br.com.ritmesa.bisburger.data.network.CustomerProfile
+import br.com.ritmesa.bisburger.data.network.HighlightCouponResponse
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -52,6 +53,9 @@ data class MenuUiState(
     val couponDiscount: Double = 0.0,
     val couponError: String? = null,
     val couponLoading: Boolean = false,
+    val highlightedCoupon: HighlightCouponResponse? = null,
+    val promoCouponVisible: Boolean = false,
+    val suggestedCouponCode: String = "",
     val useCashback: Boolean = false,
     val pushRegistrationStatus: String = "Verificando notificações…",
     val error: String? = null,
@@ -64,6 +68,7 @@ class MenuViewModel(application: Application) : AndroidViewModel(application) {
     private val orderRepository = bisBurgerApplication.orderRepository
     private val cart = bisBurgerApplication.cart
     private var quoteJob: Job? = null
+    private val dismissedPromoCouponCodes = mutableSetOf<String>()
     private val _state = MutableStateFlow(MenuUiState())
     val state: StateFlow<MenuUiState> = _state.asStateFlow()
 
@@ -239,7 +244,14 @@ class MenuViewModel(application: Application) : AndroidViewModel(application) {
             _state.update { it.copy(couponLoading = true, couponError = null) }
             runCatching { orderRepository.validateCoupon(code, subtotal) }
                 .onSuccess { res ->
-                    _state.update { it.copy(couponLoading = false, couponCode = res.codigo, couponDiscount = res.desconto) }
+                    _state.update {
+                        it.copy(
+                            couponLoading = false,
+                            couponCode = res.codigo,
+                            couponDiscount = res.desconto,
+                            suggestedCouponCode = "",
+                        )
+                    }
                 }
                 .onFailure {
                     _state.update { it.copy(couponLoading = false, couponCode = "", couponDiscount = 0.0, couponError = "Cupom inválido ou expirado.") }
@@ -249,6 +261,22 @@ class MenuViewModel(application: Application) : AndroidViewModel(application) {
 
     fun removeCoupon() {
         _state.update { it.copy(couponCode = "", couponDiscount = 0.0, couponError = null) }
+    }
+
+    fun dismissPromoCoupon() {
+        _state.value.highlightedCoupon?.codigo?.let(dismissedPromoCouponCodes::add)
+        _state.update { it.copy(promoCouponVisible = false) }
+    }
+
+    fun usePromoCoupon() {
+        val coupon = _state.value.highlightedCoupon ?: return
+        dismissedPromoCouponCodes.add(coupon.codigo)
+        _state.update {
+            it.copy(
+                promoCouponVisible = false,
+                suggestedCouponCode = coupon.codigo,
+            )
+        }
     }
 
     fun toggleCashback(use: Boolean) {
@@ -378,6 +406,7 @@ class MenuViewModel(application: Application) : AndroidViewModel(application) {
                             couponDiscount = 0.0,
                             couponError = null,
                             couponLoading = false,
+                            suggestedCouponCode = "",
                             useCashback = false,
                         )
                     }
@@ -457,6 +486,19 @@ private var autoRefreshJob: Job? = null
                     }
                 }
             _state.update { it.copy(refreshing = false) }
+            refreshHighlightCoupon()
         }
+    }
+
+    private suspend fun refreshHighlightCoupon() {
+        runCatching { orderRepository.highlightCoupon() }
+            .onSuccess { coupon ->
+                _state.update {
+                    it.copy(
+                        highlightedCoupon = coupon,
+                        promoCouponVisible = coupon != null && coupon.codigo !in dismissedPromoCouponCodes,
+                    )
+                }
+            }
     }
 }

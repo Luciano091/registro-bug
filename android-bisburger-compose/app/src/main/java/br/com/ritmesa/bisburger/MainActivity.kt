@@ -82,6 +82,8 @@ class MainActivity : ComponentActivity() {
                         onToggleCashback = viewModel::toggleCashback,
                     onDismissOrders = viewModel::dismissOrders,
                     onRefreshOrders = viewModel::refreshOrders,
+                    onDismissPromoCoupon = viewModel::dismissPromoCoupon,
+                    onUsePromoCoupon = viewModel::usePromoCoupon,
                 )
             }
         }

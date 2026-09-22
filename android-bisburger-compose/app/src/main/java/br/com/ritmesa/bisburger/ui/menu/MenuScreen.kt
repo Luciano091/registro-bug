@@ -109,6 +109,8 @@ fun MenuScreen(
     onToggleCashback: (Boolean) -> Unit,
     onDismissOrders: () -> Unit,
     onRefreshOrders: () -> Unit,
+    onDismissPromoCoupon: () -> Unit,
+    onUsePromoCoupon: () -> Unit,
 ) {
     LaunchedEffect(state.catalog) {
         if (state.catalog != null) {
@@ -209,6 +211,7 @@ fun MenuScreen(
             couponDiscount = state.couponDiscount,
             couponError = state.couponError,
             couponLoading = state.couponLoading,
+            suggestedCouponCode = state.suggestedCouponCode,
             useCashback = state.useCashback,
             onApplyCoupon = onApplyCoupon,
             onRemoveCoupon = onRemoveCoupon,
@@ -233,6 +236,7 @@ fun MenuScreen(
         CouponsSheet(
             cartTotal = cartTotal,
             appliedCode = state.couponCode,
+            suggestedCode = state.suggestedCouponCode,
             discount = state.couponDiscount,
             loading = state.couponLoading,
             error = state.couponError,
@@ -240,6 +244,15 @@ fun MenuScreen(
             onRemove = onRemoveCoupon,
             onDismiss = { couponsVisible = false },
         )
+    }
+    if (state.promoCouponVisible) {
+        state.highlightedCoupon?.let { coupon ->
+            CouponPromoDialog(
+                coupon = coupon,
+                onDismiss = onDismissPromoCoupon,
+                onUseCoupon = onUsePromoCoupon,
+            )
+        }
     }
 }
 

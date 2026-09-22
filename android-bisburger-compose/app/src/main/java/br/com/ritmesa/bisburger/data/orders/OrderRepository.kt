@@ -17,6 +17,8 @@ class OrderRepository(
     private val sessionStore: CustomerSessionStore,
     private val orderStore: OrderStore,
 ) {
+    suspend fun highlightCoupon() = api.getHighlightCoupon()
+
     suspend fun deliveryConfig(): DeliveryConfig = api.getDeliveryConfig()
 
     suspend fun quoteDelivery(request: DeliveryQuoteRequest): DeliveryQuote =

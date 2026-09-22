@@ -4,24 +4,23 @@ import { getEstablishmentSlug } from '../services/api';
 
 export const PwaInstallPrompt = () => {
   const [showPrompt, setShowPrompt] = useState(false);
+  const dismissedKey = 'apk_prompt_dismissed:2.0.2';
   
   useEffect(() => {
-    // Detect iOS
     const ua = window.navigator.userAgent;
-    const isIosDevice = /iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream;
+    const isAndroidBrowser = /Android/i.test(ua);
+    if (!isAndroidBrowser) return;
 
-    // Se estiver no iOS, não mostramos o botão de APK (pois APK não instala no iPhone)
-    if (isIosDevice) return;
-
-    // Mostra o banner após 2 segundos se não foi fechado antes
-    if (!localStorage.getItem('apk_prompt_dismissed')) {
-      const timer = setTimeout(() => setShowPrompt(true), 2000);
+    // Uma dispensa vale apenas para a sessão atual. Em uma nova visita o
+    // cliente volta a receber a sugestão, sem ser incomodado a cada tela.
+    if (!sessionStorage.getItem(dismissedKey)) {
+      const timer = setTimeout(() => setShowPrompt(true), 4500);
       return () => clearTimeout(timer);
     }
   }, []);
 
   const dismiss = () => {
-    localStorage.setItem('apk_prompt_dismissed', 'true');
+    sessionStorage.setItem(dismissedKey, 'true');
     setShowPrompt(false);
   };
 
@@ -49,7 +48,7 @@ export const PwaInstallPrompt = () => {
         </div>
         
         <a 
-          href="/app-bisburger.apk?v=2.0.1"
+          href="/app-bisburger.apk?v=2.0.2"
           download="BisBurger.apk"
           onClick={dismiss}
           className="shrink-0 bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors text-center"

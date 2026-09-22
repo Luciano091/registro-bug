@@ -39,6 +39,7 @@ import java.util.Locale
 fun CouponsSheet(
     cartTotal: Double,
     appliedCode: String,
+    suggestedCode: String = "",
     discount: Double,
     loading: Boolean,
     error: String?,
@@ -46,7 +47,9 @@ fun CouponsSheet(
     onRemove: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var code by remember(appliedCode) { mutableStateOf(appliedCode) }
+    var code by remember(appliedCode, suggestedCode) {
+        mutableStateOf(appliedCode.ifBlank { suggestedCode })
+    }
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(

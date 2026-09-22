@@ -53,7 +53,18 @@ data class CouponValidateResponse(
     val descricao: String
 )
 
+data class HighlightCouponResponse(
+    val codigo: String,
+    val descricao: String? = null,
+    val pedido_minimo: Double = 0.0,
+    val tipo: String,
+    val valor: Double,
+)
+
 interface BisBurgerApi {
+    @GET("public/bisburger/cupons/destaque")
+    suspend fun getHighlightCoupon(): HighlightCouponResponse?
+
     @POST("public/bisburger/cupons/validar")
     suspend fun validateCoupon(@Body request: CouponValidateRequest): CouponValidateResponse
 
