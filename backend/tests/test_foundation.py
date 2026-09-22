@@ -128,6 +128,45 @@ class FoundationTests(unittest.TestCase):
         self.assertEqual(updated.status, "Em preparo")
         self.assertIsNone(crud.update_pedido_status(self.db, confirmed.id + 1000000000, "Pronto", establishment.id))
 
+    def test_authenticated_customer_wins_over_legacy_phone_match(self):
+        establishment = self.create_establishment("Cliente autenticado", "cliente-auth", "auth@teste.com")
+        product = crud.create_produto(
+            self.db,
+            schemas.ProdutoCreate(nome="Lanche", categoria="Lanches", preco=20),
+            establishment.id,
+        )
+        legacy = models.Cliente(
+            estabelecimento_id=establishment.id,
+            nome="Cliente antigo",
+            telefone="82999999999",
+        )
+        authenticated = models.Cliente(
+            estabelecimento_id=establishment.id,
+            google_id="google-123",
+            nome="Cliente Google",
+            email="cliente@teste.com",
+        )
+        self.db.add_all([legacy, authenticated])
+        self.db.commit()
+
+        order = crud.create_pedido(
+            self.db,
+            schemas.PedidoCreate(
+                cliente="Cliente Google",
+                cliente_id=authenticated.id,
+                telefone="82999999999",
+                tipo_entrega="Retirada",
+                forma_pagamento="PIX",
+                itens=[schemas.ItemPedidoCreate(produto_id=product.id, quantidade=1)],
+            ),
+            establishment.id,
+        )
+
+        self.assertEqual(order.cliente_id, authenticated.id)
+        self.db.refresh(authenticated)
+        self.assertEqual(authenticated.telefone, "82999999999")
+        self.assertNotEqual(order.cliente_id, legacy.id)
+
     def test_old_cash_sale_is_not_posted_again_on_confirmation(self):
         establishment = self.create_establishment("Caixa Antigo", "caixa-antigo", "antigo@teste.com")
         product = crud.create_produto(self.db, schemas.ProdutoCreate(nome="Suco", categoria="Bebidas", preco=8), establishment.id)

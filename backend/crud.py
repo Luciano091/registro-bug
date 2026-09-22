@@ -412,11 +412,21 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate, estabelecimento_id:
     cliente_id = pedido.cliente_id
     db_cliente = None
     
+    # Um cliente autenticado deve sempre prevalecer. Procurar primeiro pelo
+    # telefone fazia pedidos logados serem vinculados a cadastros antigos.
+    if cliente_id:
+        db_cliente = db.query(models.Cliente).filter(
+            models.Cliente.id == cliente_id,
+            models.Cliente.estabelecimento_id == estabelecimento_id,
+        ).first()
+
     if telefone_limpo:
-        db_cliente = db.query(models.Cliente).filter(models.Cliente.telefone == telefone_limpo, models.Cliente.estabelecimento_id == estabelecimento_id).first()
-        if not db_cliente and cliente_id:
-            db_cliente = db.query(models.Cliente).filter(models.Cliente.id == cliente_id).first()
-            
+        if not db_cliente:
+            db_cliente = db.query(models.Cliente).filter(
+                models.Cliente.telefone == telefone_limpo,
+                models.Cliente.estabelecimento_id == estabelecimento_id,
+            ).first()
+
         if not db_cliente:
             db_cliente = models.Cliente(
                 estabelecimento_id=estabelecimento_id,
@@ -435,8 +445,8 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate, estabelecimento_id:
                 db_cliente.nome = pedido.cliente
             db.flush()
         cliente_id = db_cliente.id
-    elif cliente_id:
-        db_cliente = db.query(models.Cliente).filter(models.Cliente.id == cliente_id).first()
+    elif cliente_id and not db_cliente:
+        raise ValueError("Cliente autenticado não encontrado neste estabelecimento.")
 
 
     if pedido.cashback_usado and pedido.cashback_usado > 0:

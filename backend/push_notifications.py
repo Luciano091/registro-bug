@@ -47,6 +47,9 @@ def _disable_invalid_tokens(tokens: list[str]):
             db.query(models.DispositivoPush).filter(models.DispositivoPush.token.in_(tokens)).update(
                 {models.DispositivoPush.ativo: False}, synchronize_session=False,
             )
+            db.query(models.Cliente).filter(models.Cliente.push_token.in_(tokens)).update(
+                {models.Cliente.push_token: None}, synchronize_session=False,
+            )
             db.commit()
     except Exception:
         logger.exception("Não foi possível desativar tokens FCM inválidos.")
