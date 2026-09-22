@@ -15,7 +15,15 @@ def get_produtos(db: Session, estabelecimento_id: int, skip: int = 0, limit: int
     query = db.query(models.Produto).options(
         joinedload(models.Produto.categoria_obj),
         joinedload(models.Produto.grupos_opcoes).joinedload(models.GrupoOpcao.opcoes),
-    ).filter(models.Produto.estabelecimento_id == estabelecimento_id)
+    ).outerjoin(
+        models.Categoria,
+        models.Produto.categoria_id == models.Categoria.id,
+    ).filter(
+        models.Produto.estabelecimento_id == estabelecimento_id,
+    ).order_by(
+        func.coalesce(models.Categoria.ordem, 999999),
+        models.Produto.id,
+    )
     if somente_ativos:
         query = query.filter(models.Produto.ativo == True)
     produtos = query.offset(skip).limit(limit).all()

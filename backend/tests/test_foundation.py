@@ -425,6 +425,50 @@ class FoundationTests(unittest.TestCase):
 
         self.assertEqual(len(statements), 1)
 
+    def test_product_catalog_follows_configured_category_order(self):
+        establishment = self.create_establishment("Ordem", "ordem", "ordem@teste.com")
+        last_category = crud.save_categoria(
+            self.db, schemas.CategoriaCreate(nome="Bebidas", ordem=3), establishment.id,
+        )
+        first_category = crud.save_categoria(
+            self.db, schemas.CategoriaCreate(nome="Artesanal", ordem=0), establishment.id,
+        )
+        middle_category = crud.save_categoria(
+            self.db, schemas.CategoriaCreate(nome="Tradicional", ordem=1), establishment.id,
+        )
+
+        crud.create_produto(
+            self.db,
+            schemas.ProdutoCreate(
+                nome="Refrigerante", categoria=last_category.nome,
+                categoria_id=last_category.id, preco=5,
+            ),
+            establishment.id,
+        )
+        crud.create_produto(
+            self.db,
+            schemas.ProdutoCreate(
+                nome="Hamburguer artesanal", categoria=first_category.nome,
+                categoria_id=first_category.id, preco=20,
+            ),
+            establishment.id,
+        )
+        crud.create_produto(
+            self.db,
+            schemas.ProdutoCreate(
+                nome="X-Burger", categoria=middle_category.nome,
+                categoria_id=middle_category.id, preco=15,
+            ),
+            establishment.id,
+        )
+
+        products = crud.get_produtos(self.db, establishment.id, somente_ativos=True)
+
+        self.assertEqual(
+            [product.categoria for product in products],
+            ["Artesanal", "Tradicional", "Bebidas"],
+        )
+
     def test_public_configuration_uses_one_query_and_reports_open_cash(self):
         establishment = self.create_establishment("Loja", "loja", "loja@teste.com")
 
