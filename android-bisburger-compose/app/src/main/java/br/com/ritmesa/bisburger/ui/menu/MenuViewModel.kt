@@ -370,7 +370,16 @@ class MenuViewModel(application: Application) : AndroidViewModel(application) {
                 .onSuccess { order ->
                     cart.clear()
                     _state.update {
-                        it.copy(orderSubmitting = false, createdOrder = order, deliveryQuote = null)
+                        it.copy(
+                            orderSubmitting = false,
+                            createdOrder = order,
+                            deliveryQuote = null,
+                            couponCode = "",
+                            couponDiscount = 0.0,
+                            couponError = null,
+                            couponLoading = false,
+                            useCashback = false,
+                        )
                     }
                 }
                 .onFailure {

@@ -200,11 +200,13 @@ def save_cupom(db: Session, payload: schemas.CupomCreate, estabelecimento_id: in
         duplicate = duplicate.filter(models.Cupom.id != cupom_id)
     if duplicate.first():
         raise ValueError("Já existe um cupom com este código.")
-    values = payload.model_dump()
+    values = payload.model_dump(exclude={"reiniciar_usos"})
     values["codigo"] = codigo
     if cupom:
         for key, value in values.items():
             setattr(cupom, key, value)
+        if payload.reiniciar_usos:
+            cupom.usos = 0
     else:
         cupom = models.Cupom(estabelecimento_id=estabelecimento_id, **values)
         db.add(cupom)

@@ -421,6 +421,23 @@ class FoundationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "limite de usos"):
             crud.consultar_cupom(self.db, "PROMO10", establishment.id)
 
+        reactivated = crud.save_cupom(
+            self.db,
+            schemas.CupomCreate(
+                codigo="PROMO10",
+                tipo="percentual",
+                valor=10,
+                pedido_minimo=20,
+                limite_usos=1,
+                ativo=True,
+                reiniciar_usos=True,
+            ),
+            establishment.id,
+            coupon.id,
+        )
+        self.assertEqual(reactivated.usos, 0)
+        self.assertEqual(crud.consultar_cupom(self.db, "PROMO10", establishment.id).id, coupon.id)
+
         inactive = crud.save_cupom(self.db, schemas.CupomCreate(codigo="PAUSADO", tipo="fixo", valor=5, ativo=False), establishment.id)
         with self.assertRaisesRegex(ValueError, "inativo"):
             crud.consultar_cupom(self.db, inactive.codigo, establishment.id)

@@ -49,7 +49,7 @@ export const PwaInstallPrompt = () => {
         </div>
         
         <a 
-          href="/app-bisburger.apk?v=2.0.0" 
+          href="/app-bisburger.apk?v=2.0.1"
           download="BisBurger.apk"
           onClick={dismiss}
           className="shrink-0 bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors text-center"

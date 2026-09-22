@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.WindowInsets
@@ -34,6 +35,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -139,8 +141,13 @@ fun CheckoutSheet(
         paymentMethod.isBlank() -> "Escolha a forma de pagamento."
         else -> null
     }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        dragHandle = null,
+    ) {
         if (createdOrder != null) {
             OrderSuccess(createdOrder, onDismiss)
             return@ModalBottomSheet
@@ -150,6 +157,7 @@ fun CheckoutSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight(0.94f)
+                .imePadding()
                 .navigationBarsPadding(),
         ) {
             Column(

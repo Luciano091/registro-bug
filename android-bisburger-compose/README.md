@@ -16,7 +16,7 @@ Reimplementação gradual do aplicativo do cliente em Kotlin e Jetpack Compose. 
 - Toque na notificação de entrega abre diretamente o acompanhamento.
 - Marcadores de desempenho no Logcat com a tag `BisBurgerStartup`.
 
-Versão 2.0.0 validada em aparelho físico com um pedido real completo. As notificações automáticas de `em_rota` e `entregue` foram recebidas pelo cliente autenticado.
+Versão 2.0.1. O fluxo 2.0.0 foi validado em aparelho físico com um pedido real completo, incluindo notificações automáticas de `em_rota` e `entregue`. A atualização 2.0.1 limpa cupom e cashback após cada pedido e estabiliza a rolagem do checkout.
 
 ## Validação local
 

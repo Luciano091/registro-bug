@@ -99,7 +99,7 @@ class CupomBase(BaseModel):
     ativo: bool = True
 
 class CupomCreate(CupomBase):
-    pass
+    reiniciar_usos: bool = False
 
 class Cupom(CupomBase):
     id: int
