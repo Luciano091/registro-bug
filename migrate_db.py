@@ -1,13 +1,11 @@
 import os
-import urllib.parse
 from sqlalchemy import create_engine, MetaData, text
 
 import dotenv
 dotenv.load_dotenv("backend/.env")
-OLD_URL = os.environ.get("DATABASE_URL")
+OLD_URL = os.environ["SOURCE_DATABASE_URL"]
+NEW_URL = os.environ["TARGET_DATABASE_URL"]
 
-pw = urllib.parse.quote('3Pj*yvP#BD.nTSR')
-NEW_URL = f"postgresql://postgres.fkyradvexnmpdjbeveir:{pw}@aws-0-sa-east-1.pooler.supabase.com:6543/postgres"
 
 old_engine = create_engine(OLD_URL)
 new_engine = create_engine(NEW_URL)
