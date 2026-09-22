@@ -248,7 +248,7 @@ def delete_category(categoria_id: int, db: Session = Depends(get_db), usuario: a
     categoria = crud.delete_categoria(db, categoria_id, usuario.estabelecimento_id)
     if not categoria:
         raise HTTPException(status_code=404, detail="Categoria não encontrada.")
-    crud.create_audit_log(db, usuario.estabelecimento_id, "categoria.desativada", usuario.usuario_id, "categoria", categoria.id)
+    crud.create_audit_log(db, usuario.estabelecimento_id, "categoria.excluida", usuario.usuario_id, "categoria", categoria.id)
     return categoria
 
 @app.get("/cupons", response_model=List[schemas.Cupom])

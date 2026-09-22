@@ -174,6 +174,38 @@ def delete_categoria(db: Session, categoria_id: int, estabelecimento_id: int):
     categoria = get_categoria(db, categoria_id, estabelecimento_id)
     if not categoria:
         return None
+
+    # A coluna textual `Produto.categoria` ainda é usada pelos cardápios.
+    # Se ela mantiver o nome antigo, a categoria excluída reaparece na web e
+    # no app como uma categoria legada.
+    produtos_vinculados = db.query(models.Produto).filter(
+        models.Produto.estabelecimento_id == estabelecimento_id,
+        or_(
+            models.Produto.categoria_id == categoria.id,
+            func.lower(func.trim(models.Produto.categoria)) == categoria.nome.strip().lower(),
+        ),
+    )
+    if produtos_vinculados.first():
+        fallback_name = "Sem categoria" if categoria.nome.strip().lower() == "outros" else "Outros"
+        fallback = db.query(models.Categoria).filter(
+            models.Categoria.estabelecimento_id == estabelecimento_id,
+            func.lower(models.Categoria.nome) == fallback_name.lower(),
+        ).first()
+        if not fallback:
+            fallback = models.Categoria(
+                estabelecimento_id=estabelecimento_id,
+                nome=fallback_name,
+                descricao="Produtos sem categoria definida",
+                ordem=999,
+                ativo=True,
+            )
+            db.add(fallback)
+            db.flush()
+        produtos_vinculados.update(
+            {"categoria_id": fallback.id, "categoria": fallback.nome},
+            synchronize_session=False,
+        )
+
     db.delete(categoria)
     db.commit()
     return categoria

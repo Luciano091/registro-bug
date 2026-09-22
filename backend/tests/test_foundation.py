@@ -307,6 +307,40 @@ class FoundationTests(unittest.TestCase):
         tuesday_after_midnight = datetime.datetime(2026, 9, 8, 1, 0)
         self.assertTrue(crud.dentro_do_horario("0", "18:00", "02:00", tuesday_after_midnight))
 
+    def test_deleting_category_removes_legacy_name_and_preserves_products(self):
+        establishment = self.create_establishment(
+            "Exclusão de categoria",
+            "categoria-delete",
+            "categoria-delete@teste.com",
+        )
+        category = crud.save_categoria(
+            self.db,
+            schemas.CategoriaCreate(nome="Hamburguer", ordem=1),
+            establishment.id,
+        )
+        product = crud.create_produto(
+            self.db,
+            schemas.ProdutoCreate(
+                nome="X-Burger",
+                categoria=category.nome,
+                categoria_id=category.id,
+                preco=20,
+            ),
+            establishment.id,
+        )
+
+        deleted = crud.delete_categoria(self.db, category.id, establishment.id)
+
+        self.assertIsNotNone(deleted)
+        self.assertIsNone(crud.get_categoria(self.db, category.id, establishment.id))
+        self.db.refresh(product)
+        self.assertEqual(product.categoria, "Outros")
+        self.assertIsNotNone(product.categoria_id)
+        self.assertEqual(product.categoria_obj.nome, "Outros")
+        category_names = [item.nome for item in crud.get_categorias(self.db, establishment.id)]
+        self.assertNotIn("Hamburguer", category_names)
+        self.assertIn("Outros", category_names)
+
     def test_product_catalog_eager_loads_public_relationships(self):
         establishment = self.create_establishment("Cardapio", "cardapio", "cardapio@teste.com")
         category = crud.save_categoria(

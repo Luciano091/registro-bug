@@ -18,7 +18,7 @@ export default function CategoriesModal({ onClose, onChanged }: { onClose: () =>
   const toggleDay = (day: string) => setForm({ ...form, dias_semana: (selectedDays.includes(day) ? selectedDays.filter((value: string) => value !== day) : [...selectedDays, day]).sort().join(',') });
   const handleDelete = async (e: any, id: number) => {
     e.stopPropagation();
-    if (!confirm("Tem certeza que deseja excluir esta categoria? Os produtos associados não serão excluídos, mas ficarão sem esta categoria.")) return;
+    if (!confirm("Tem certeza que deseja excluir esta categoria definitivamente? Os produtos não serão excluídos; eles serão movidos para a categoria Outros.")) return;
     try {
       await api.delete(`/categorias/${id}`);
       load();
