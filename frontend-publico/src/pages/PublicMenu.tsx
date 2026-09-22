@@ -261,7 +261,7 @@ const PublicMenu = () => {
           </div>
 
                     {/* Middle Section: Facts (FULL WIDTH, CENTERED) */}
-          <div className="mt-5 flex w-full items-center justify-center gap-4">
+          <div className="mt-4 flex w-full items-center justify-center gap-4 md:mt-3 md:justify-start md:pl-[145px]">
 
                  {/* Delivery Tag */}
                  <div className="flex items-center gap-2">
@@ -292,7 +292,7 @@ const PublicMenu = () => {
           {/* Bottom Section: Cashback Full Width Banner */}
           <div 
             onClick={() => setActiveTab('conta')}
-            className="mt-5 flex w-full cursor-pointer items-center justify-between rounded-xl bg-gradient-to-r from-[#fae8c3] to-[#f4d193] px-4 py-3 shadow-[0_4px_12px_rgba(0,0,0,0.4)] transition-transform active:scale-[0.98] md:hover:scale-[1.01]"
+            className="mt-4 flex w-full cursor-pointer items-center justify-between rounded-xl bg-gradient-to-r from-[#fae8c3] to-[#f4d193] px-4 py-3 shadow-[0_4px_12px_rgba(0,0,0,0.4)] transition-transform active:scale-[0.98] md:mt-3 md:hover:scale-[1.01]"
           >
             <div className="flex items-center gap-3">
               <Gift className="w-6 h-6 text-orange-600 shrink-0" />
@@ -555,7 +555,7 @@ const PublicMenu = () => {
           </div>
           {getEstablishmentSlug() === 'bisburger' && !isNativeApp && (
             <div className="mt-3">
-              <a href="/app-bisburger.apk?v=2.0.4" download="BisBurger.apk" className="inline-flex items-center gap-1.5 rounded-full bg-slate-200/80 px-3 py-1.5 text-[10px] font-bold text-slate-700 hover:bg-slate-300 transition-colors">
+              <a href="/app-bisburger.apk?v=2.0.5" download="BisBurger.apk" className="inline-flex items-center gap-1.5 rounded-full bg-slate-200/80 px-3 py-1.5 text-[10px] font-bold text-slate-700 hover:bg-slate-300 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
                 Baixar App
               </a>

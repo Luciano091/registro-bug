@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -51,6 +52,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
@@ -407,8 +409,7 @@ private fun StoreHeader(
                 Row(verticalAlignment = Alignment.Bottom) {
                     val businessName = catalog.config.name
                     if (businessName.equals("BisBurger", ignoreCase = true)) {
-                        Text("Bis", color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Black)
-                        Text("Burger", color = Color(0xFFFFC914), fontSize = 30.sp, fontWeight = FontWeight.Black)
+                        BisBurgerWordmark()
                     } else {
                         Text(
                             businessName,
@@ -474,7 +475,7 @@ private fun StoreHeader(
                                 Icons.Outlined.LocalShipping,
                                 null,
                                 tint = Color.White,
-                                modifier = Modifier.size(16.dp),
+                                modifier = Modifier.offset(x = 4.dp).size(16.dp),
                             )
                         },
                         title = formatDeliveryFee(catalog.config.deliveryFee),
@@ -493,7 +494,7 @@ private fun StoreHeader(
                                 Icons.Outlined.Schedule,
                                 null,
                                 tint = Color.White,
-                                modifier = Modifier.size(16.dp),
+                                modifier = Modifier.offset(x = 4.dp).size(16.dp),
                             )
                         },
                         title = "${catalog.config.preparationMinutes} min",
@@ -546,6 +547,38 @@ private fun HeaderMetric(
             Text(title, color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Black, maxLines = 1)
             Text(subtitle, color = Color(0xFFB7B0AC), fontSize = 8.sp, maxLines = 1)
         }
+    }
+}
+
+@Composable
+private fun BisBurgerWordmark() {
+    Row(verticalAlignment = Alignment.Bottom) {
+        Text("B", color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Black)
+        Box(
+            modifier = Modifier
+                .width(10.dp)
+                .height(38.dp),
+        ) {
+            Text(
+                "ı",
+                color = Color.White,
+                fontSize = 30.sp,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
+            Text(
+                "♛",
+                color = Color(0xFFFFC914),
+                fontSize = 11.sp,
+                lineHeight = 11.sp,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .offset(x = 1.dp, y = 1.dp)
+                    .rotate(12f),
+            )
+        }
+        Text("s", color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Black)
+        Text("Burger", color = Color(0xFFFFC914), fontSize = 30.sp, fontWeight = FontWeight.Black)
     }
 }
 
