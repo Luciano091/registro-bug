@@ -76,6 +76,7 @@ import androidx.compose.material.icons.outlined.LocalShipping
 import androidx.compose.material.icons.outlined.PersonOutline
 import androidx.compose.material.icons.outlined.RestaurantMenu
 import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material.icons.outlined.CardGiftcard
 import androidx.compose.material.icons.rounded.LocalFireDepartment
 import java.text.NumberFormat
@@ -277,6 +278,7 @@ private fun CatalogContent(
     } else {
         catalog.products.filter { it.category == selectedCategory }
     }
+    val featuredProduct = catalog.products.firstOrNull { it.featured }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -325,6 +327,32 @@ private fun CatalogContent(
         if (promotions.isNotEmpty()) {
             item {
                 PromoCarousel(promotions, onSelectProduct)
+            }
+        }
+        if (featuredProduct != null && selectedCategory == "Todos") {
+            item {
+                Column {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 18.dp, end = 18.dp, bottom = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            Icons.Outlined.Star,
+                            contentDescription = null,
+                            tint = Orange,
+                            modifier = Modifier.size(19.dp),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text("Destaque do dia", fontWeight = FontWeight.Black, fontSize = 18.sp)
+                    }
+                    ProductCard(
+                        product = featuredProduct,
+                        onClick = { onSelectProduct(featuredProduct) },
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                    )
+                }
             }
         }
         items(visibleProducts, key = { it.id }) { product ->

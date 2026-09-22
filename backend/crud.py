@@ -72,6 +72,11 @@ def _repor_estoque_produto(produto: models.Produto, quantidade: float):
 
 def create_produto(db: Session, produto: schemas.ProdutoCreate, estabelecimento_id: int):
     values = produto.model_dump()
+    if values.get("is_destaque"):
+        db.query(models.Produto).filter(
+            models.Produto.estabelecimento_id == estabelecimento_id,
+            models.Produto.is_destaque == True,
+        ).update({"is_destaque": False}, synchronize_session=False)
     if values.get("setor_producao_id") is None:
         setor_padrao = db.query(models.SetorProducao).filter(models.SetorProducao.estabelecimento_id == estabelecimento_id, models.SetorProducao.ativo == True).order_by(models.SetorProducao.ordem, models.SetorProducao.id).first()
         values["setor_producao_id"] = setor_padrao.id if setor_padrao else None
@@ -96,6 +101,12 @@ def update_produto(db: Session, produto_id: int, produto: schemas.ProdutoCreate,
     db_produto = db.query(models.Produto).filter(models.Produto.id == produto_id, models.Produto.estabelecimento_id == estabelecimento_id).first()
     if db_produto:
         values = produto.model_dump()
+        if values.get("is_destaque"):
+            db.query(models.Produto).filter(
+                models.Produto.estabelecimento_id == estabelecimento_id,
+                models.Produto.id != produto_id,
+                models.Produto.is_destaque == True,
+            ).update({"is_destaque": False}, synchronize_session=False)
         if values.get("setor_producao_id") and not get_setor_producao(db, values["setor_producao_id"], estabelecimento_id):
             raise ValueError("Setor de produção inválido para este estabelecimento.")
         if values.get("categoria_id"):

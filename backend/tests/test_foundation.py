@@ -341,6 +341,52 @@ class FoundationTests(unittest.TestCase):
         self.assertNotIn("Hamburguer", category_names)
         self.assertIn("Outros", category_names)
 
+    def test_only_one_product_can_be_featured_per_establishment(self):
+        establishment = self.create_establishment(
+            "Destaque",
+            "destaque",
+            "destaque@teste.com",
+        )
+        first = crud.create_produto(
+            self.db,
+            schemas.ProdutoCreate(
+                nome="Primeiro",
+                categoria="Lanches",
+                preco=20,
+                is_destaque=True,
+            ),
+            establishment.id,
+        )
+        second = crud.create_produto(
+            self.db,
+            schemas.ProdutoCreate(
+                nome="Segundo",
+                categoria="Lanches",
+                preco=25,
+                is_destaque=True,
+            ),
+            establishment.id,
+        )
+
+        self.db.refresh(first)
+        self.assertFalse(first.is_destaque)
+        self.assertTrue(second.is_destaque)
+
+        crud.update_produto(
+            self.db,
+            first.id,
+            schemas.ProdutoCreate(
+                nome=first.nome,
+                categoria=first.categoria,
+                preco=first.preco,
+                is_destaque=True,
+            ),
+            establishment.id,
+        )
+        self.db.refresh(second)
+        self.assertTrue(first.is_destaque)
+        self.assertFalse(second.is_destaque)
+
     def test_product_catalog_eager_loads_public_relationships(self):
         establishment = self.create_establishment("Cardapio", "cardapio", "cardapio@teste.com")
         category = crud.save_categoria(

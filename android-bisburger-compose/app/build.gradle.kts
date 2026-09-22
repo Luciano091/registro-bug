@@ -25,8 +25,8 @@ android {
         applicationId = "br.com.ritmesa.bisburger"
         minSdk = 24
         targetSdk = 36
-        versionCode = 115
-        versionName = "2.0.3"
+        versionCode = 116
+        versionName = "2.0.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "API_BASE_URL", "\"https://registro-bug.onrender.com/\"")

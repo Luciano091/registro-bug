@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Search, X, Trash2, Package, SlidersHorizontal, CalendarClock, FolderCog, TicketPercent } from 'lucide-react';
+import { Plus, Edit2, Search, X, Trash2, Package, SlidersHorizontal, CalendarClock, FolderCog, TicketPercent, Star } from 'lucide-react';
 import api from '../services/api';
 import { useAppData } from '../contexts/AppDataContext';
 import FichaTecnicaModal from '../components/FichaTecnicaModal';
@@ -19,7 +19,7 @@ const Menu = () => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [removerFundo, setRemoverFundo] = useState(false);
-  const [novoProduto, setNovoProduto] = useState({ nome: '', preco: '', preco_compra: '', categoria: '', descricao: '', imagem_url: '', controlar_estoque: false, estoque: '', is_promocao: false, preco_promocao: '', is_combo: false });
+  const [novoProduto, setNovoProduto] = useState({ nome: '', preco: '', preco_compra: '', categoria: '', descricao: '', imagem_url: '', controlar_estoque: false, estoque: '', is_promocao: false, is_destaque: false, preco_promocao: '', is_combo: false });
 
   const [activeCategory, setActiveCategory] = useState('Todos');
 
@@ -43,6 +43,7 @@ const Menu = () => {
       controlar_estoque: item.controlar_estoque || false,
       estoque: item.estoque !== null && item.estoque !== undefined ? item.estoque.toString() : '',
       is_promocao: item.is_promocao || false,
+      is_destaque: item.is_destaque || false,
       preco_promocao: item.preco_promocao ? item.preco_promocao.toString() : '',
       is_combo: item.is_combo || false,
     });
@@ -97,6 +98,7 @@ const Menu = () => {
         controlar_estoque: novoProduto.controlar_estoque,
         estoque: parseInt(novoProduto.estoque) || 0,
         is_promocao: novoProduto.is_promocao,
+        is_destaque: novoProduto.is_destaque,
         is_combo: novoProduto.is_combo,
         preco_promocao: novoProduto.is_promocao && novoProduto.preco_promocao ? parseFloat(novoProduto.preco_promocao) : null,
         categoria_id: existing?.categoria_id ?? null,
@@ -118,7 +120,7 @@ const Menu = () => {
       }
       
       setShowModal(false);
-            setNovoProduto({ nome: '', preco: '', preco_compra: '', categoria: '', descricao: '', imagem_url: '', controlar_estoque: false, estoque: '', is_promocao: false, preco_promocao: '', is_combo: false });
+            setNovoProduto({ nome: '', preco: '', preco_compra: '', categoria: '', descricao: '', imagem_url: '', controlar_estoque: false, estoque: '', is_promocao: false, is_destaque: false, preco_promocao: '', is_combo: false });
       setEditingId(null);
       refreshProdutos();
     } catch (error) {
@@ -196,7 +198,7 @@ const Menu = () => {
         <button 
           onClick={() => {
             setEditingId(null);
-                  setNovoProduto({ nome: '', preco: '', preco_compra: '', categoria: '', descricao: '', imagem_url: '', controlar_estoque: false, estoque: '', is_promocao: false, preco_promocao: '', is_combo: false });
+                  setNovoProduto({ nome: '', preco: '', preco_compra: '', categoria: '', descricao: '', imagem_url: '', controlar_estoque: false, estoque: '', is_promocao: false, is_destaque: false, preco_promocao: '', is_combo: false });
             setShowModal(true);
           }}
           className="premium-btn col-span-2 flex flex-1 items-center justify-center gap-2 rounded-xl px-5 py-2.5 font-semibold md:col-auto md:flex-none"
@@ -262,6 +264,11 @@ const Menu = () => {
                     {produto.is_promocao && (
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border bg-orange-500/10 text-orange-400 border-orange-500/20">
                         🔥 Promoção
+                      </span>
+                    )}
+                    {produto.is_destaque && (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-0.5 text-xs font-bold text-amber-300">
+                        <Star size={12} fill="currentColor" /> Destaque do dia
                       </span>
                     )}
                   </div>
@@ -442,6 +449,19 @@ const Menu = () => {
               </div>
 
               <div className="bg-dark-900 border border-white/5 p-4 rounded-xl space-y-4">
+                <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-amber-400/20 bg-amber-400/5 p-3">
+                  <input
+                    type="checkbox"
+                    checked={novoProduto.is_destaque}
+                    onChange={e => setNovoProduto({...novoProduto, is_destaque: e.target.checked})}
+                    className="mt-0.5 h-5 w-5 rounded border-white/10 bg-dark-800 text-amber-500 focus:ring-amber-500/50 focus:ring-offset-dark-900"
+                  />
+                  <div>
+                    <span className="flex items-center gap-1.5 text-sm font-bold text-amber-300"><Star size={15} /> Destaque do dia</span>
+                    <span className="mt-1 block text-xs leading-relaxed text-zinc-400">Aparece em evidência na web e no aplicativo. Ao marcar, o destaque anterior será removido.</span>
+                  </div>
+                </label>
+
                 <label className="flex items-center gap-3 cursor-pointer">
                   <input 
                     type="checkbox" 

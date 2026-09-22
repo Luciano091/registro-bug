@@ -39,6 +39,7 @@ class ProdutoBase(BaseModel):
     controlar_estoque: bool = False
     estoque: int = 0
     is_promocao: bool = False
+    is_destaque: bool = False
     preco_promocao: Optional[float] = None
     promocao_inicio: Optional[datetime] = None
     promocao_fim: Optional[datetime] = None

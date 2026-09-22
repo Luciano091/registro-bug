@@ -117,6 +117,7 @@ class Produto(Base):
     controlar_estoque = Column(Boolean, default=False)
     estoque = Column(Integer, default=0)
     is_promocao = Column(Boolean, default=False)
+    is_destaque = Column(Boolean, nullable=False, default=False, index=True)
     preco_promocao = Column(Numeric(10, 2, asdecimal=False), nullable=True)
     promocao_inicio = Column(DateTime, nullable=True)
     promocao_fim = Column(DateTime, nullable=True)

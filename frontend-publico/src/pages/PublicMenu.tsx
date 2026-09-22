@@ -105,20 +105,10 @@ const PublicMenu = () => {
   }, []);
 
   // Hooks não podem ser chamados após o return!
-  // Produto Destaque do Dia (Rodízio diário)
+  // Produto escolhido no painel como Destaque do Dia.
   const destaqueDoDia = useMemo(() => {
     if (activeCategory !== 'Todos') return null;
-    
-    const produtosComImagem = produtos.filter(p => p.imagem_url);
-    const candidatos = produtosComImagem.length > 0 ? produtosComImagem : produtos;
-    if (candidatos.length === 0) return null;
-    
-    // Usa o dia do ano para fazer o rodízio (muda 1x por dia)
-    const start = new Date(new Date().getFullYear(), 0, 0).getTime();
-    const diff = new Date().getTime() - start;
-    const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
-    
-    return candidatos[dayOfYear % candidatos.length];
+    return produtos.find(p => p.is_destaque) || null;
   }, [produtos, activeCategory]);
 
   // Promoções do Dia
@@ -338,8 +328,8 @@ const PublicMenu = () => {
 
         <div className="space-y-10">
           
-          {/* 🔥 PROMOÇÕES DO DIA OU DESTAQUE */}
-          {promocoesAtivas.length > 0 ? (
+          {/* 🔥 PROMOÇÕES DO DIA */}
+          {promocoesAtivas.length > 0 && (
             <section className="promotion-section mb-10">
               <div className="promotion-heading mb-4 flex items-end justify-between gap-4">
                 <h2 className="flex items-center gap-2 text-xl font-bold text-zinc-900">
@@ -405,7 +395,10 @@ const PublicMenu = () => {
                 ))}
               </div>
             </section>
-          ) : destaqueDoDia && (
+          )}
+
+          {/* O destaque só existe quando foi escolhido no painel. */}
+          {destaqueDoDia && (
             <section className="featured-section mb-10">
               <div className="featured-heading flex items-center mb-4">
                 <h2 className="flex items-center gap-2 text-xl font-bold text-zinc-900">
@@ -562,7 +555,7 @@ const PublicMenu = () => {
           </div>
           {getEstablishmentSlug() === 'bisburger' && !isNativeApp && (
             <div className="mt-3">
-              <a href="/app-bisburger.apk?v=2.0.3" download="BisBurger.apk" className="inline-flex items-center gap-1.5 rounded-full bg-slate-200/80 px-3 py-1.5 text-[10px] font-bold text-slate-700 hover:bg-slate-300 transition-colors">
+              <a href="/app-bisburger.apk?v=2.0.4" download="BisBurger.apk" className="inline-flex items-center gap-1.5 rounded-full bg-slate-200/80 px-3 py-1.5 text-[10px] font-bold text-slate-700 hover:bg-slate-300 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
                 Baixar App
               </a>

@@ -45,6 +45,7 @@ data class Product(
     @SerializedName("imagem_url") val imageUrl: String? = null,
     @SerializedName("preco") val price: Double,
     @SerializedName("ativo") val active: Boolean = true,
+    @SerializedName("is_destaque") val featured: Boolean = false,
     @SerializedName("promocao_ativa") val promotionActive: Boolean = false,
     @SerializedName("preco_promocao") val promotionPrice: Double? = null,
     @SerializedName("grupos_opcoes") val optionGroups: List<ProductOptionGroup> = emptyList(),
