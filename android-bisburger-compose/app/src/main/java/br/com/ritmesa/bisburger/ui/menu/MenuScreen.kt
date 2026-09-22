@@ -475,7 +475,7 @@ private fun StoreHeader(
                                 Icons.Outlined.LocalShipping,
                                 null,
                                 tint = Color.White,
-                                modifier = Modifier.offset(x = 4.dp).size(16.dp),
+                                modifier = Modifier.size(16.dp),
                             )
                         },
                         title = formatDeliveryFee(catalog.config.deliveryFee),
@@ -494,7 +494,7 @@ private fun StoreHeader(
                                 Icons.Outlined.Schedule,
                                 null,
                                 tint = Color.White,
-                                modifier = Modifier.offset(x = 4.dp).size(16.dp),
+                                modifier = Modifier.size(16.dp),
                             )
                         },
                         title = "${catalog.config.preparationMinutes} min",
@@ -540,8 +540,10 @@ private fun HeaderMetric(
     title: String,
     subtitle: String,
 ) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        icon()
+    Row(verticalAlignment = Alignment.Top) {
+        Box(modifier = Modifier.padding(top = 1.dp)) {
+            icon()
+        }
         Spacer(Modifier.width(5.dp))
         Column {
             Text(title, color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Black, maxLines = 1)

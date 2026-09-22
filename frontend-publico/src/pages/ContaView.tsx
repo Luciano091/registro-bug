@@ -166,7 +166,7 @@ export const ContaView = () => {
                 {googleLoading ? 'Conectando...' : 'Continuar com Google'}
               </button>
             ) : (
-              <p className="mt-5 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-900">Atualize o aplicativo para entrar com Google. <a className="font-bold underline" href="/app-bisburger.apk?v=2.0.5" target="_blank" rel="noreferrer">Baixar atualização</a></p>
+              <p className="mt-5 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-900">Atualize o aplicativo para entrar com Google. <a className="font-bold underline" href="/app-bisburger.apk?v=2.0.6" target="_blank" rel="noreferrer">Baixar atualização</a></p>
             )
           ) : (
             <div className="mt-7 flex justify-center"><GoogleLogin onSuccess={handleGoogleSuccess} onError={() => setGoogleError('Não foi possível abrir o login Google. Tente novamente.')} use_fedcm_for_button text="continue_with" size="large" shape="pill" width="280" /></div>

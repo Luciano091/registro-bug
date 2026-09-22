@@ -4,7 +4,7 @@ import { getEstablishmentSlug } from '../services/api';
 
 export const PwaInstallPrompt = () => {
   const [showPrompt, setShowPrompt] = useState(false);
-  const dismissedKey = 'apk_prompt_dismissed:2.0.5';
+  const dismissedKey = 'apk_prompt_dismissed:2.0.6';
   
   useEffect(() => {
     const ua = window.navigator.userAgent;
@@ -48,7 +48,7 @@ export const PwaInstallPrompt = () => {
         </div>
         
         <a 
-          href="/app-bisburger.apk?v=2.0.5"
+          href="/app-bisburger.apk?v=2.0.6"
           download="BisBurger.apk"
           onClick={dismiss}
           className="shrink-0 bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors text-center"
