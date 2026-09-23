@@ -244,10 +244,10 @@ const Menu = () => {
       <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar pb-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filtered.map(produto => (
-            <div key={produto.id} className="glass-card p-5 rounded-2xl group flex flex-col justify-between">
+            <div key={produto.id} className="menu-product-card glass-card p-5 rounded-2xl group flex flex-col justify-between">
               <div>
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex flex-wrap gap-2">
+                <div className="mb-2">
+                  <div className="flex min-w-0 flex-wrap gap-2">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-500/10 text-brand-400 border border-brand-500/20">
                       {produto.categoria}
                     </span>
@@ -272,43 +272,6 @@ const Menu = () => {
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-1 shrink-0 ml-2">
-                    <button
-                      onClick={() => setAvailabilityProduct(produto)}
-                      className="text-zinc-400 hover:text-white md:opacity-0 group-hover:opacity-100 transition-all bg-dark-900 p-1.5 rounded-lg border border-white/10 hover:border-brand-500/50"
-                      title="Disponibilidade, canais e promoção"
-                    >
-                      <CalendarClock size={16} />
-                    </button>
-                    <button
-                      onClick={() => setOptionsProduct(produto)}
-                      className="text-zinc-400 hover:text-white md:opacity-0 group-hover:opacity-100 transition-all bg-dark-900 p-1.5 rounded-lg border border-white/10 hover:border-brand-500/50"
-                      title="Tamanhos, sabores e adicionais"
-                    >
-                      <SlidersHorizontal size={16} />
-                    </button>
-                    <button 
-                      onClick={() => setShowFichaModal({id: produto.id, nome: produto.nome})}
-                      className="text-zinc-400 hover:text-white opacity-0 group-hover:opacity-100 transition-all bg-dark-900 p-1.5 rounded-lg border border-white/10 hover:border-brand-500/50"
-                      title="Ficha Técnica / Insumos"
-                    >
-                      <Package size={16} />
-                    </button>
-                    <button 
-                      onClick={() => openEditProductModal(produto)}
-                      className="text-zinc-400 hover:text-white opacity-0 group-hover:opacity-100 transition-all bg-dark-900 p-1.5 rounded-lg border border-white/10 hover:border-brand-500/50"
-                      title="Editar"
-                    >
-                      <Edit2 size={16} />
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(produto.id)}
-                      className="text-zinc-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all bg-dark-900 p-1.5 rounded-lg border border-white/10 hover:border-red-500/50"
-                      title="Excluir"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
                 </div>
                 <h3 className="font-bold text-lg text-white mb-1 group-hover:text-brand-400 transition-colors font-heading">{produto.nome}</h3>
               </div>
@@ -322,6 +285,48 @@ const Menu = () => {
                     <span className="text-emerald-500 font-medium">Lucro: {(produto.preco - produto.preco_compra).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
                   </div>
                 )}
+                <div className="product-actions mt-3 flex w-full items-center justify-end gap-1 border-t border-slate-100 pt-3" aria-label={`Ações de ${produto.nome}`}>
+                  <button
+                    onClick={() => setAvailabilityProduct(produto)}
+                    className="rounded-lg border border-slate-200 bg-slate-50 p-1.5 text-slate-500 transition hover:border-brand-500/50 hover:bg-orange-50 hover:text-brand-600"
+                    title="Disponibilidade, canais e promoção"
+                    aria-label={`Disponibilidade de ${produto.nome}`}
+                  >
+                    <CalendarClock size={16} />
+                  </button>
+                  <button
+                    onClick={() => setOptionsProduct(produto)}
+                    className="rounded-lg border border-slate-200 bg-slate-50 p-1.5 text-slate-500 transition hover:border-brand-500/50 hover:bg-orange-50 hover:text-brand-600"
+                    title="Tamanhos, sabores e adicionais"
+                    aria-label={`Opções de ${produto.nome}`}
+                  >
+                    <SlidersHorizontal size={16} />
+                  </button>
+                  <button
+                    onClick={() => setShowFichaModal({id: produto.id, nome: produto.nome})}
+                    className="rounded-lg border border-slate-200 bg-slate-50 p-1.5 text-slate-500 transition hover:border-brand-500/50 hover:bg-orange-50 hover:text-brand-600"
+                    title="Ficha Técnica / Insumos"
+                    aria-label={`Ficha técnica de ${produto.nome}`}
+                  >
+                    <Package size={16} />
+                  </button>
+                  <button
+                    onClick={() => openEditProductModal(produto)}
+                    className="rounded-lg border border-slate-200 bg-slate-50 p-1.5 text-slate-500 transition hover:border-brand-500/50 hover:bg-orange-50 hover:text-brand-600"
+                    title="Editar"
+                    aria-label={`Editar ${produto.nome}`}
+                  >
+                    <Edit2 size={16} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(produto.id)}
+                    className="rounded-lg border border-slate-200 bg-slate-50 p-1.5 text-slate-500 transition hover:border-red-500/50 hover:bg-red-50 hover:text-red-500"
+                    title="Excluir"
+                    aria-label={`Excluir ${produto.nome}`}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
