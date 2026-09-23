@@ -144,6 +144,7 @@ class MenuViewModel(application: Application) : AndroidViewModel(application) {
 
     fun showAccount() {
         _state.update { it.copy(accountVisible = true, loginError = null) }
+        refreshCustomerProfile()
     }
 
     fun dismissAccount() {
@@ -155,7 +156,11 @@ class MenuViewModel(application: Application) : AndroidViewModel(application) {
     fun signInWithGoogleToken(idToken: String) {
         viewModelScope.launch {
             _state.update { it.copy(loginLoading = true, loginError = null) }
-            runCatching { authRepository.signInWithGoogle(idToken) }
+            runCatching {
+                val signedIn = authRepository.signInWithGoogle(idToken)
+                val localPhone = orderRepository.lastKnownLocalPhone()
+                if (localPhone != null) authRepository.linkPhone(localPhone) ?: signedIn else signedIn
+            }
                 .onSuccess { customer ->
                     _state.update {
                         it.copy(customer = customer, loginLoading = false, loginError = null)
@@ -285,7 +290,13 @@ class MenuViewModel(application: Application) : AndroidViewModel(application) {
 
     fun refreshCustomerProfile() {
         viewModelScope.launch {
-            authRepository.refreshCustomerProfile()?.let { updated ->
+            val localPhone = orderRepository.lastKnownLocalPhone()
+            val updated = if (localPhone != null) {
+                authRepository.linkPhone(localPhone)
+            } else {
+                authRepository.refreshCustomerProfile()
+            }
+            updated?.let {
                 _state.update { it.copy(customer = updated) }
             }
         }
@@ -410,6 +421,7 @@ class MenuViewModel(application: Application) : AndroidViewModel(application) {
                             useCashback = false,
                         )
                     }
+                    refreshCustomerProfile()
                 }
                 .onFailure {
                     _state.update {

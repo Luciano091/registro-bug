@@ -3,6 +3,7 @@ package br.com.ritmesa.bisburger.data.auth
 import br.com.ritmesa.bisburger.data.network.BisBurgerApi
 import br.com.ritmesa.bisburger.data.network.CustomerProfile
 import br.com.ritmesa.bisburger.data.network.GoogleAuthRequest
+import br.com.ritmesa.bisburger.data.network.PhoneLinkRequest
 
 class CustomerAuthRepository(
     private val api: BisBurgerApi,
@@ -23,6 +24,15 @@ class CustomerAuthRepository(
         val token = sessionStore.customerToken() ?: return null
         return runCatching {
             val updated = api.getCustomerProfile("Bearer $token")
+            sessionStore.saveSession(token, updated)
+            updated
+        }.getOrNull()
+    }
+
+    suspend fun linkPhone(phone: String): CustomerProfile? {
+        val token = sessionStore.customerToken() ?: return null
+        return runCatching {
+            val updated = api.linkCustomerPhone("Bearer $token", PhoneLinkRequest(phone))
             sessionStore.saveSession(token, updated)
             updated
         }.getOrNull()

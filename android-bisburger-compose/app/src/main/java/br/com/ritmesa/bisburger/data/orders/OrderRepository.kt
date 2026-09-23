@@ -38,10 +38,26 @@ class OrderRepository(
     fun trackingCodes(): List<String> = orderStore.trackingCodes()
 
     suspend fun trackedOrders(): List<TrackedOrder> = coroutineScope {
+        val authorization = sessionStore.customerToken()?.let { "Bearer $it" }
+        val accountOrders = async {
+            if (authorization == null) emptyList()
+            else runCatching { api.getCustomerOrders(authorization) }.getOrDefault(emptyList())
+        }
+        val localOrders = trackingCodes()
+            .map { code -> async { runCatching { api.getTrackedOrder(code) }.getOrNull() } }
+            .awaitAll()
+            .filterNotNull()
+        (accountOrders.await() + localOrders)
+            .distinctBy { it.id }
+            .sortedByDescending { it.date }
+    }
+
+    suspend fun lastKnownLocalPhone(): String? = coroutineScope {
         trackingCodes()
             .map { code -> async { runCatching { api.getTrackedOrder(code) }.getOrNull() } }
             .awaitAll()
             .filterNotNull()
             .sortedByDescending { it.date }
+            .firstNotNullOfOrNull { it.phone?.filter(Char::isDigit)?.takeIf { phone -> phone.length >= 10 } }
     }
 }

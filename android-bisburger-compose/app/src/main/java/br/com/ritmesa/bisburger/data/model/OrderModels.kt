@@ -105,6 +105,7 @@ data class TrackedOrder(
     @SerializedName("numero") val number: String,
     val status: String,
     @SerializedName("tipo_entrega") val deliveryType: String,
+    @SerializedName("telefone") val phone: String? = null,
     val total: Double,
     @SerializedName("data") val date: String,
     @SerializedName("itens") val items: List<TrackedOrderItem> = emptyList(),

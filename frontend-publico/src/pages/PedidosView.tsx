@@ -45,27 +45,31 @@ export const PedidosView = () => {
     const fetchPedidos = async () => {
       try {
         const idsStr = localStorage.getItem('meus_pedidos');
-        if (!idsStr) {
-          setLoading(false);
-          return;
-        }
-        
-        const codigos = JSON.parse(idsStr);
-        if (!Array.isArray(codigos) || codigos.length === 0) {
-          setLoading(false);
-          return;
-        }
+        let codigos: unknown[] = [];
+        try {
+          const parsed = idsStr ? JSON.parse(idsStr) : [];
+          codigos = Array.isArray(parsed) ? parsed : [];
+        } catch { codigos = []; }
 
-        // Buscar todos os pedidos
-        const promessas = codigos
+        // Pedidos da conta são compartilhados entre dispositivos. Os códigos
+        // locais preservam o acompanhamento de compras feitas sem login.
+        const localRequests = codigos
           .filter((codigo: unknown) => typeof codigo === 'string')
           .map((codigo: string) => api.get<Order>(`/public/${getEstablishmentSlug()}/acompanhamento/${encodeURIComponent(codigo)}`).catch(() => null));
-        const resultados = await Promise.all(promessas);
-        
-        // Filtrar nulos e ordenar do mais novo para o mais antigo
-        const pedidosValidos = resultados
+        const accountRequest = localStorage.getItem('cliente_token')
+          ? api.get<Order[]>(`/public/${getEstablishmentSlug()}/clientes/me/pedidos`).catch(() => ({ data: [] as Order[] }))
+          : Promise.resolve({ data: [] as Order[] });
+        const [accountResponse, resultados] = await Promise.all([
+          accountRequest,
+          Promise.all(localRequests),
+        ]);
+
+        const localOrders = resultados
           .filter(r => r && r.data)
-          .map(r => r!.data)
+          .map(r => r!.data);
+        const uniqueOrders = new Map<number, Order>();
+        [...accountResponse.data, ...localOrders].forEach(order => uniqueOrders.set(order.id, order));
+        const pedidosValidos = Array.from(uniqueOrders.values())
           .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
           
         setPedidos(pedidosValidos);

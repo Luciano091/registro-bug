@@ -139,6 +139,7 @@ class FoundationTests(unittest.TestCase):
             estabelecimento_id=establishment.id,
             nome="Cliente antigo",
             telefone="82999999999",
+            saldo_cashback=1.25,
         )
         authenticated = models.Cliente(
             estabelecimento_id=establishment.id,
@@ -148,6 +149,19 @@ class FoundationTests(unittest.TestCase):
         )
         self.db.add_all([legacy, authenticated])
         self.db.commit()
+
+        legacy_order = crud.create_pedido(
+            self.db,
+            schemas.PedidoCreate(
+                cliente="Cliente antigo",
+                telefone="82999999999",
+                tipo_entrega="Retirada",
+                forma_pagamento="PIX",
+                itens=[schemas.ItemPedidoCreate(produto_id=product.id, quantidade=1)],
+            ),
+            establishment.id,
+        )
+        self.assertEqual(legacy_order.cliente_id, legacy.id)
 
         order = crud.create_pedido(
             self.db,
@@ -165,7 +179,16 @@ class FoundationTests(unittest.TestCase):
         self.assertEqual(order.cliente_id, authenticated.id)
         self.db.refresh(authenticated)
         self.assertEqual(authenticated.telefone, "82999999999")
+        self.assertEqual(authenticated.saldo_cashback, 1.25)
+        self.db.refresh(legacy_order)
+        self.assertEqual(legacy_order.cliente_id, authenticated.id)
+        self.assertIsNone(self.db.get(models.Cliente, legacy.id))
         self.assertNotEqual(order.cliente_id, legacy.id)
+
+        crud.vincular_cliente_por_telefone(self.db, authenticated, "(82) 99999-9999", establishment.id)
+        self.db.commit()
+        self.db.refresh(authenticated)
+        self.assertEqual(authenticated.saldo_cashback, 1.25)
 
     def test_old_cash_sale_is_not_posted_again_on_confirmation(self):
         establishment = self.create_establishment("Caixa Antigo", "caixa-antigo", "antigo@teste.com")

@@ -11,7 +11,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.Lifecycle
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.LaunchedEffect
 import br.com.ritmesa.bisburger.data.auth.GoogleCredentialClient
@@ -42,6 +44,9 @@ class MainActivity : ComponentActivity() {
                 val state = viewModel.state.collectAsStateWithLifecycle().value
                 val shouldOpenOrders = openOrdersRequested.collectAsStateWithLifecycle().value
                 val scope = rememberCoroutineScope()
+                LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+                    viewModel.refreshCustomerProfile()
+                }
                 LaunchedEffect(shouldOpenOrders) {
                     if (shouldOpenOrders) {
                         viewModel.showOrders()

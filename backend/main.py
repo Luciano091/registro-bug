@@ -1540,3 +1540,48 @@ def get_public_cliente(slug: str, db: Session = Depends(get_db), cliente_id: str
     if not cliente:
         raise HTTPException(status_code=404, detail="Cliente não encontrado")
     return cliente
+
+@app.put("/public/{slug}/clientes/me/telefone", response_model=schemas.Cliente)
+def link_public_customer_phone(
+    slug: str,
+    payload: schemas.ClienteTelefoneVincular,
+    db: Session = Depends(get_db),
+    cliente_id: str = Depends(auth.get_current_cliente_optional),
+):
+    if not cliente_id:
+        raise HTTPException(status_code=401, detail="Não autenticado")
+    estabelecimento = require_public_establishment(slug, db)
+    cliente = db.query(models.Cliente).filter(
+        models.Cliente.id == int(cliente_id),
+        models.Cliente.estabelecimento_id == estabelecimento.id,
+    ).first()
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    try:
+        crud.vincular_cliente_por_telefone(db, cliente, payload.telefone, estabelecimento.id)
+        db.commit()
+        db.refresh(cliente)
+        return cliente
+    except ValueError as exc:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(exc))
+
+@app.get("/public/{slug}/clientes/me/pedidos", response_model=List[schemas.Pedido])
+def get_public_customer_orders(
+    slug: str,
+    db: Session = Depends(get_db),
+    cliente_id: str = Depends(auth.get_current_cliente_optional),
+):
+    if not cliente_id:
+        raise HTTPException(status_code=401, detail="Não autenticado")
+    estabelecimento = require_public_establishment(slug, db)
+    cliente = db.query(models.Cliente).filter(
+        models.Cliente.id == int(cliente_id),
+        models.Cliente.estabelecimento_id == estabelecimento.id,
+    ).first()
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    return db.query(models.Pedido).filter(
+        models.Pedido.estabelecimento_id == estabelecimento.id,
+        models.Pedido.cliente_id == cliente.id,
+    ).order_by(models.Pedido.data.desc(), models.Pedido.id.desc()).all()

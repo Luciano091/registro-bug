@@ -390,6 +390,41 @@ def get_cliente_by_google_id(db: Session, google_id: str):
 def get_cliente_by_email(db: Session, email: str):
     return db.query(models.Cliente).filter(models.Cliente.email == email).first()
 
+def vincular_cliente_por_telefone(db: Session, cliente: models.Cliente, telefone: str, estabelecimento_id: int):
+    """Move saldo e pedidos de cadastros convidados para a conta autenticada."""
+    import re
+
+    telefone_limpo = re.sub(r"\D", "", telefone or "")
+    if len(telefone_limpo) < 10:
+        raise ValueError("Informe um telefone válido com DDD.")
+    if cliente.estabelecimento_id != estabelecimento_id:
+        raise ValueError("Cliente não pertence a este estabelecimento.")
+
+    convidados = db.query(models.Cliente).filter(
+        models.Cliente.estabelecimento_id == estabelecimento_id,
+        models.Cliente.telefone == telefone_limpo,
+        models.Cliente.id != cliente.id,
+        models.Cliente.google_id.is_(None),
+        models.Cliente.email.is_(None),
+    ).all()
+
+    for convidado in convidados:
+        db.query(models.Pedido).filter(
+            models.Pedido.estabelecimento_id == estabelecimento_id,
+            models.Pedido.cliente_id == convidado.id,
+        ).update({models.Pedido.cliente_id: cliente.id}, synchronize_session=False)
+        cliente.saldo_cashback = round(
+            float(cliente.saldo_cashback or 0.0) + float(convidado.saldo_cashback or 0.0),
+            2,
+        )
+        if not cliente.endereco and convidado.endereco:
+            cliente.endereco = convidado.endereco
+        db.delete(convidado)
+
+    cliente.telefone = telefone_limpo
+    db.flush()
+    return cliente
+
 def create_cliente(db: Session, cliente: schemas.ClienteCreate):
     db_cliente = models.Cliente(**cliente.dict())
     db.add(db_cliente)
@@ -474,6 +509,13 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate, estabelecimento_id:
         ).first()
 
     if telefone_limpo:
+        if db_cliente and cliente_id:
+            db_cliente = vincular_cliente_por_telefone(
+                db,
+                db_cliente,
+                telefone_limpo,
+                estabelecimento_id,
+            )
         if not db_cliente:
             db_cliente = db.query(models.Cliente).filter(
                 models.Cliente.telefone == telefone_limpo,

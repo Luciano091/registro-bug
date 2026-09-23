@@ -32,26 +32,51 @@ export const ContaView = () => {
     setNome(localStorage.getItem('user_nome') || '');
     setTelefone(localStorage.getItem('user_telefone') || '');
     setEndereco(localStorage.getItem('user_endereco') || '');
-    
-    const token = localStorage.getItem('cliente_token');
-    if (token) {
+
+    let cancelled = false;
+    const refreshProfile = async () => {
+      const token = localStorage.getItem('cliente_token');
+      if (!token) return;
       setIsLoggedIn(true);
       setGuestStep('overview');
       setFoto(localStorage.getItem('user_foto') || '');
       setEmail(localStorage.getItem('user_email') || '');
-      // Fetch cashback balance
-      api.get(`/public/${getEstablishmentSlug()}/clientes/me`, {
-        headers: { Authorization: `Bearer ${token}` }
-      }).then(res => {
-        setSaldoCashback(res.data.saldo_cashback || 0);
-      }).catch(() => {});
-    }
+      try {
+        const storedPhone = localStorage.getItem('user_telefone') || '';
+        const path = `/public/${getEstablishmentSlug()}/clientes/me`;
+        const response = storedPhone.replace(/\D/g, '').length >= 10
+          ? await api.put(`${path}/telefone`, { telefone: storedPhone })
+          : await api.get(path);
+        if (!cancelled) {
+          const customer = response.data;
+          setSaldoCashback(customer.saldo_cashback || 0);
+          setNome(customer.nome || '');
+          setEmail(customer.email || '');
+          setFoto(customer.foto_url || '');
+          if (customer.telefone) setTelefone(customer.telefone);
+          if (customer.endereco) setEndereco(customer.endereco);
+        }
+      } catch { /* Mantém os dados locais se estiver sem conexão. */ }
+    };
+    refreshProfile();
+    const handleFocus = () => refreshProfile();
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     localStorage.setItem('user_nome', nome);
     localStorage.setItem('user_telefone', telefone);
     localStorage.setItem('user_endereco', endereco);
+    if (isLoggedIn && telefone.replace(/\D/g, '').length >= 10) {
+      try {
+        const response = await api.put(`/public/${getEstablishmentSlug()}/clientes/me/telefone`, { telefone });
+        setSaldoCashback(response.data.saldo_cashback || 0);
+      } catch { /* Os dados continuam salvos no aparelho para nova tentativa. */ }
+    }
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -73,12 +98,22 @@ export const ContaView = () => {
       if (data.cliente.telefone) localStorage.setItem('user_telefone', data.cliente.telefone);
       if (data.cliente.endereco) localStorage.setItem('user_endereco', data.cliente.endereco);
       
-      setNome(data.cliente.nome);
+      let customer = data.cliente;
+      const storedPhone = localStorage.getItem('user_telefone') || '';
+      if (storedPhone.replace(/\D/g, '').length >= 10) {
+        try {
+          const linked = await api.put(`/public/${getEstablishmentSlug()}/clientes/me/telefone`, { telefone: storedPhone });
+          customer = linked.data;
+        } catch { /* O vínculo será repetido ao abrir a conta. */ }
+      }
+
+      setNome(customer.nome);
       registerPushTokenIfNative();
-      setEmail(data.cliente.email);
-      setFoto(data.cliente.foto_url || '');
-      if (data.cliente.telefone) setTelefone(data.cliente.telefone);
-      if (data.cliente.endereco) setEndereco(data.cliente.endereco);
+      setEmail(customer.email);
+      setFoto(customer.foto_url || '');
+      setSaldoCashback(customer.saldo_cashback || 0);
+      if (customer.telefone) setTelefone(customer.telefone);
+      if (customer.endereco) setEndereco(customer.endereco);
       
       setIsLoggedIn(true);
       setGuestStep('overview');
@@ -166,7 +201,7 @@ export const ContaView = () => {
                 {googleLoading ? 'Conectando...' : 'Continuar com Google'}
               </button>
             ) : (
-              <p className="mt-5 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-900">Atualize o aplicativo para entrar com Google. <a className="font-bold underline" href="/app-bisburger.apk?v=2.0.6" target="_blank" rel="noreferrer">Baixar atualização</a></p>
+              <p className="mt-5 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-900">Atualize o aplicativo para entrar com Google. <a className="font-bold underline" href="/app-bisburger.apk?v=2.0.7" target="_blank" rel="noreferrer">Baixar atualização</a></p>
             )
           ) : (
             <div className="mt-7 flex justify-center"><GoogleLogin onSuccess={handleGoogleSuccess} onError={() => setGoogleError('Não foi possível abrir o login Google. Tente novamente.')} use_fedcm_for_button text="continue_with" size="large" shape="pill" width="280" /></div>

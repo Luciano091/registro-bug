@@ -24,6 +24,7 @@ data class PushTokenRequest(
 )
 
 data class GoogleAuthRequest(val token: String)
+data class PhoneLinkRequest(val telefone: String)
 
 data class CustomerProfile(
     val id: Long,
@@ -68,8 +69,17 @@ interface BisBurgerApi {
     @POST("public/bisburger/cupons/validar")
     suspend fun validateCoupon(@Body request: CouponValidateRequest): CouponValidateResponse
 
-    @GET("clientes/me")
+    @GET("public/bisburger/clientes/me")
     suspend fun getCustomerProfile(@Header("Authorization") authorization: String): CustomerProfile
+
+    @PUT("public/bisburger/clientes/me/telefone")
+    suspend fun linkCustomerPhone(
+        @Header("Authorization") authorization: String,
+        @Body request: PhoneLinkRequest,
+    ): CustomerProfile
+
+    @GET("public/bisburger/clientes/me/pedidos")
+    suspend fun getCustomerOrders(@Header("Authorization") authorization: String): List<TrackedOrder>
 
     @POST("auth/google")
     suspend fun authenticateWithGoogle(@Body request: GoogleAuthRequest): GoogleAuthResponse

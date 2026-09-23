@@ -259,6 +259,9 @@ class DispositivoPushCreate(BaseModel):
     plataforma: str = Field(default="android", max_length=30)
     app_version: Optional[str] = Field(default=None, max_length=30)
 
+class ClienteTelefoneVincular(BaseModel):
+    telefone: str = Field(min_length=10, max_length=30)
+
 class DispositivoPush(BaseModel):
     id: int
     plataforma: str
