@@ -15,6 +15,22 @@ const orders = [
     estornado: false,
     origem: 'balcao',
   },
+  {
+    id: 8,
+    numero: 'B-0008',
+    cliente: 'Cliente Finalizado',
+    telefone: '82988888888',
+    tipo_entrega: 'Delivery',
+    endereco: 'Rua Final, 20',
+    total: 14.99,
+    status: 'Finalizado',
+    data: new Date().toISOString(),
+    forma_pagamento: 'PIX',
+    pagamento_confirmado_em: new Date().toISOString(),
+    estornado: false,
+    origem: 'balcao',
+    itens: [{ id: 1, quantidade: 1, produto_nome: 'Hambúrguer', subtotal: 14.99 }],
+  },
 ];
 
 test.describe('Gestor de pedidos', () => {
@@ -32,6 +48,7 @@ test.describe('Gestor de pedidos', () => {
       localStorage.removeItem('orders_view_mode');
     });
     await page.route('**/pedidos/resumo', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(orders) }));
+    await page.route('**/pedidos/8', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(orders[1]) }));
     await page.route('**/produtos', route => route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
     await page.route('**/dashboard/resumo', route => route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));
   });
@@ -43,6 +60,10 @@ test.describe('Gestor de pedidos', () => {
     await expect(page.getByRole('heading', { name: 'Recebidos' })).toBeVisible();
     await expect(page.getByText('#0007')).toBeVisible();
     await expect(page.getByRole('button', { name: /Iniciar preparo/ })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Abrir detalhes do pedido 0008' }).click();
+    await expect(page.getByRole('heading', { name: 'Pedido #0008' })).toBeVisible();
+    await page.getByRole('button', { name: 'Fechar detalhes' }).click();
 
     await page.getByRole('button', { name: 'Lista' }).click();
     await expect(page.getByRole('button', { name: 'Lista' })).toHaveAttribute('aria-pressed', 'true');

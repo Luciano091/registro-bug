@@ -361,8 +361,27 @@ const Orders = () => {
                           : null;
                     const nextLabel = nextStatus === 'Em preparo' ? 'Iniciar preparo' : nextStatus === 'Pronto' ? 'Marcar pronto' : nextStatus === 'Finalizado' ? 'Finalizar' : '';
                     const isFinished = column.key === 'Finalizado';
+                    const customerInfo = <>
+                      <span className="block truncate text-sm font-semibold text-slate-800">{order.cliente}</span>
+                      <span className="mt-1 flex items-center gap-1 text-[11px] text-slate-500">
+                        {isDeliveryOrder(order) ? <><Truck size={12} /> Entrega</> : order.tipo_entrega === 'Mesa' || order.tipo_entrega === 'Salão' ? 'Mesa / Salão' : 'Retirada'}
+                      </span>
+                    </>;
                     return (
-                      <article key={order.id} className={`rounded-xl border bg-white p-3.5 shadow-sm transition hover:border-orange-200 hover:shadow-md ${order.origem === 'ifood' ? 'border-red-200' : 'border-slate-200'}`}>
+                      <article
+                        key={order.id}
+                        role={isFinished ? 'button' : undefined}
+                        tabIndex={isFinished ? 0 : undefined}
+                        aria-label={isFinished ? `Abrir detalhes do pedido ${shortOrderNumber(order.numero)}` : undefined}
+                        onClick={isFinished ? () => void openOrderDetails(order) : undefined}
+                        onKeyDown={isFinished ? event => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            void openOrderDetails(order);
+                          }
+                        } : undefined}
+                        className={`rounded-xl border bg-white p-3.5 shadow-sm transition hover:border-orange-200 hover:shadow-md ${isFinished ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2' : ''} ${order.origem === 'ifood' ? 'border-red-200' : 'border-slate-200'}`}
+                      >
                         <div className="flex items-start justify-between gap-2">
                           <div>
                             <div className="flex items-center gap-2">
@@ -374,18 +393,17 @@ const Orders = () => {
                           <strong className="shrink-0 text-sm text-orange-600">R$ {Number(order.total || 0).toFixed(2).replace('.', ',')}</strong>
                         </div>
 
-                        <button type="button" onClick={() => void openOrderDetails(order)} className="mt-3 block w-full text-left">
-                          <span className="block truncate text-sm font-semibold text-slate-800">{order.cliente}</span>
-                          <span className="mt-1 flex items-center gap-1 text-[11px] text-slate-500">
-                            {isDeliveryOrder(order) ? <><Truck size={12} /> Entrega</> : order.tipo_entrega === 'Mesa' || order.tipo_entrega === 'Salão' ? 'Mesa / Salão' : 'Retirada'}
-                          </span>
-                        </button>
+                        {isFinished
+                          ? <div className="mt-3 block w-full text-left">{customerInfo}</div>
+                          : <button type="button" onClick={() => void openOrderDetails(order)} className="mt-3 block w-full text-left">{customerInfo}</button>}
 
                         <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
                           <span className={`text-[10px] font-bold ${order.estornado ? 'text-slate-400' : order.pagamento_confirmado_em ? 'text-emerald-600' : 'text-amber-600'}`}>
                             {order.estornado ? 'DEVOLVIDO' : order.pagamento_confirmado_em ? 'RECEBIDO' : 'A RECEBER'}
                           </span>
-                          <button type="button" onClick={() => void openOrderDetails(order)} className="text-[11px] font-semibold text-slate-500 hover:text-orange-600">Ver detalhes</button>
+                          {isFinished
+                            ? <span className="text-[11px] font-semibold text-slate-500">Ver detalhes</span>
+                            : <button type="button" onClick={() => void openOrderDetails(order)} className="text-[11px] font-semibold text-slate-500 hover:text-orange-600">Ver detalhes</button>}
                         </div>
 
                         {!isFinished && canUpdateOrders && (
@@ -574,6 +592,7 @@ const Orders = () => {
                 </button>
                 <button 
                   onClick={() => setSelectedOrder(null)}
+                  aria-label="Fechar detalhes"
                   className="p-2 hover:bg-white/10 rounded-full transition-colors text-zinc-300 hover:text-white"
                 >
                   <X size={20} />
