@@ -1,14 +1,11 @@
 import { useEffect } from 'react';
 import { registerPushTokenIfNative } from './services/pushRegistration';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { GoogleOAuthProvider } from '@react-oauth/google';
 import { NetworkProvider } from './contexts/NetworkContext';
 import { CartProvider } from './contexts/CartContext';
 import PublicMenu from './pages/PublicMenu';
 import LandingPage from './pages/LandingPage';
 import { getEstablishmentSlug } from './services/api';
-
-const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '836965237182-kmgamm79oo3ft7kgifqom9ulj5u37mt2.apps.googleusercontent.com';
 
 function AppRouter() {
   const slug = getEstablishmentSlug();
@@ -42,17 +39,15 @@ function App() {
   }, []);
 
   return (
-    <GoogleOAuthProvider clientId={googleClientId} locale="pt-BR">
-      <NetworkProvider>
-        <CartProvider>
-          <Router>
-            <div className="min-h-screen flex flex-col bg-zinc-50">
-              <AppRouter />
-            </div>
-          </Router>
-        </CartProvider>
-      </NetworkProvider>
-    </GoogleOAuthProvider>
+    <NetworkProvider>
+      <CartProvider>
+        <Router>
+          <div className="min-h-screen flex flex-col bg-zinc-50">
+            <AppRouter />
+          </div>
+        </Router>
+      </CartProvider>
+    </NetworkProvider>
   );
 }
 

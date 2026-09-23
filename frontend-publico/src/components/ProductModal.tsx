@@ -62,7 +62,7 @@ export const ProductModal = ({ produto, onClose, lojaAberta = true, onLojaFechad
   return <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center md:p-4">
     <div className="absolute inset-0 bg-zinc-900/55 backdrop-blur-sm" onClick={onClose} />
     <div className="relative flex max-h-[94vh] w-full flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl md:max-w-2xl md:rounded-3xl">
-      {produto.imagem_url && <div className="h-48 shrink-0 bg-orange-50 md:h-56"><img src={produto.imagem_url} alt={produto.nome} className="h-full w-full object-contain p-3" /></div>}
+      {produto.imagem_url && <div className="h-48 shrink-0 bg-orange-50 md:h-56"><img src={produto.imagem_url} alt={produto.nome} decoding="async" className="h-full w-full object-contain p-3" /></div>}
       <button onClick={onClose} aria-label="Fechar" className="absolute right-4 top-4 rounded-full bg-white p-2.5 text-zinc-700 shadow"><X size={20} /></button>
       <div className="flex-1 overflow-y-auto p-5 md:p-6">
         <div className="pr-10"><h2 className="text-2xl font-bold text-zinc-900">{produto.nome}</h2>{produto.descricao && <p className="mt-2 text-sm leading-relaxed text-zinc-500">{produto.descricao}</p>}<strong className="mt-3 block text-lg text-brand-600">{basePrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong></div>

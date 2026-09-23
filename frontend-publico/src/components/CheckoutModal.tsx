@@ -226,6 +226,7 @@ export const CheckoutModal = ({ onClose, lojaAberta = true, mesaNumero }: Checko
           </h2>
           <button 
             onClick={onClose}
+            aria-label="Fechar pedido"
             className="text-zinc-500 hover:text-zinc-900 p-2 rounded-full hover:bg-white/5 transition-colors"
           >
             <X size={20} />

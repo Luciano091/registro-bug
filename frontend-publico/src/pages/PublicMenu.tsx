@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { MapPin, Clock, Utensils, Truck, ChevronRight, Gift, Crown, Plus, Flame, Check, Ticket, Receipt, User } from 'lucide-react';
 import api from '../services/api';
 import { getEstablishmentSlug } from '../services/api';
@@ -14,6 +15,8 @@ import { LojaFechadaModal } from '../components/LojaFechadaModal';
 import { PromoPopup } from '../components/PromoPopup';
 import { PwaInstallPrompt } from '../components/PwaInstallPrompt';
 import { useCart } from '../contexts/CartContext';
+
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '836965237182-kmgamm79oo3ft7kgifqom9ulj5u37mt2.apps.googleusercontent.com';
 
 type CapacitorBridge = {
   isNativePlatform?: () => boolean;
@@ -155,7 +158,7 @@ const PublicMenu = () => {
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6 lg:px-8">
           <button onClick={() => setActiveTab('cardapio')} className="flex items-center gap-2.5" aria-label="Ir para o cardápio">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-50 ring-1 ring-zinc-200">
-              <img src="/brand/ritmesa-mark.png" alt="" className="h-7 w-7 object-contain" />
+              <img src="/brand/ritmesa-mark.png" alt="" decoding="async" className="h-7 w-7 object-contain" />
             </span>
             <span className="text-lg font-bold tracking-tight text-[#10233f]">Ritmesa</span>
           </button>
@@ -188,7 +191,7 @@ const PublicMenu = () => {
         {/* Background Image / Glow */}
         <div className="absolute inset-0 z-0 pointer-events-none bg-[#111]">
            {/* Imagem de fundo estilo Hamburgueria Artesanal (unsplash) ou a capa_url do restaurante */}
-           <img src={config?.capa_url || "https://images.unsplash.com/photo-1550547660-d9450f859349?q=80&w=1000&auto=format&fit=crop"} alt="Capa" className="absolute top-0 right-0 w-[85%] h-[120%] object-cover opacity-35 object-right-top" />
+           <img src={config?.capa_url || "https://images.unsplash.com/photo-1550547660-d9450f859349?q=80&w=1000&auto=format&fit=crop"} alt="Capa" decoding="async" fetchPriority="high" className="absolute top-0 right-0 w-[85%] h-[120%] object-cover opacity-35 object-right-top" />
            {/* Gradiente escuro para garantir legibilidade perfeita */}
            <div className="absolute inset-0 bg-gradient-to-r from-[#111] via-[#111]/90 to-transparent"></div>
            <div className="absolute inset-0 bg-gradient-to-t from-[#111] via-[#111]/50 to-transparent"></div>
@@ -202,13 +205,13 @@ const PublicMenu = () => {
             
             {/* Logo */}
             <div className="shrink-0 rounded-[20px] border border-white/10 bg-black/50 p-1 shadow-xl backdrop-blur-md mt-1">
-              <img src={config?.logo || "/logo.png"} alt={config?.nome_empresa || "Logo"} className="h-[84px] w-[84px] rounded-[14px] object-cover md:h-[120px] md:w-[120px]" />
+              <img src={config?.logo || "/logo.png"} alt={config?.nome_empresa || "Logo"} decoding="async" fetchPriority="high" className="h-[84px] w-[84px] rounded-[14px] object-cover md:h-[120px] md:w-[120px]" />
             </div>
             
             {/* Right Column */}
             <div className="flex flex-col min-w-0 flex-1">
               <div className="flex items-center">
-                <h1 className="text-[26px] font-black tracking-tight text-white md:text-4xl drop-shadow-md relative py-1">
+                <h1 aria-label={config?.nome_empresa || 'BisBurger'} className="text-[26px] font-black tracking-tight text-white md:text-4xl drop-shadow-md relative py-1">
                   {(() => {
                     const name = config?.nome_empresa || 'BisBurger';
                     if (name.toLowerCase() === 'bisburger') {
@@ -353,6 +356,8 @@ const PublicMenu = () => {
                         <img 
                           src={promocao.imagem_url} 
                           alt={promocao.nome} 
+                          loading="lazy"
+                          decoding="async"
                           className="h-full w-full object-contain p-3 transition-transform duration-500 group-hover:scale-105"
                           referrerPolicy="no-referrer" 
                         />
@@ -385,6 +390,7 @@ const PublicMenu = () => {
                         </div>
                         <button 
                           onClick={(e) => quickAdd(promocao, e)}
+                          aria-label={`Pedir ${promocao.nome}`}
                           className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-all active:scale-95 ${addedProductId === promocao.id ? 'bg-emerald-500' : 'bg-brand-500 hover:bg-brand-600'}`}
                         >
                           {addedProductId === promocao.id ? <><Check size={16} /> Adicionado!</> : <><Plus size={16} /> Pedir</>}
@@ -415,6 +421,8 @@ const PublicMenu = () => {
                     <img 
                       src={destaqueDoDia.imagem_url} 
                       alt={destaqueDoDia.nome} 
+                      decoding="async"
+                      fetchPriority="high"
                       className="h-full w-full object-contain p-4 transition-transform duration-500 group-hover:scale-105"
                       referrerPolicy="no-referrer" 
                     />
@@ -442,6 +450,7 @@ const PublicMenu = () => {
                     </span>
                     <button 
                       onClick={(e) => quickAdd(destaqueDoDia, e)}
+                      aria-label={`Pedir ${destaqueDoDia.nome}`}
                       className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-all active:scale-95 ${addedProductId === destaqueDoDia.id ? 'bg-emerald-500' : 'bg-brand-500 hover:bg-brand-600'}`}
                     >
                       {addedProductId === destaqueDoDia.id ? <><Check size={16} /> Adicionado!</> : <><Plus size={16} /> Pedir</>}
@@ -476,6 +485,8 @@ const PublicMenu = () => {
                          <img 
                            src={produto.imagem_url} 
                            alt={produto.nome} 
+                           loading="lazy"
+                           decoding="async"
                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
                            referrerPolicy="no-referrer" 
                          />
@@ -550,7 +561,7 @@ const PublicMenu = () => {
             </p>
           )}
           <div className="mt-1.5 flex items-center gap-1 text-[10px] text-zinc-400">
-            <img src="/brand/ritmesa-mark.png" alt="" className="w-3 h-3 object-contain" />
+            <img src="/brand/ritmesa-mark.png" alt="" loading="lazy" decoding="async" className="w-3 h-3 object-contain" />
             Pedidos com tecnologia <a href="https://www.ritmesa.com.br/" target="_blank" rel="noopener noreferrer" className="text-zinc-500 font-bold hover:underline">Ritmesa</a>
           </div>
           {getEstablishmentSlug() === 'bisburger' && !isNativeApp && (
@@ -571,7 +582,11 @@ const PublicMenu = () => {
       <div className="mx-auto w-full max-w-6xl">
         {activeTab === 'cupons' && <CuponsView />}
         {activeTab === 'pedidos' && <PedidosView />}
-        {activeTab === 'conta' && <ContaView />}
+        {activeTab === 'conta' && (
+          isNativeApp
+            ? <ContaView />
+            : <GoogleOAuthProvider clientId={googleClientId} locale="pt-BR"><ContaView /></GoogleOAuthProvider>
+        )}
       </div>
 
       {/* MODALS & FLOATING CART */}

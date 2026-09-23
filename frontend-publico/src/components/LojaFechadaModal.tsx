@@ -16,6 +16,9 @@ export const LojaFechadaModal = ({ onClose }: LojaFechadaModalProps) => {
 
       {/* Modal */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="loja-fechada-title"
         className="relative bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden animate-in zoom-in-95 fade-in duration-300"
         onClick={(e) => e.stopPropagation()}
       >
@@ -23,6 +26,7 @@ export const LojaFechadaModal = ({ onClose }: LojaFechadaModalProps) => {
         <div className="bg-brand-500 px-6 pt-8 pb-10 flex flex-col items-center text-center relative">
           <button
             onClick={onClose}
+            aria-label="Fechar aviso de loja fechada"
             className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors"
           >
             <X size={20} />
@@ -30,7 +34,7 @@ export const LojaFechadaModal = ({ onClose }: LojaFechadaModalProps) => {
           <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mb-4">
             <Moon size={40} className="text-white" />
           </div>
-          <h2 className="text-2xl font-heading font-black text-white uppercase tracking-wide">
+          <h2 id="loja-fechada-title" className="text-2xl font-heading font-black text-white uppercase tracking-wide">
             Loja Fechada
           </h2>
           <p className="text-white/80 text-sm mt-1 font-medium">

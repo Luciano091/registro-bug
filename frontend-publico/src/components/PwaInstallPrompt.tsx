@@ -32,7 +32,7 @@ export const PwaInstallPrompt = () => {
   return (
     <div className="fixed bottom-20 left-4 right-4 md:left-1/2 md:-translate-x-1/2 md:max-w-md z-50 animate-in slide-in-from-bottom-5 fade-in duration-300">
       <div className="bg-white rounded-2xl shadow-xl border border-brand-100 p-4 relative flex items-center gap-4">
-        <button onClick={dismiss} className="absolute -top-2 -right-2 bg-white rounded-full p-1 shadow-sm border border-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
+        <button onClick={dismiss} aria-label="Fechar sugestão de aplicativo" className="absolute -top-2 -right-2 bg-white rounded-full p-1 shadow-sm border border-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
           <X size={16} />
         </button>
         
