@@ -112,13 +112,14 @@
   .admin-main td { font-variant-numeric: tabular-nums; }
   .admin-main tbody tr { transition: background-color 150ms ease; }
   .admin-main tbody tr:hover { background-color: #f8fafc; }
-  .dashboard-stats > div { padding: 24px; min-height: 156px; }
+  .dashboard-page .dashboard-header { padding-bottom: 18px; }
+  .dashboard-stats > div { padding: 16px; min-height: 108px; }
   .dashboard-stats h3 { font-variant-numeric: tabular-nums; letter-spacing: -0.04em; }
   .dashboard-stats > div { position: relative; overflow: hidden; }
   .dashboard-stats > div::after { content: ''; position: absolute; inset: auto 0 0; height: 3px; background: #e2e8f0; }
   .dashboard-stats > div:first-child { background: linear-gradient(135deg, #fff7ed, #ffffff 58%); border-color: #fed7aa; }
   .dashboard-stats > div:first-child::after { background: #f97316; }
-  .dashboard-empty { min-height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px dashed #d7dee8; background: #fbfcfd; border-radius: 12px; }
+  .dashboard-empty { min-height: 176px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px dashed #d7dee8; background: #fbfcfd; border-radius: 12px; }
   .product-tile { min-height: 132px; }
   .product-tile:hover { background-color: #ffffff; border-color: #fdba74; box-shadow: 0 8px 24px rgba(15,23,42,.07); }
   .order-workspace > .glass-card { border-top: 2px solid #f9731670; }
@@ -136,7 +137,8 @@
     body.salon-modal-open .mobile-bottom-nav { display: none; }
     .admin-main > div { padding-left: 20px; padding-right: 20px; }
     .admin-main header { padding-bottom: 20px; }
-    .dashboard-stats > div { min-height: 136px; padding: 20px; }
+    .dashboard-page .dashboard-header { padding-bottom: 16px; }
+    .dashboard-stats > div { min-height: 100px; padding: 15px; }
     .login-form { padding: 24px; }
     .driver-mobile-brand { height: 64px; padding: 0 18px; gap: 11px; }
     .driver-mobile-brand .mobile-tenant-logo { width: 40px; height: 40px; border-radius: 11px; }
