@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-import { Search, Clock, Printer, CheckCircle2, Loader2, MessageCircle, X, Eye, MapPin, RotateCcw } from 'lucide-react';
+import { Search, Clock, Printer, CheckCircle2, Loader2, MessageCircle, X, Eye, MapPin, RotateCcw, Columns3, List, ChevronRight, Truck } from 'lucide-react';
 import api from '../services/api';
 import { useAppData } from '../contexts/AppDataContext';
 import { can, readSession } from '../services/session';
@@ -27,9 +27,28 @@ const statusIcons: any = {
 };
 
 const shortOrderNumber = (number: string) => number.split('-').pop() || number;
+const isDeliveryOrder = (order: any) => ['delivery', 'entrega'].includes((order.tipo_entrega || '').toLowerCase());
+const formatElapsed = (value?: string) => {
+  if (!value) return 'Agora';
+  const minutes = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 60000));
+  if (minutes < 1) return 'Agora';
+  if (minutes < 60) return `Há ${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `Há ${hours}h`;
+  return new Date(value).toLocaleDateString('pt-BR');
+};
+
+const flowColumns = [
+  { key: 'Recebido', title: 'Recebidos', statuses: ['Novo', 'Recebido'], accent: 'border-blue-400', badge: 'bg-blue-50 text-blue-700' },
+  { key: 'Em preparo', title: 'Em preparo', statuses: ['Em preparo'], accent: 'border-amber-400', badge: 'bg-amber-50 text-amber-700' },
+  { key: 'Pronto', title: 'Prontos', statuses: ['Pronto'], accent: 'border-emerald-400', badge: 'bg-emerald-50 text-emerald-700' },
+  { key: 'Saiu entrega', title: 'Em entrega', statuses: ['Saiu entrega'], accent: 'border-purple-400', badge: 'bg-purple-50 text-purple-700' },
+  { key: 'Finalizado', title: 'Finalizados', statuses: ['Finalizado', 'Concluído', 'Entregue'], accent: 'border-slate-300', badge: 'bg-slate-100 text-slate-600' },
+];
 
 const Orders = () => {
   const [filter, setFilter] = useState('Hoje');
+  const [viewMode, setViewMode] = useState<'flow' | 'list'>(() => localStorage.getItem('orders_view_mode') === 'list' ? 'list' : 'flow');
   const [search, setSearch] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [detailLoading, setDetailLoading] = useState<number | null>(null);
@@ -39,12 +58,18 @@ const Orders = () => {
   const [receivedMethod, setReceivedMethod] = useState('PIX');
   const [confirmingPayment, setConfirmingPayment] = useState(false);
   const canConfirmPayment = can(readSession(), 'caixa.operar');
+  const canUpdateOrders = can(readSession(), 'pedidos.atualizar');
   const { orders: cachedOrders, ordersLoaded, refreshOrders, updateOrderStatus: optimisticUpdateStatus } = useAppData();
   const orders = cachedOrders;
 
   useEffect(() => {
     if (!ordersLoaded) void refreshOrders();
   }, [ordersLoaded, refreshOrders]);
+
+  const changeViewMode = (mode: 'flow' | 'list') => {
+    setViewMode(mode);
+    localStorage.setItem('orders_view_mode', mode);
+  };
 
   const handleStatusChange = async (id: number, newStatus: string) => {
     if (newStatus === 'Cancelado') { setCancelModalOrderId(id); setCancelMotivo(''); setCancelEstornado(false); return; }
@@ -257,10 +282,20 @@ const Orders = () => {
   });
 
   return (
-    <div className="p-6 md:p-10 max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 h-full flex flex-col">
-      <header className="mb-8">
-        <h2 className="text-3xl font-bold tracking-tight text-white font-heading drop-shadow-sm">Pedidos</h2>
-        <p className="text-zinc-300 mt-1">Gerencie e acompanhe os pedidos em andamento.</p>
+    <div className={`p-6 md:p-10 mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 h-full flex flex-col ${viewMode === 'flow' ? 'max-w-[1600px]' : 'max-w-6xl'}`}>
+      <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight text-white font-heading drop-shadow-sm">Pedidos</h2>
+          <p className="text-zinc-300 mt-1">Gerencie e acompanhe os pedidos em andamento.</p>
+        </div>
+        <div className="inline-flex w-fit rounded-xl border border-slate-200 bg-white p-1 shadow-sm" aria-label="Visualização dos pedidos">
+          <button type="button" aria-pressed={viewMode === 'flow'} onClick={() => changeViewMode('flow')} className={`flex min-h-9 items-center gap-2 rounded-lg px-3 text-sm font-semibold transition-colors ${viewMode === 'flow' ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
+            <Columns3 size={16} /> Fluxo
+          </button>
+          <button type="button" aria-pressed={viewMode === 'list'} onClick={() => changeViewMode('list')} className={`flex min-h-9 items-center gap-2 rounded-lg px-3 text-sm font-semibold transition-colors ${viewMode === 'list' ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
+            <List size={16} /> Lista
+          </button>
+        </div>
       </header>
 
       <div className="flex flex-col md:flex-row gap-4 mb-6 justify-between">
@@ -296,6 +331,88 @@ const Orders = () => {
         </div>
       </div>
 
+      {viewMode === 'flow' ? (
+        <div className="flex min-h-[430px] flex-1 gap-4 overflow-x-auto pb-3 custom-scrollbar" aria-label="Fluxo de pedidos">
+          {flowColumns.map(column => {
+            const columnOrders = filteredOrders.filter(order => column.statuses.includes(order.status));
+            const columnTotal = columnOrders.reduce((total, order) => total + Number(order.total || 0), 0);
+            return (
+              <section key={column.key} className={`min-w-[255px] xl:min-w-[180px] flex-1 self-start overflow-hidden rounded-2xl border border-slate-200 border-t-4 ${column.accent} bg-slate-50/80 shadow-sm`}>
+                <div className="border-b border-slate-200 bg-white px-4 py-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-sm font-bold text-slate-800">{column.title}</h3>
+                    <span className={`grid min-w-6 place-items-center rounded-full px-1.5 py-0.5 text-xs font-bold ${column.badge}`}>{columnOrders.length}</span>
+                  </div>
+                  <p className="mt-1 text-xs font-semibold text-slate-400">R$ {columnTotal.toFixed(2).replace('.', ',')}</p>
+                </div>
+
+                <div className="max-h-[calc(100vh-340px)] space-y-3 overflow-y-auto p-3 custom-scrollbar">
+                  {!ordersLoaded ? (
+                    <div className="py-10 text-center text-sm text-slate-400"><Loader2 className="mx-auto mb-2 animate-spin" size={20} />Carregando...</div>
+                  ) : columnOrders.length === 0 ? (
+                    <div className="rounded-xl border border-dashed border-slate-200 bg-white/70 px-3 py-8 text-center text-xs text-slate-400">Nenhum pedido nesta etapa</div>
+                  ) : columnOrders.map(order => {
+                    const nextStatus = ['Novo', 'Recebido'].includes(order.status)
+                      ? 'Em preparo'
+                      : order.status === 'Em preparo'
+                        ? 'Pronto'
+                        : order.status === 'Pronto' && !isDeliveryOrder(order)
+                          ? 'Finalizado'
+                          : null;
+                    const nextLabel = nextStatus === 'Em preparo' ? 'Iniciar preparo' : nextStatus === 'Pronto' ? 'Marcar pronto' : nextStatus === 'Finalizado' ? 'Finalizar' : '';
+                    const isFinished = column.key === 'Finalizado';
+                    return (
+                      <article key={order.id} className={`rounded-xl border bg-white p-3.5 shadow-sm transition hover:border-orange-200 hover:shadow-md ${order.origem === 'ifood' ? 'border-red-200' : 'border-slate-200'}`}>
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <strong className="text-base text-slate-900">#{shortOrderNumber(order.numero)}</strong>
+                              {order.origem === 'ifood' && <span className="rounded-full bg-red-500 px-1.5 py-0.5 text-[9px] font-bold text-white">iFood</span>}
+                            </div>
+                            <span className="mt-0.5 block text-[11px] text-slate-400">{formatElapsed(order.data)}</span>
+                          </div>
+                          <strong className="shrink-0 text-sm text-orange-600">R$ {Number(order.total || 0).toFixed(2).replace('.', ',')}</strong>
+                        </div>
+
+                        <button type="button" onClick={() => void openOrderDetails(order)} className="mt-3 block w-full text-left">
+                          <span className="block truncate text-sm font-semibold text-slate-800">{order.cliente}</span>
+                          <span className="mt-1 flex items-center gap-1 text-[11px] text-slate-500">
+                            {isDeliveryOrder(order) ? <><Truck size={12} /> Entrega</> : order.tipo_entrega === 'Mesa' || order.tipo_entrega === 'Salão' ? 'Mesa / Salão' : 'Retirada'}
+                          </span>
+                        </button>
+
+                        <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
+                          <span className={`text-[10px] font-bold ${order.estornado ? 'text-slate-400' : order.pagamento_confirmado_em ? 'text-emerald-600' : 'text-amber-600'}`}>
+                            {order.estornado ? 'DEVOLVIDO' : order.pagamento_confirmado_em ? 'RECEBIDO' : 'A RECEBER'}
+                          </span>
+                          <button type="button" onClick={() => void openOrderDetails(order)} className="text-[11px] font-semibold text-slate-500 hover:text-orange-600">Ver detalhes</button>
+                        </div>
+
+                        {!isFinished && canUpdateOrders && (
+                          <div className="mt-3 flex gap-2">
+                            {nextStatus ? (
+                              <button type="button" onClick={() => void handleStatusChange(order.id, nextStatus)} className="flex min-h-9 flex-1 items-center justify-center gap-1 rounded-lg bg-orange-500 px-2 text-xs font-bold text-white hover:bg-orange-600">
+                                {nextLabel} <ChevronRight size={14} />
+                              </button>
+                            ) : order.status === 'Pronto' && isDeliveryOrder(order) ? (
+                              <button type="button" onClick={() => window.location.assign('/entregas')} className="flex min-h-9 flex-1 items-center justify-center gap-1 rounded-lg bg-purple-600 px-2 text-xs font-bold text-white hover:bg-purple-700">
+                                Gerenciar entrega <ChevronRight size={14} />
+                              </button>
+                            ) : null}
+                            <button type="button" aria-label={`Cancelar pedido ${shortOrderNumber(order.numero)}`} title="Cancelar pedido" onClick={() => void handleStatusChange(order.id, 'Cancelado')} className="grid min-h-9 min-w-9 place-items-center rounded-lg border border-red-200 text-red-500 hover:bg-red-50">
+                              <X size={15} />
+                            </button>
+                          </div>
+                        )}
+                      </article>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      ) : (
       <div className="glass-card rounded-2xl flex-1 flex flex-col overflow-hidden min-h-[400px]">
         <div className="overflow-auto flex-1 custom-scrollbar">
           <table className="w-full text-left border-collapse">
@@ -430,6 +547,7 @@ const Orders = () => {
           </table>
         </div>
       </div>
+      )}
 
       {selectedOrder && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
