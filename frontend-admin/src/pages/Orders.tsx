@@ -5,6 +5,7 @@ import api from '../services/api';
 import { useAppData } from '../contexts/AppDataContext';
 import { can, readSession } from '../services/session';
 import { PrinterService } from "../services/PrinterService";
+import { formatOrderReceipt } from '../services/orderReceipt';
 
 const PAYMENT_METHODS = ['PIX', 'Cartão de Crédito', 'Cartão de Débito', 'Dinheiro'];
 
@@ -134,54 +135,14 @@ const Orders = () => {
 
   const handlePrintReceipt = async (passedOrder: any) => {
     try {
-      const businessName = localStorage.getItem('estabelecimentoNome') || 'Estabelecimento';
-      const orderNumber = shortOrderNumber(passedOrder.numero);
-      
-      let text = `--------------------------------\n`;
-      text += `         ${businessName.toUpperCase()}\n`;
-      text += `--------------------------------\n\n`;
-      
-      text += `PEDIDO #${orderNumber}\n`;
-      text += `Cliente: ${passedOrder.cliente}\n`;
-      if (passedOrder.telefone) text += `Tel: ${passedOrder.telefone}\n`;
-      
-      const date = new Date(passedOrder.data);
-      text += `Data: ${date.toLocaleDateString('pt-BR')} ${date.toLocaleTimeString('pt-BR')}\n\n`;
-      
-      text += `[ITENS DO PEDIDO]\n`;
-      passedOrder.itens?.forEach((item: any) => {
-        const productName = item.produto_nome || item.produto?.nome || 'Produto';
-        const itemTotal = item.subtotal || (item.quantidade * (item.produto?.preco || 0));
-        text += `${item.quantidade}x ${productName} - R$ ${itemTotal.toFixed(2)}\n`;
-        item.opcoes?.forEach((option: any) => { text += `  + ${option.quantidade}x ${option.opcao_nome}\n`; });
-        if (item.observacao) text += `  Obs.: ${item.observacao}\n`;
-      });
-      
-      text += `\n[RESUMO]\n`;
-      if (passedOrder.taxa_entrega > 0) text += `Taxa de Entrega: R$ ${passedOrder.taxa_entrega.toFixed(2)}\n`;
-      if (passedOrder.taxa_servico > 0) text += `Taxa de Servico: R$ ${passedOrder.taxa_servico.toFixed(2)}\n`;
-      if (passedOrder.desconto > 0) text += `Desconto: R$ ${passedOrder.desconto.toFixed(2)}\n`;
-      text += `TOTAL: R$ ${passedOrder.total?.toFixed(2) || '0.00'}\n\n`;
-      
-      text += `[PAGAMENTO]\n`;
-      text += `Forma: ${passedOrder.forma_pagamento || 'Nao informado'}\n`;
-      text += `Status: ${passedOrder.pagamento_confirmado_em ? 'PAGO' : 'PENDENTE'}\n\n`;
-      
-      text += `[ENTREGA]\n`;
-      if (passedOrder.tipo_entrega === 'Delivery' || passedOrder.tipo_entrega === 'Entrega') {
-        text += `Tipo: Delivery\n`;
-        text += `Endereco: ${passedOrder.endereco || 'Nao informado'}\n`;
-      } else if (passedOrder.tipo_entrega === 'Salão' || passedOrder.tipo_entrega === 'Mesa') {
-        text += `Tipo: Mesa/Salao\n`;
-        text += `Mesa: ${passedOrder.observacao || 'Local'}\n`;
-      } else {
-        text += `Tipo: Retirada no Balcao\n`;
+      // A listagem usa PedidoResumo e nao carrega os itens. Busque o pedido
+      // completo em qualquer ponto de impressao para nunca gerar cupom vazio.
+      const order = await getOrderDetails(passedOrder);
+      if (!order.itens?.length) {
+        throw new Error('Este pedido não possui itens para impressão.');
       }
-      
-      text += `\n\n        Obrigado pela\n         preferencia!\n\n`;
-      text += `--------------------------------\n\n\n\n\n`;
-      
-      await PrinterService.printReceipt(text);
+      const businessName = localStorage.getItem('estabelecimentoNome') || 'Estabelecimento';
+      await PrinterService.printReceipt(formatOrderReceipt(order, businessName));
       
     } catch (err: any) {
       alert("Erro ao imprimir: " + err.message);

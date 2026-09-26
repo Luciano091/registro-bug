@@ -52,16 +52,15 @@ export class PrinterService {
     if (!this.writer) throw new Error("A conexão com a impressora falhou.");
 
     const ESC = '\x1B';
-    const GS = '\x1D';
-    
     const init = ESC + '@'; // Initialize printer
     const setCharset = ESC + 't' + '\x00'; // PC437
-    const cut = GS + 'V' + '\x00'; // Full cut
     
     const cleanText = this.removeAccents(text);
     
     const encoder = new TextEncoder();
-    const data = encoder.encode(init + setCharset + cleanText + '\n\n\n\n\n' + cut);
+    // A MO-5812 usa serrilha manual. Tres avancos deixam espaco suficiente
+    // para destacar o cupom sem desperdicarem uma faixa grande de papel.
+    const data = encoder.encode(init + setCharset + cleanText + '\n\n\n');
     
     await this.writer.write(data);
   }
