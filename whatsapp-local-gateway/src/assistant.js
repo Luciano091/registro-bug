@@ -8,10 +8,35 @@ const normalize = (value = '') => value
 
 const includesAny = (text, expressions) => expressions.some((expression) => text.includes(expression));
 
+const numberedIntents = {
+  1: 'menu',
+  2: 'hours',
+  3: 'delivery',
+  4: 'payment',
+  5: 'order_status',
+  6: 'human',
+};
+
+const optionsMenu = `1️⃣ Ver cardápio
+2️⃣ Horário de atendimento
+3️⃣ Entrega e taxa
+4️⃣ Formas de pagamento
+5️⃣ Acompanhar pedido
+6️⃣ Falar com atendente`;
+
+const greetingFor = (text) => {
+  if (text.includes('bom dia')) return 'Bom dia';
+  if (text.includes('boa tarde')) return 'Boa tarde';
+  if (text.includes('boa noite')) return 'Boa noite';
+  return 'Olá';
+};
+
 export const intentFor = (message) => {
   const text = normalize(message);
 
   if (!text) return 'empty';
+  const numberedOption = text.match(/^(?:opcao\s*)?([1-6])$/);
+  if (numberedOption) return numberedIntents[numberedOption[1]];
   if (includesAny(text, ['atendente', 'humano', 'pessoa de verdade', 'falar com alguem', 'falar com uma pessoa'])) return 'human';
   if (includesAny(text, ['cardapio', 'menu', 'preco', 'valor', 'lanche', 'hamburguer', 'burger', 'comida'])) return 'menu';
   if (includesAny(text, ['meu pedido', 'acompanhar', 'status', 'onde esta', 'demora', 'pedido chegou'])) return 'order_status';
@@ -56,7 +81,7 @@ export const replyFor = (message, business) => {
     case 'greeting':
       return {
         intent,
-        text: `Olá! Eu sou o assistente virtual da ${name}. 😊\n\nPosso enviar o cardápio, informar horário, entrega, pagamento ou ajudar a acompanhar um pedido. O que você precisa?`,
+        text: `${greetingFor(normalize(message))}! 😊 Sou o assistente virtual da ${name}.\n\nComo posso ajudar?\n\n${optionsMenu}\n\nDigite o número da opção.`,
       };
     case 'thanks':
       return { intent, text: `Por nada! A ${name} agradece o contato. 🍔` };
@@ -65,10 +90,9 @@ export const replyFor = (message, business) => {
     default:
       return {
         intent,
-        text: `Entendi. Para pedir, nosso cardápio é ${business.menuUrl}\n\nSe sua dúvida não foi respondida, escreva *atendente* para falar com a equipe.`,
+        text: `Não consegui entender. Escolha uma opção:\n\n${optionsMenu}\n\nDigite o número da opção.`,
       };
   }
 };
 
 export const normalizeText = normalize;
-
