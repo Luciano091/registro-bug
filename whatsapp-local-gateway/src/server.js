@@ -52,6 +52,10 @@ const randomDelay = () => {
 
 const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
+// O WhatsApp está migrando conversas individuais de @c.us para @lid.
+// Ambos representam contatos diretos e precisam chegar ao assistente.
+const isDirectChatId = (chatId = '') => chatId.endsWith('@c.us') || chatId.endsWith('@lid');
+
 const isRateLimited = (chatId) => {
   const now = Date.now();
   const windowStart = now - 10 * 60 * 1000;
@@ -78,8 +82,12 @@ const isInHandoff = (chatId) => {
 const sendBotMessage = async (chatId, text) => {
   botSendingChats.add(chatId);
   try {
-    const chat = await client.getChatById(chatId);
-    await chat.sendStateTyping();
+    // A ação de "digitando" ainda falha em algumas conversas @lid,
+    // embora o envio direto para o mesmo identificador seja suportado.
+    if (!chatId.endsWith('@lid')) {
+      const chat = await client.getChatById(chatId);
+      await chat.sendStateTyping();
+    }
     await sleep(randomDelay());
     await client.sendMessage(chatId, text);
   } finally {
@@ -152,7 +160,7 @@ client.on('message_create', (message) => {
 });
 
 client.on('message', async (message) => {
-  if (message.fromMe || message.from === 'status@broadcast' || !message.from.endsWith('@c.us')) return;
+  if (message.fromMe || message.from === 'status@broadcast' || !isDirectChatId(message.from)) return;
   if (!message.body?.trim()) return;
 
   let contactName = message.from;
@@ -202,4 +210,3 @@ const shutdown = async (signal) => {
 
 process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
-
