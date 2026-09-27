@@ -18,7 +18,7 @@ export const config = Object.freeze({
   chromeHeadless: boolean('CHROME_HEADLESS', true),
   chromeNoSandbox: boolean('CHROME_NO_SANDBOX', false),
   businessName: process.env.BUSINESS_NAME || 'BisBurger',
-  menuUrl: process.env.MENU_URL || 'https://bisburger.ritmesa.com.br/',
+  menuUrl: process.env.MENU_URL || 'https://bisburger.ritmesa.com.br/cardapio',
   address: process.env.BUSINESS_ADDRESS || 'Cajueiro-AL',
   hours: process.env.BUSINESS_HOURS || 'Todos os dias, das 13h às 00h',
   paymentMethods: process.env.PAYMENT_METHODS || 'PIX, dinheiro e cartão',
@@ -27,4 +27,3 @@ export const config = Object.freeze({
   replyDelayMinMs: integer('REPLY_DELAY_MIN_MS', 1200),
   replyDelayMaxMs: integer('REPLY_DELAY_MAX_MS', 2600),
 });
-

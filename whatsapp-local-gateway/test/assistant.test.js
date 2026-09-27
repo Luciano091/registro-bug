@@ -4,7 +4,7 @@ import { intentFor, replyFor } from '../src/assistant.js';
 
 const business = {
   businessName: 'BisBurger',
-  menuUrl: 'https://bisburger.ritmesa.com.br/',
+  menuUrl: 'https://bisburger.ritmesa.com.br/cardapio',
   address: 'Cajueiro-AL',
   hours: 'das 13h às 00h',
   paymentMethods: 'PIX e cartão',
