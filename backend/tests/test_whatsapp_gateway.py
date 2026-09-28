@@ -72,6 +72,15 @@ class WhatsAppGatewayTest(unittest.TestCase):
             ),
             self.db,
         )
+        whatsapp_gateway.gateway_contact(
+            schemas.WhatsAppGatewayContact(
+                slug="bisburger",
+                chat_id="123@lid",
+                telefone="5582999999999",
+                contact_name="Cliente Atualizado",
+            ),
+            self.db,
+        )
         queued = whatsapp_gateway.queue_manual_message(
             conversation["id"],
             schemas.WhatsAppManualMessageCreate(texto="Olá, vou continuar seu atendimento."),
@@ -91,6 +100,8 @@ class WhatsAppGatewayTest(unittest.TestCase):
         detail = whatsapp_gateway.conversation_detail(
             conversation["id"], self.db, self.establishment_id,
         )
+        self.assertEqual(detail["telefone"], "5582999999999")
+        self.assertEqual(detail["nome"], "Cliente Atualizado")
         self.assertEqual([item["status"] for item in detail["mensagens"]], ["received", "sent"])
 
     def test_gateway_rejects_invalid_secret(self):

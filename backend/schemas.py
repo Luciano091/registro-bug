@@ -759,6 +759,13 @@ class WhatsAppGatewayMode(BaseModel):
     handoff_requested: bool = False
 
 
+class WhatsAppGatewayContact(BaseModel):
+    slug: str
+    chat_id: str
+    telefone: Optional[str] = None
+    contact_name: Optional[str] = None
+
+
 class WhatsAppGatewayDeliveryStatus(BaseModel):
     status: str
     external_id: Optional[str] = None

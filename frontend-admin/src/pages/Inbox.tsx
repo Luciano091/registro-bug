@@ -43,8 +43,10 @@ const formatTime = (value?: string | null) => value
   : '--:--';
 
 const displayPhone = (conversation: Conversation) => {
-  const number = conversation.telefone || conversation.chat_id.split('@')[0];
-  return number.length > 15 ? 'Contato do WhatsApp' : `+${number}`;
+  if (conversation.telefone) return `+${conversation.telefone}`;
+  if (conversation.chat_id.endsWith('@lid')) return 'Número não disponibilizado pelo WhatsApp';
+  const number = conversation.chat_id.split('@')[0];
+  return number.length > 15 ? 'Número não disponibilizado pelo WhatsApp' : `+${number}`;
 };
 
 export default function Inbox() {

@@ -325,6 +325,20 @@ def gateway_mode(payload: schemas.WhatsAppGatewayMode, db: Session = Depends(get
     return {"status": "ok"}
 
 
+@router.post("/gateway/contact", dependencies=[Depends(_gateway_auth)])
+def gateway_contact(payload: schemas.WhatsAppGatewayContact, db: Session = Depends(get_db)):
+    establishment = _establishment(db, payload.slug)
+    conversation = _conversation(
+        db,
+        establishment.id,
+        payload.chat_id,
+        payload.telefone,
+        payload.contact_name,
+    )
+    db.commit()
+    return {"status": "ok", "conversation_id": conversation.id}
+
+
 @router.get("/gateway/sync", dependencies=[Depends(_gateway_auth)])
 def gateway_sync(slug: str, db: Session = Depends(get_db)):
     establishment = _establishment(db, slug)

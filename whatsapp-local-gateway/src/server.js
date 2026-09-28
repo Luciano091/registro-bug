@@ -22,6 +22,7 @@ const handoffs = new Map();
 const replyHistory = new Map();
 const pendingMessages = new Map();
 const botSendingChats = new Set();
+const contactResolutionAttempts = new Map();
 
 const log = (message) => {
   const entry = { time: new Date().toLocaleTimeString('pt-BR'), message };
@@ -58,6 +59,34 @@ const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, mil
 // O WhatsApp está migrando conversas individuais de @c.us para @lid.
 // Ambos representam contatos diretos e precisam chegar ao assistente.
 const isDirectChatId = (chatId = '') => chatId.endsWith('@c.us') || chatId.endsWith('@lid');
+
+const resolvePhoneNumber = async (chatId, contact = null) => {
+  if (chatId.endsWith('@c.us')) {
+    return contact?.number || contact?.id?.user || chatId.split('@')[0];
+  }
+  if (!chatId.endsWith('@lid')) return null;
+
+  const mappings = await client.getContactLidAndPhone([chatId]);
+  const mapping = mappings.find((item) => item.lid === chatId) || mappings[0];
+  return mapping?.pn ? mapping.pn.split('@')[0] : null;
+};
+
+const syncContactIdentity = async (chatId, contactName = null, contact = null) => {
+  const lastAttempt = contactResolutionAttempts.get(chatId) || 0;
+  if (Date.now() - lastAttempt < 10 * 60 * 1000) return null;
+  contactResolutionAttempts.set(chatId, Date.now());
+
+  try {
+    const phoneNumber = await resolvePhoneNumber(chatId, contact);
+    if (phoneNumber) {
+      bridge.contact(chatId, phoneNumber, contactName);
+      return phoneNumber;
+    }
+  } catch (error) {
+    log(`Não foi possível identificar o telefone de ${chatId}: ${error.message}`);
+  }
+  return null;
+};
 
 const isRateLimited = (chatId) => {
   const now = Date.now();
@@ -195,7 +224,7 @@ client.on('message', async (message) => {
   try {
     const contact = await message.getContact();
     contactName = contact.pushname || contact.name || contact.number || message.from;
-    if (contact.id?.server === 'c.us') phoneNumber = contact.number || contact.id?.user || null;
+    phoneNumber = await syncContactIdentity(message.from, contactName, contact);
   } catch {}
 
   log(`Mensagem recebida de ${contactName}.`);
@@ -240,6 +269,7 @@ const syncPanel = async () => {
     for (const item of data.modes || []) {
       if (item.modo === 'human') handoffs.set(item.chat_id, Number.POSITIVE_INFINITY);
       else handoffs.delete(item.chat_id);
+      await syncContactIdentity(item.chat_id);
     }
     for (const queued of data.outbox || []) {
       botSendingChats.add(queued.chat_id);

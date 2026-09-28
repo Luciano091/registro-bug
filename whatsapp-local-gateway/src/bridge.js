@@ -89,6 +89,15 @@ export class GatewayBridge {
     });
   }
 
+  contact(chatId, phoneNumber = null, contactName = null) {
+    this.enqueue('/contact', {
+      slug: this.slug,
+      chat_id: chatId,
+      telefone: phoneNumber,
+      contact_name: contactName,
+    });
+  }
+
   async sync() {
     if (!this.enabled) return { outbox: [], modes: [] };
     try {
