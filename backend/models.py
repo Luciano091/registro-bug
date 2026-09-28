@@ -475,6 +475,67 @@ class WhatsAppMensagem(Base):
 
     contato = relationship("WhatsAppContato", back_populates="mensagens")
 
+
+# Caixa de entrada do gateway local (WhatsApp Web). Mantida separada das
+# tabelas legadas da API oficial da Meta para evitar mistura de transportes.
+class WhatsAppGatewayState(Base):
+    __tablename__ = "whatsapp_gateway_states"
+
+    id = Column(Integer, primary_key=True)
+    estabelecimento_id = Column(Integer, ForeignKey("estabelecimentos.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
+    connection = Column(String, nullable=False, default="offline", index=True)
+    connected_number = Column(String, nullable=True)
+    automation_enabled = Column(Boolean, nullable=False, default=True)
+    needs_qr = Column(Boolean, nullable=False, default=False)
+    error_message = Column(Text, nullable=True)
+    last_seen_at = Column(DateTime, nullable=False, default=get_now, index=True)
+    updated_at = Column(DateTime, nullable=False, default=get_now, onupdate=get_now)
+
+
+class WhatsAppConversation(Base):
+    __tablename__ = "whatsapp_conversations"
+    __table_args__ = (
+        UniqueConstraint("estabelecimento_id", "chat_id", name="uq_whatsapp_conversation_chat"),
+    )
+
+    id = Column(Integer, primary_key=True)
+    estabelecimento_id = Column(Integer, ForeignKey("estabelecimentos.id", ondelete="CASCADE"), nullable=False, index=True)
+    chat_id = Column(String, nullable=False, index=True)
+    telefone = Column(String, nullable=True, index=True)
+    nome = Column(String, nullable=True)
+    atendimento_modo = Column(String, nullable=False, default="bot", index=True)
+    handoff_requested = Column(Boolean, nullable=False, default=False, index=True)
+    nao_lidas = Column(Integer, nullable=False, default=0)
+    ultima_mensagem = Column(Text, nullable=True)
+    ultima_interacao = Column(DateTime, nullable=False, default=get_now, index=True)
+    criado_em = Column(DateTime, nullable=False, default=get_now)
+    atualizado_em = Column(DateTime, nullable=False, default=get_now, onupdate=get_now)
+
+    mensagens = relationship(
+        "WhatsAppChatMessage",
+        back_populates="conversa",
+        cascade="all, delete-orphan",
+        order_by="WhatsAppChatMessage.criado_em",
+    )
+
+
+class WhatsAppChatMessage(Base):
+    __tablename__ = "whatsapp_chat_messages"
+
+    id = Column(Integer, primary_key=True)
+    conversa_id = Column(Integer, ForeignKey("whatsapp_conversations.id", ondelete="CASCADE"), nullable=False, index=True)
+    external_id = Column(String, nullable=True, unique=True, index=True)
+    direcao = Column(String, nullable=False, index=True)
+    remetente = Column(String, nullable=False, default="cliente")
+    texto = Column(Text, nullable=False)
+    status = Column(String, nullable=False, default="received", index=True)
+    criado_em = Column(DateTime, nullable=False, default=get_now, index=True)
+    enviado_em = Column(DateTime, nullable=True)
+    ultima_tentativa_em = Column(DateTime, nullable=True)
+    erro = Column(Text, nullable=True)
+
+    conversa = relationship("WhatsAppConversation", back_populates="mensagens")
+
 class Insumo(Base):
     __tablename__ = "insumos"
 

@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Home, PlusCircle, ListOrdered, Utensils, BarChart3, Settings as SettingsIcon, ChevronLeft, ChevronRight, Wallet, LogOut, Menu as MenuIcon, X, Package, Store, Users, Armchair, ChefHat, Truck } from 'lucide-react';
+import { Home, PlusCircle, ListOrdered, Utensils, BarChart3, Settings as SettingsIcon, ChevronLeft, ChevronRight, Wallet, LogOut, Menu as MenuIcon, X, Package, Store, Users, Armchair, ChefHat, Truck, MessageCircle } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import NewOrder from './pages/NewOrder';
 import Orders from './pages/Orders';
@@ -15,6 +15,7 @@ import Team from './pages/Team';
 import Salon from './pages/Salon';
 import Kitchen from './pages/Kitchen';
 import Deliveries from './pages/Deliveries';
+import Inbox from './pages/Inbox';
 
 import Login from './pages/Login';
 import ResetPassword from './pages/ResetPassword';
@@ -98,6 +99,9 @@ function AppContent() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [estabelecimento, setEstabelecimento] = useState<{ nome_empresa?: string; logo?: string }>(() => ({ nome_empresa: localStorage.getItem('estabelecimentoNome') || undefined }));
   const [session, setSession] = useState<SessionUser | null>(readSession());
+  const [whatsappUnread, setWhatsappUnread] = useState(0);
+  const [whatsappWaiting, setWhatsappWaiting] = useState(0);
+  const previousWhatsappWaiting = useRef(0);
   const location = useLocation();
   const isLoginRoute = location.pathname === '/login';
   const isPasswordResetRoute = location.pathname === '/reset-password';
@@ -126,6 +130,30 @@ function AppContent() {
       setSession(data);
     }).catch(() => undefined);
   }, [isLoginRoute, isPasswordResetRoute, isPlatformArea]);
+
+  useEffect(() => {
+    if (isLoginRoute || isPasswordResetRoute || isPlatformArea || !localStorage.getItem('adminToken') || !can(session, 'whatsapp.visualizar')) return;
+    const refresh = async () => {
+      try {
+        const { data } = await api.get('/whatsapp/inbox/summary');
+        const waiting = Number(data.waiting_human || 0);
+        setWhatsappUnread(Number(data.unread || 0));
+        setWhatsappWaiting(waiting);
+        if (waiting > previousWhatsappWaiting.current) {
+          void new Audio('/notification.mp3').play().catch(() => undefined);
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('Cliente aguardando no WhatsApp', { body: 'Abra a caixa de entrada da Ritmesa para responder.' });
+          }
+        }
+        previousWhatsappWaiting.current = waiting;
+      } catch {
+        // O restante do painel continua disponível se o módulo estiver offline.
+      }
+    };
+    void refresh();
+    const timer = window.setInterval(() => void refresh(), 7000);
+    return () => window.clearInterval(timer);
+  }, [isLoginRoute, isPasswordResetRoute, isPlatformArea, session]);
 
   if (isPlatformArea) {
     return (
@@ -180,6 +208,7 @@ function AppContent() {
             {can(session, 'dashboard.visualizar') && <NavLink to="/" icon={Home} isCollapsed={isCollapsed}>Dashboard</NavLink>}
             {can(session, 'pedidos.criar') && <NavLink to="/novo-pedido" icon={PlusCircle} isCollapsed={isCollapsed}>Novo Pedido</NavLink>}
             {can(session, 'pedidos.visualizar') && session?.perfil !== 'entregador' && <NavLink to="/pedidos" icon={ListOrdered} isCollapsed={isCollapsed}>Pedidos</NavLink>}
+            {can(session, 'whatsapp.visualizar') && <NavLink to="/whatsapp" icon={MessageCircle} isCollapsed={isCollapsed} hasBadge={whatsappWaiting > 0 || whatsappUnread > 0}>WhatsApp</NavLink>}
             {can(session, 'salao.operar') && <NavLink to="/salao" icon={Armchair} isCollapsed={isCollapsed}>Salão</NavLink>}
             {can(session, 'cozinha.operar') && <NavLink to="/cozinha" icon={ChefHat} isCollapsed={isCollapsed}>Cozinha</NavLink>}
             {can(session, 'entregas.visualizar') && <NavLink to="/entregas" icon={Truck} isCollapsed={isCollapsed}>Entregas</NavLink>}
@@ -239,6 +268,7 @@ function AppContent() {
             <Route path="/" element={<ProtectedRoute user={session}><HomeRoute user={session} /></ProtectedRoute>} />
             <Route path="/novo-pedido" element={<ProtectedRoute permission="pedidos.criar" user={session}><NewOrder /></ProtectedRoute>} />
             <Route path="/pedidos" element={<ProtectedRoute permission="pedidos.visualizar" user={session}><Orders /></ProtectedRoute>} />
+            <Route path="/whatsapp" element={<ProtectedRoute permission="whatsapp.visualizar" user={session}><Inbox /></ProtectedRoute>} />
             <Route path="/salao" element={<ProtectedRoute permission="salao.operar" user={session}><Salon /></ProtectedRoute>} />
             <Route path="/cozinha" element={<ProtectedRoute permission="cozinha.operar" user={session}><Kitchen /></ProtectedRoute>} />
             <Route path="/entregas" element={<ProtectedRoute permission="entregas.visualizar" user={session}><Deliveries /></ProtectedRoute>} />
@@ -269,6 +299,7 @@ function AppContent() {
               {can(session, 'cozinha.operar') && <Link to="/cozinha" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><ChefHat className="text-brand-400" /> Painel de cozinha</Link>}
               {can(session, 'entregas.visualizar') && <Link to="/entregas" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><Truck className="text-brand-400" /> Entregas</Link>}
               {can(session, 'caixa.visualizar') && <Link to="/caixa" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><Wallet className="text-brand-400" /> Caixa</Link>}
+              {can(session, 'whatsapp.visualizar') && <Link to="/whatsapp" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><MessageCircle className="text-brand-400" /> WhatsApp{whatsappWaiting > 0 ? ` (${whatsappWaiting})` : ''}</Link>}
               {can(session, 'estoque.visualizar') && <Link to="/insumos" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><Package className="text-brand-400" /> Insumos</Link>}
               {can(session, 'relatorios.visualizar') && <Link to="/relatorios" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><BarChart3 className="text-brand-400" /> Relatórios</Link>}
               {can(session, 'usuarios.visualizar') && <Link to="/equipe" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><Users className="text-brand-400" /> Equipe</Link>}

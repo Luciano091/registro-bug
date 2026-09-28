@@ -2,4 +2,5 @@ node_modules/
 .env
 .session/
 .wwebjs_cache/
+.data/
 npm-debug.log*

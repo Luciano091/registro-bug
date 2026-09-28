@@ -14,6 +14,7 @@ import cloudinary.uploader
 from fastapi import UploadFile, File, Form
 
 import models, schemas, crud, whatsapp_api, auth, push_notifications, realtime
+import whatsapp_gateway
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from database import engine, get_db, SessionLocal
@@ -114,6 +115,7 @@ async def health_check():
 
 from ifood import router as ifood_router
 app.include_router(ifood_router)
+app.include_router(whatsapp_gateway.router)
 
 @app.websocket("/ws/operacao")
 async def operation_events(websocket: WebSocket):

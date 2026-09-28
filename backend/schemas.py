@@ -721,6 +721,57 @@ class WhatsAppContato(WhatsAppContatoBase):
     class Config:
         from_attributes = True
 
+
+class WhatsAppGatewayHeartbeat(BaseModel):
+    slug: str
+    connection: str
+    connected_number: Optional[str] = None
+    automation_enabled: bool = True
+    needs_qr: bool = False
+    error_message: Optional[str] = None
+
+
+class WhatsAppGatewayIncoming(BaseModel):
+    slug: str
+    chat_id: str
+    telefone: Optional[str] = None
+    contact_name: Optional[str] = None
+    external_id: Optional[str] = None
+    texto: str
+    criado_em: Optional[datetime] = None
+
+
+class WhatsAppGatewayOutgoing(BaseModel):
+    slug: str
+    chat_id: str
+    telefone: Optional[str] = None
+    contact_name: Optional[str] = None
+    external_id: Optional[str] = None
+    texto: str
+    remetente: str = "bot"
+    criado_em: Optional[datetime] = None
+
+
+class WhatsAppGatewayMode(BaseModel):
+    slug: str
+    chat_id: str
+    modo: str
+    handoff_requested: bool = False
+
+
+class WhatsAppGatewayDeliveryStatus(BaseModel):
+    status: str
+    external_id: Optional[str] = None
+    error_message: Optional[str] = None
+
+
+class WhatsAppManualMessageCreate(BaseModel):
+    texto: str
+
+
+class WhatsAppConversationModeUpdate(BaseModel):
+    modo: str
+
 # --- Insumo ---
 class InsumoCreate(BaseModel):
     nome: str

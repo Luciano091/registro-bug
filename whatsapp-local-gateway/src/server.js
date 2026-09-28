@@ -4,6 +4,7 @@ import wweb from 'whatsapp-web.js';
 import { config } from './config.js';
 import { replyFor } from './assistant.js';
 import { dashboardHtml } from './dashboard.js';
+import { GatewayBridge } from './bridge.js';
 
 const { Client, LocalAuth } = wweb;
 const app = express();
@@ -27,6 +28,8 @@ const log = (message) => {
   state.logs = [entry, ...state.logs].slice(0, 80);
   console.log(`[${entry.time}] ${message}`);
 };
+
+const bridge = new GatewayBridge(config, log);
 
 const chromeArgs = [
   '--disable-dev-shm-usage',
@@ -89,7 +92,7 @@ const sendBotMessage = async (chatId, text) => {
       await chat.sendStateTyping();
     }
     await sleep(randomDelay());
-    await client.sendMessage(chatId, text);
+    return await client.sendMessage(chatId, text);
   } finally {
     setTimeout(() => botSendingChats.delete(chatId), 2500);
   }
@@ -112,8 +115,18 @@ const processMessages = async (chatId) => {
   if (!answer.text) return;
 
   try {
-    await sendBotMessage(chatId, answer.text);
-    if (answer.pause) handoffs.set(chatId, Date.now() + config.handoffMinutes * 60_000);
+    const sentMessage = await sendBotMessage(chatId, answer.text);
+    bridge.outgoing({
+      chat_id: chatId,
+      external_id: sentMessage?.id?._serialized || null,
+      texto: answer.text,
+      remetente: 'bot',
+      criado_em: new Date().toISOString(),
+    });
+    if (answer.pause) {
+      handoffs.set(chatId, Date.now() + config.handoffMinutes * 60_000);
+      bridge.mode(chatId, 'human', true);
+    }
     log(`Resposta automática enviada para ${pending.contactName || chatId} (${answer.intent}).`);
   } catch (error) {
     log(`Falha ao responder ${chatId}: ${error.message}`);
@@ -124,6 +137,7 @@ client.on('qr', async (qr) => {
   state.connection = 'waiting_qr';
   state.qr = await QRCode.toDataURL(qr, { width: 320, margin: 1 });
   log('QR Code gerado. Escaneie em Aparelhos conectados.');
+  bridge.heartbeat({ connection: state.connection, connected_number: null, automation_enabled: state.automationEnabled, needs_qr: true });
 });
 
 client.on('authenticated', () => {
@@ -137,25 +151,38 @@ client.on('ready', () => {
   state.qr = null;
   state.connectedNumber = client.info?.wid?.user || null;
   log(`WhatsApp conectado${state.connectedNumber ? ` no número ${state.connectedNumber}` : ''}.`);
+  bridge.heartbeat({ connection: state.connection, connected_number: state.connectedNumber, automation_enabled: state.automationEnabled, needs_qr: false });
 });
 
 client.on('auth_failure', (message) => {
   state.connection = 'auth_failure';
   state.qr = null;
   log(`Falha de autenticação: ${message}`);
+  bridge.heartbeat({ connection: state.connection, connected_number: null, automation_enabled: state.automationEnabled, needs_qr: true, error_message: message });
 });
 
 client.on('disconnected', (reason) => {
   state.connection = 'disconnected';
   state.qr = null;
   log(`WhatsApp desconectado: ${reason}.`);
+  bridge.heartbeat({ connection: state.connection, connected_number: state.connectedNumber, automation_enabled: state.automationEnabled, needs_qr: false, error_message: String(reason) });
 });
 
-client.on('message_create', (message) => {
+client.on('message_create', async (message) => {
   if (!message.fromMe || message.from === 'status@broadcast') return;
   const chatId = message.to;
   if (!chatId || botSendingChats.has(chatId)) return;
   handoffs.set(chatId, Date.now() + config.handoffMinutes * 60_000);
+  if (message.body?.trim()) {
+    bridge.outgoing({
+      chat_id: chatId,
+      external_id: message.id?._serialized || null,
+      texto: message.body,
+      remetente: 'humano',
+      criado_em: message.timestamp ? new Date(message.timestamp * 1000).toISOString() : new Date().toISOString(),
+    });
+  }
+  bridge.mode(chatId, 'human', true);
   log(`Atendimento humano detectado em ${chatId}; robô pausado temporariamente.`);
 });
 
@@ -164,12 +191,22 @@ client.on('message', async (message) => {
   if (!message.body?.trim()) return;
 
   let contactName = message.from;
+  let phoneNumber = null;
   try {
     const contact = await message.getContact();
     contactName = contact.pushname || contact.name || contact.number || message.from;
+    if (contact.id?.server === 'c.us') phoneNumber = contact.number || contact.id?.user || null;
   } catch {}
 
   log(`Mensagem recebida de ${contactName}.`);
+  bridge.incoming({
+    chat_id: message.from,
+    telefone: phoneNumber,
+    contact_name: contactName,
+    external_id: message.id?._serialized || null,
+    texto: message.body,
+    criado_em: message.timestamp ? new Date(message.timestamp * 1000).toISOString() : new Date().toISOString(),
+  });
   const previous = pendingMessages.get(message.from);
   if (previous?.timer) clearTimeout(previous.timer);
   const messages = [...(previous?.messages || []), message];
@@ -190,8 +227,45 @@ app.get('/api/status', (_request, response) => response.json({
 app.post('/api/automation', (request, response) => {
   state.automationEnabled = Boolean(request.body?.enabled);
   log(`Atendimento automático ${state.automationEnabled ? 'ativado' : 'pausado'} pelo painel local.`);
+  bridge.heartbeat({ connection: state.connection, connected_number: state.connectedNumber, automation_enabled: state.automationEnabled, needs_qr: state.connection === 'waiting_qr' });
   response.json({ automationEnabled: state.automationEnabled });
 });
+
+let syncingOutbox = false;
+const syncPanel = async () => {
+  if (syncingOutbox || !bridge.enabled || state.connection !== 'ready') return;
+  syncingOutbox = true;
+  try {
+    const data = await bridge.sync();
+    for (const item of data.modes || []) {
+      if (item.modo === 'human') handoffs.set(item.chat_id, Number.POSITIVE_INFINITY);
+      else handoffs.delete(item.chat_id);
+    }
+    for (const queued of data.outbox || []) {
+      botSendingChats.add(queued.chat_id);
+      try {
+        const sent = await client.sendMessage(queued.chat_id, queued.texto);
+        await bridge.deliveryStatus(queued.id, 'sent', sent?.id?._serialized || null);
+        log(`Resposta do painel enviada para ${queued.chat_id}.`);
+      } catch (error) {
+        await bridge.deliveryStatus(queued.id, 'failed', null, error.message);
+        log(`Falha ao enviar resposta do painel para ${queued.chat_id}: ${error.message}`);
+      } finally {
+        setTimeout(() => botSendingChats.delete(queued.chat_id), 2500);
+      }
+    }
+  } finally {
+    syncingOutbox = false;
+  }
+};
+
+setInterval(() => void syncPanel(), 2500);
+setInterval(() => bridge.heartbeat({
+  connection: state.connection,
+  connected_number: state.connectedNumber,
+  automation_enabled: state.automationEnabled,
+  needs_qr: state.connection === 'waiting_qr',
+}), 15_000);
 
 const server = app.listen(config.port, config.host, () => {
   log(`Painel local disponível em http://${config.host}:${config.port}`);
