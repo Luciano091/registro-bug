@@ -2,7 +2,7 @@ import express from 'express';
 import QRCode from 'qrcode';
 import wweb from 'whatsapp-web.js';
 import { config } from './config.js';
-import { replyFor } from './assistant.js';
+import { audioReply, isAudioType, replyFor } from './assistant.js';
 import { dashboardHtml } from './dashboard.js';
 import { GatewayBridge } from './bridge.js';
 
@@ -217,7 +217,8 @@ client.on('message_create', async (message) => {
 
 client.on('message', async (message) => {
   if (message.fromMe || message.from === 'status@broadcast' || !isDirectChatId(message.from)) return;
-  if (!message.body?.trim()) return;
+  const receivedAudio = isAudioType(message.type);
+  if (!receivedAudio && !message.body?.trim()) return;
 
   let contactName = message.from;
   let phoneNumber = null;
@@ -227,15 +228,36 @@ client.on('message', async (message) => {
     phoneNumber = await syncContactIdentity(message.from, contactName, contact);
   } catch {}
 
-  log(`Mensagem recebida de ${contactName}.`);
+  const incomingText = receivedAudio ? '[Áudio recebido]' : message.body;
+  log(`${receivedAudio ? 'Áudio' : 'Mensagem'} recebido de ${contactName}.`);
   bridge.incoming({
     chat_id: message.from,
     telefone: phoneNumber,
     contact_name: contactName,
     external_id: message.id?._serialized || null,
-    texto: message.body,
+    texto: incomingText,
     criado_em: message.timestamp ? new Date(message.timestamp * 1000).toISOString() : new Date().toISOString(),
   });
+
+  if (receivedAudio) {
+    if (!state.automationEnabled || isInHandoff(message.from) || isRateLimited(message.from)) return;
+    try {
+      const text = audioReply();
+      const sentMessage = await sendBotMessage(message.from, text);
+      bridge.outgoing({
+        chat_id: message.from,
+        external_id: sentMessage?.id?._serialized || null,
+        texto: text,
+        remetente: 'bot',
+        criado_em: new Date().toISOString(),
+      });
+      log(`Orientação para áudio enviada para ${contactName}.`);
+    } catch (error) {
+      log(`Falha ao responder áudio de ${message.from}: ${error.message}`);
+    }
+    return;
+  }
+
   const previous = pendingMessages.get(message.from);
   if (previous?.timer) clearTimeout(previous.timer);
   const messages = [...(previous?.messages || []), message];

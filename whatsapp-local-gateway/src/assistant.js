@@ -31,6 +31,12 @@ const greetingFor = (text) => {
   return 'Olá';
 };
 
+export const isAudioType = (type) => type === 'ptt' || type === 'audio';
+
+export const audioReply = () => (
+  'Recebi seu áudio, mas ainda não consigo ouvi-lo. Por favor, escreva sua mensagem ou digite 6 para falar com um atendente. 😊'
+);
+
 export const intentFor = (message) => {
   const text = normalize(message);
 

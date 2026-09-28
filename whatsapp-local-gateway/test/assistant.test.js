@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { intentFor, replyFor } from '../src/assistant.js';
+import { audioReply, intentFor, isAudioType, replyFor } from '../src/assistant.js';
 
 const business = {
   businessName: 'BisBurger',
@@ -42,4 +42,12 @@ test('mostra menu curto e acompanha a saudação do cliente', () => {
   assert.match(answer.text, /1️⃣ Ver cardápio/);
   assert.match(answer.text, /6️⃣ Falar com atendente/);
   assert.match(answer.text, /Digite o número da opção/);
+});
+
+test('reconhece áudio e orienta o cliente a escrever ou chamar atendente', () => {
+  assert.equal(isAudioType('ptt'), true);
+  assert.equal(isAudioType('audio'), true);
+  assert.equal(isAudioType('image'), false);
+  assert.match(audioReply(), /ainda não consigo ouvi-lo/);
+  assert.match(audioReply(), /digite 6/);
 });
