@@ -22,6 +22,7 @@ interface AppDataContextType {
   refreshProdutos: () => Promise<void>;
   refreshDashboard: () => Promise<void>;
   refreshCaixa: () => Promise<void>;
+  playNotificationSound: () => Promise<void>;
 
   // Optimistic updates
   addOptimisticOrder: (order: any) => void;
@@ -272,6 +273,7 @@ const showBrowserNotification = (title: string, body: string) => {
       refreshProdutos,
       refreshDashboard,
       refreshCaixa,
+      playNotificationSound: playOrderSound,
 
       addOptimisticOrder,
       updateOrderStatus,

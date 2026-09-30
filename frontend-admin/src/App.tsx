@@ -94,7 +94,7 @@ const HomeRoute = ({ user }: { user: SessionUser | null }) => {
 };
 
 function AppContent() {
-  const { realtimeConnected } = useAppData();
+  const { realtimeConnected, playNotificationSound } = useAppData();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [estabelecimento, setEstabelecimento] = useState<{ nome_empresa?: string; logo?: string }>(() => ({ nome_empresa: localStorage.getItem('estabelecimentoNome') || undefined }));
@@ -138,7 +138,7 @@ function AppContent() {
         const unread = Number(data.unread || 0);
         setWhatsappUnread(unread);
         if (previousWhatsappUnread.current !== null && unread > previousWhatsappUnread.current) {
-          void new Audio('/notification.mp3').play().catch(() => undefined);
+          void playNotificationSound();
           if ('Notification' in window && Notification.permission === 'granted') {
             new Notification('Nova mensagem no WhatsApp', { body: 'Abra a caixa de entrada da Ritmesa para visualizar.' });
           }
@@ -151,7 +151,7 @@ function AppContent() {
     void refresh();
     const timer = window.setInterval(() => void refresh(), 7000);
     return () => window.clearInterval(timer);
-  }, [isLoginRoute, isPasswordResetRoute, isPlatformArea, session]);
+  }, [isLoginRoute, isPasswordResetRoute, isPlatformArea, session, playNotificationSound]);
 
   if (isPlatformArea) {
     return (
