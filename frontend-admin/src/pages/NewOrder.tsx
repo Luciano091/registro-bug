@@ -193,7 +193,7 @@ const NewOrder = () => {
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto animate-in fade-in duration-500 min-h-screen text-zinc-100 flex flex-col">
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4 md:mb-5">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-white font-heading drop-shadow-sm">Novo Pedido</h2>
           <p className="mt-1 text-sm text-zinc-400">O número do pedido aparece após a confirmação.</p>
@@ -328,7 +328,7 @@ const NewOrder = () => {
         </div>
       )}
 
-      <div className="order-workspace flex flex-col lg:flex-row gap-6 lg:h-[calc(100vh-10rem)]">
+      <div className="order-workspace flex flex-col lg:flex-row gap-6 lg:h-[calc(100vh-9rem)]">
         <div className="min-w-0 flex-1 flex flex-col gap-4">
           <div className="flex flex-col xl:flex-row gap-4 mb-2 justify-between">
             <div className="min-w-0 flex gap-2 p-1 bg-dark-800/50 backdrop-blur-md border border-white/5 rounded-xl overflow-x-auto shadow-lg">
