@@ -1,4 +1,4 @@
-import { Utensils, Ticket, Receipt, User, ShoppingCart } from 'lucide-react';
+import { Utensils, Ticket, Receipt, User, ShoppingCart, MessageCircle } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 
 export type TabType = 'cardapio' | 'cupons' | 'pedidos' | 'conta';
@@ -7,9 +7,10 @@ interface BottomNavProps {
   onOpenCart: () => void;
   activeTab: TabType;
   onChangeTab: (tab: TabType) => void;
+  whatsappUrl?: string | null;
 }
 
-export const BottomNav = ({ onOpenCart, activeTab, onChangeTab }: BottomNavProps) => {
+export const BottomNav = ({ onOpenCart, activeTab, onChangeTab, whatsappUrl }: BottomNavProps) => {
   const { cartCount, cartTotal } = useCart();
 
   const getTabClass = (tab: TabType) => {
@@ -20,6 +21,19 @@ export const BottomNav = ({ onOpenCart, activeTab, onChangeTab }: BottomNavProps
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-zinc-200 bg-white/95 shadow-[0_-8px_30px_rgba(15,23,42,0.08)] backdrop-blur-xl md:hidden pb-safe">
+      {whatsappUrl && (
+        <a
+          href={whatsappUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Falar com a BisBurger pelo WhatsApp"
+          className={`absolute right-4 grid h-14 w-14 place-items-center rounded-full bg-[#25D366] text-white shadow-[0_10px_25px_rgba(37,211,102,0.35)] transition-all hover:bg-[#1fbd59] active:scale-95 ${
+            cartCount > 0 && activeTab === 'cardapio' ? 'bottom-[10.25rem]' : 'bottom-[5.25rem]'
+          }`}
+        >
+          <MessageCircle size={28} strokeWidth={2.4} />
+        </a>
+      )}
       <div className="flex min-h-[72px] items-center justify-around px-2 py-1">
         <button onClick={() => onChangeTab('cardapio')} className={getTabClass('cardapio')} aria-current={activeTab === 'cardapio' ? 'page' : undefined}>
           <Utensils size={20} strokeWidth={activeTab === 'cardapio' ? 2.5 : 2} />

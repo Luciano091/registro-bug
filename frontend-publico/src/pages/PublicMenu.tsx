@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
-import { MapPin, Clock, Utensils, Truck, ChevronRight, Gift, Crown, Plus, Flame, Check, Ticket, Receipt, User } from 'lucide-react';
+import { MapPin, Clock, Utensils, Truck, ChevronRight, Gift, Crown, Plus, Flame, Check, Ticket, Receipt, User, MessageCircle } from 'lucide-react';
 import api from '../services/api';
 import { getEstablishmentSlug } from '../services/api';
 import { ProductModal } from '../components/ProductModal';
@@ -17,6 +17,7 @@ import { PwaInstallPrompt } from '../components/PwaInstallPrompt';
 import { useCart } from '../contexts/CartContext';
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '836965237182-kmgamm79oo3ft7kgifqom9ulj5u37mt2.apps.googleusercontent.com';
+const bisburgerWhatsappUrl = 'https://wa.me/558298218008?text=Ol%C3%A1%21%20Gostaria%20de%20falar%20com%20a%20BisBurger.';
 
 type CapacitorBridge = {
   isNativePlatform?: () => boolean;
@@ -41,6 +42,7 @@ const PublicMenu = () => {
   const [activeTab, setActiveTab] = useState<TabType>('cardapio');
   const [showLojaFechada, setShowLojaFechada] = useState(false);
   const isNativeApp = useMemo(isRunningInNativeApp, []);
+  const whatsappUrl = getEstablishmentSlug() === 'bisburger' ? bisburgerWhatsappUrl : null;
   
   // Modals state
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
@@ -178,6 +180,17 @@ const PublicMenu = () => {
                 <Icon size={17} /> {label}
               </button>
             ))}
+            {whatsappUrl && (
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Falar com a BisBurger pelo WhatsApp"
+                className="flex min-h-10 items-center gap-2 rounded-xl bg-[#25D366] px-3.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#1fbd59]"
+              >
+                <MessageCircle size={17} /> WhatsApp
+              </a>
+            )}
           </nav>
         </div>
       </header>
@@ -603,7 +616,12 @@ const PublicMenu = () => {
       <div className="hidden md:block">
         <FloatingCart onOpen={() => setIsCheckoutOpen(true)} />
       </div>
-      <BottomNav onOpenCart={() => setIsCheckoutOpen(true)} activeTab={activeTab} onChangeTab={setActiveTab} />
+      <BottomNav
+        onOpenCart={() => setIsCheckoutOpen(true)}
+        activeTab={activeTab}
+        onChangeTab={setActiveTab}
+        whatsappUrl={whatsappUrl}
+      />
       
       {isCheckoutOpen && (
         <CheckoutModal 
