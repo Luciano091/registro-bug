@@ -126,10 +126,18 @@ def inbox_summary(
     state = db.query(models.WhatsAppGatewayState).filter(
         models.WhatsAppGatewayState.estabelecimento_id == establishment_id,
     ).first()
+    latest_incoming = db.query(models.WhatsAppChatMessage.id).join(
+        models.WhatsAppConversation,
+        models.WhatsAppConversation.id == models.WhatsAppChatMessage.conversa_id,
+    ).filter(
+        models.WhatsAppConversation.estabelecimento_id == establishment_id,
+        models.WhatsAppChatMessage.direcao == "in",
+    ).order_by(models.WhatsAppChatMessage.id.desc()).first()
     return {
         "gateway": _gateway_state_payload(state),
         "unread": sum(item.nao_lidas or 0 for item in conversations),
         "waiting_human": sum(1 for item in conversations if item.handoff_requested),
+        "latest_incoming_id": latest_incoming[0] if latest_incoming else None,
     }
 
 

@@ -101,6 +101,7 @@ function AppContent() {
   const [session, setSession] = useState<SessionUser | null>(readSession());
   const [whatsappUnread, setWhatsappUnread] = useState(0);
   const previousWhatsappUnread = useRef<number | null>(null);
+  const previousWhatsappIncomingId = useRef<number | null>(null);
   const location = useLocation();
   const isLoginRoute = location.pathname === '/login';
   const isPasswordResetRoute = location.pathname === '/reset-password';
@@ -136,14 +137,19 @@ function AppContent() {
       try {
         const { data } = await api.get('/whatsapp/inbox/summary');
         const unread = Number(data.unread || 0);
+        const latestIncomingId = data.latest_incoming_id == null ? null : Number(data.latest_incoming_id);
+        const receivedNewMessage = latestIncomingId !== null
+          ? previousWhatsappIncomingId.current !== null && latestIncomingId !== previousWhatsappIncomingId.current
+          : previousWhatsappUnread.current !== null && unread > previousWhatsappUnread.current;
         setWhatsappUnread(unread);
-        if (previousWhatsappUnread.current !== null && unread > previousWhatsappUnread.current) {
+        if (receivedNewMessage) {
           void playNotificationSound();
           if ('Notification' in window && Notification.permission === 'granted') {
             new Notification('Nova mensagem no WhatsApp', { body: 'Abra a caixa de entrada da Ritmesa para visualizar.' });
           }
         }
         previousWhatsappUnread.current = unread;
+        previousWhatsappIncomingId.current = latestIncomingId;
       } catch {
         // O restante do painel continua disponível se o módulo estiver offline.
       }

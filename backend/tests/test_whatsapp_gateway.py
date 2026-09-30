@@ -62,6 +62,11 @@ class WhatsAppGatewayTest(unittest.TestCase):
         conversation = inbox["conversations"][0]
         self.assertEqual(conversation["nao_lidas"], 1)
         self.assertTrue(inbox["gateway"]["online"])
+        summary = whatsapp_gateway.inbox_summary(self.db, self.establishment_id)
+        incoming = self.db.query(models.WhatsAppChatMessage).filter(
+            models.WhatsAppChatMessage.direcao == "in",
+        ).one()
+        self.assertEqual(summary["latest_incoming_id"], incoming.id)
 
         whatsapp_gateway.gateway_mode(
             schemas.WhatsAppGatewayMode(
