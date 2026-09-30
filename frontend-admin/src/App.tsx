@@ -100,8 +100,7 @@ function AppContent() {
   const [estabelecimento, setEstabelecimento] = useState<{ nome_empresa?: string; logo?: string }>(() => ({ nome_empresa: localStorage.getItem('estabelecimentoNome') || undefined }));
   const [session, setSession] = useState<SessionUser | null>(readSession());
   const [whatsappUnread, setWhatsappUnread] = useState(0);
-  const [whatsappWaiting, setWhatsappWaiting] = useState(0);
-  const previousWhatsappWaiting = useRef(0);
+  const previousWhatsappUnread = useRef<number | null>(null);
   const location = useLocation();
   const isLoginRoute = location.pathname === '/login';
   const isPasswordResetRoute = location.pathname === '/reset-password';
@@ -136,16 +135,15 @@ function AppContent() {
     const refresh = async () => {
       try {
         const { data } = await api.get('/whatsapp/inbox/summary');
-        const waiting = Number(data.waiting_human || 0);
-        setWhatsappUnread(Number(data.unread || 0));
-        setWhatsappWaiting(waiting);
-        if (waiting > previousWhatsappWaiting.current) {
+        const unread = Number(data.unread || 0);
+        setWhatsappUnread(unread);
+        if (previousWhatsappUnread.current !== null && unread > previousWhatsappUnread.current) {
           void new Audio('/notification.mp3').play().catch(() => undefined);
           if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification('Cliente aguardando no WhatsApp', { body: 'Abra a caixa de entrada da Ritmesa para responder.' });
+            new Notification('Nova mensagem no WhatsApp', { body: 'Abra a caixa de entrada da Ritmesa para visualizar.' });
           }
         }
-        previousWhatsappWaiting.current = waiting;
+        previousWhatsappUnread.current = unread;
       } catch {
         // O restante do painel continua disponível se o módulo estiver offline.
       }
@@ -208,7 +206,7 @@ function AppContent() {
             {can(session, 'dashboard.visualizar') && <NavLink to="/" icon={Home} isCollapsed={isCollapsed}>Dashboard</NavLink>}
             {can(session, 'pedidos.criar') && <NavLink to="/novo-pedido" icon={PlusCircle} isCollapsed={isCollapsed}>Novo Pedido</NavLink>}
             {can(session, 'pedidos.visualizar') && session?.perfil !== 'entregador' && <NavLink to="/pedidos" icon={ListOrdered} isCollapsed={isCollapsed}>Pedidos</NavLink>}
-            {can(session, 'whatsapp.visualizar') && <NavLink to="/whatsapp" icon={MessageCircle} isCollapsed={isCollapsed} hasBadge={whatsappWaiting > 0 || whatsappUnread > 0}>WhatsApp</NavLink>}
+            {can(session, 'whatsapp.visualizar') && <NavLink to="/whatsapp" icon={MessageCircle} isCollapsed={isCollapsed} hasBadge={whatsappUnread > 0}>WhatsApp</NavLink>}
             {can(session, 'salao.operar') && <NavLink to="/salao" icon={Armchair} isCollapsed={isCollapsed}>Salão</NavLink>}
             {can(session, 'cozinha.operar') && <NavLink to="/cozinha" icon={ChefHat} isCollapsed={isCollapsed}>Cozinha</NavLink>}
             {can(session, 'entregas.visualizar') && <NavLink to="/entregas" icon={Truck} isCollapsed={isCollapsed}>Entregas</NavLink>}
@@ -299,7 +297,7 @@ function AppContent() {
               {can(session, 'cozinha.operar') && <Link to="/cozinha" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><ChefHat className="text-brand-400" /> Painel de cozinha</Link>}
               {can(session, 'entregas.visualizar') && <Link to="/entregas" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><Truck className="text-brand-400" /> Entregas</Link>}
               {can(session, 'caixa.visualizar') && <Link to="/caixa" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><Wallet className="text-brand-400" /> Caixa</Link>}
-              {can(session, 'whatsapp.visualizar') && <Link to="/whatsapp" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><MessageCircle className="text-brand-400" /> WhatsApp{whatsappWaiting > 0 ? ` (${whatsappWaiting})` : ''}</Link>}
+              {can(session, 'whatsapp.visualizar') && <Link to="/whatsapp" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><MessageCircle className="text-brand-400" /> WhatsApp{whatsappUnread > 0 ? ` (${whatsappUnread})` : ''}</Link>}
               {can(session, 'estoque.visualizar') && <Link to="/insumos" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><Package className="text-brand-400" /> Insumos</Link>}
               {can(session, 'relatorios.visualizar') && <Link to="/relatorios" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><BarChart3 className="text-brand-400" /> Relatórios</Link>}
               {can(session, 'usuarios.visualizar') && <Link to="/equipe" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 glass-card rounded-2xl text-lg font-medium"><Users className="text-brand-400" /> Equipe</Link>}
