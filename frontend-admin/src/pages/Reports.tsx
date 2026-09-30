@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { BarChart3, Calendar, DollarSign, Package, Receipt, TrendingUp, TrendingDown, Download, FileSpreadsheet, Users } from 'lucide-react';
+import { Activity, Award, BarChart3, Calendar, DollarSign, Package, Receipt, TrendingUp, TrendingDown, Download, FileSpreadsheet, Users } from 'lucide-react';
 import api from '../services/api';
 import { DateRangePicker } from '../components/DateRangePicker';
 
@@ -22,9 +22,9 @@ const CAT_COLORS = ['#f97316', '#3b82f6', '#f59e0b', '#8b5cf6', '#10b981'];
 const GrowthBadge = ({ value }: { value: number }) => {
   const isPositive = value >= 0;
   return (
-    <div className={`flex items-center gap-1 text-xs font-medium ${isPositive ? 'text-emerald-500' : 'text-rose-500'}`}>
-      {isPositive ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-      <span>{isPositive ? '+' : ''}{value.toFixed(1)}% vs período anterior</span>
+    <div className={`flex items-center gap-1 text-[11px] font-semibold whitespace-nowrap ${isPositive ? 'text-emerald-600' : 'text-rose-600'}`}>
+      {isPositive ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
+      <span>{isPositive ? '+' : ''}{value.toFixed(1)}% vs. anterior</span>
     </div>
   );
 };
@@ -133,118 +133,100 @@ const Reports = () => {
   };
 
   const totalPagamentos = data?.vendas_pagamento?.reduce((acc: any, curr: any) => acc + curr.value, 0) || 0;
+  const faturamentoAtual = Number(data?.resumo?.faturamento?.atual || 0);
+  const lucroAtual = Number(data?.resumo?.lucro?.atual || 0);
+  const totalPedidosAtual = Number(data?.resumo?.pedidos?.atual || 0);
+  const itensVendidos = Number(data?.resumo?.itens_vendidos?.atual || 0);
+  const margemEstimada = faturamentoAtual > 0 ? (lucroAtual / faturamentoAtual) * 100 : 0;
+  const itensPorPedido = totalPedidosAtual > 0 ? itensVendidos / totalPedidosAtual : 0;
+
+  const changePeriod = (nextPeriod: string) => {
+    setPeriodo(nextPeriod);
+    if (nextPeriod === 'custom') {
+      const today = new Date();
+      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+      setCustomStart(formatLocalDate(firstDay));
+      setCustomEnd(formatLocalDate(today));
+      setShowDatePicker(true);
+      return;
+    }
+    setShowDatePicker(false);
+  };
 
   return (
     <>
-    <div className="p-4 md:p-8 max-w-[1600px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-6 custom-scrollbar text-zinc-200 print:hidden">
+    <div className="p-4 md:p-7 max-w-[1600px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-5 custom-scrollbar text-zinc-200 print:hidden">
       
-      {/* Header Profissional 2 Linhas */}
-      <header className="mb-6 print:hidden">
-        <div className="bg-white rounded-xl shadow-sm border border-zinc-200/80 p-5 flex flex-col gap-5">
-          
-          {/* Linha 1: Título */}
-          <div className="flex items-center gap-4 w-full">
-            <div className="bg-blue-100 text-blue-600 p-3.5 rounded-[14px] shrink-0">
-              <BarChart3 size={26} strokeWidth={2.5} />
+      <header className="reports-header flex flex-col gap-4 print:hidden">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-3.5">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-blue-100 text-blue-600">
+              <BarChart3 size={23} strokeWidth={2.4} />
             </div>
             <div>
-              <h2 className="text-2xl font-bold tracking-tight text-zinc-900 font-heading leading-none">Relatórios</h2>
-              <p className="text-zinc-500 mt-1.5 text-xs">Acompanhe o desempenho completo do seu negócio.</p>
+              <h2 className="text-2xl font-bold leading-none tracking-tight text-zinc-900 font-heading">Relatórios</h2>
+              <p className="mt-1.5 text-xs text-zinc-500">Fluxo, vendas e saúde da operação em uma única visão.</p>
             </div>
           </div>
 
-          {/* Divisória Horizontal */}
-          <div className="h-px w-full bg-zinc-100" />
+          <div className="flex w-full flex-wrap items-center gap-2 lg:w-auto" aria-label="Exportar relatórios">
+            <span className="mr-1 hidden text-[10px] font-bold uppercase tracking-widest text-zinc-400 xl:inline">Exportar</span>
+            <button onClick={exportClientsCSV} disabled={exportingClients} className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-3.5 text-xs font-bold text-zinc-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:opacity-50 sm:flex-none" title="Exportar base de clientes">
+              <Users size={15} /> {exportingClients ? 'Gerando...' : 'Clientes CSV'}
+            </button>
+            <button onClick={exportCSV} className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-3.5 text-xs font-bold text-zinc-700 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 sm:flex-none" title="Exportar vendas para planilha">
+              <FileSpreadsheet size={15} /> Vendas CSV
+            </button>
+            <button onClick={exportPDF} className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-zinc-900 px-3.5 text-xs font-bold text-white shadow-sm transition hover:bg-zinc-800 sm:flex-none" title="Baixar relatório em PDF">
+              <Download size={15} /> PDF
+            </button>
+          </div>
+        </div>
 
-          {/* Linha 2: Filtros e Ações */}
-          <div className="flex flex-wrap lg:flex-nowrap items-center justify-between gap-6 w-full">
-            
-            {/* Seção 2: Filtros */}
-            <div className="flex flex-wrap sm:flex-nowrap items-center gap-4 w-full lg:w-auto">
-              
-              {/* Periodo (Aparece apenas quando Personalizado) */}
-              {periodo === 'custom' && (
-                <div className="flex flex-col gap-1.5 w-full sm:w-auto animate-in fade-in slide-in-from-right-4 duration-300 relative">
-                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Período</span>
-                  <button 
-                    onClick={() => setShowDatePicker(!showDatePicker)}
-                    className="flex items-center bg-white border border-blue-200 text-blue-700 rounded-lg p-2 shadow-sm gap-2 px-3 hover:bg-blue-50 transition-colors w-full sm:w-auto justify-center"
-                  >
-                    <Calendar size={16} className="shrink-0" />
-                    <span className="text-sm font-bold whitespace-nowrap">
-                      {customStart ? customStart.split('-').reverse().slice(0,2).join('/') : 'Início'} a {customEnd ? customEnd.split('-').reverse().slice(0,2).join('/') : 'Fim'}
-                    </span>
-                  </button>
+        <div className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-2.5 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <span className="px-1 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Período</span>
+            <div className="grid grid-cols-4 rounded-lg bg-zinc-100 p-1 sm:flex" role="group" aria-label="Filtrar período">
+              {[
+                ['hoje', 'Hoje'],
+                ['7d', '7 dias'],
+                ['mes', 'Este mês'],
+                ['custom', 'Personalizado'],
+              ].map(([value, label]) => (
+                <button
+                  key={value}
+                  onClick={() => changePeriod(value)}
+                  aria-pressed={periodo === value}
+                  className={`min-h-9 rounded-md px-3 text-xs font-bold transition ${periodo === value ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-800'}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
 
-                  {/* Popover de Datas Visual */}
-                  {showDatePicker && (
-                    <div className="absolute top-full left-0 mt-2 p-4 bg-white border border-zinc-200 shadow-xl rounded-2xl z-50 flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-200">
-                       <DateRangePicker 
-                         startDate={parseLocalDate(customStart)}
-                         endDate={parseLocalDate(customEnd)}
-                         onChange={(start, end) => {
-                           setCustomStart(start ? formatLocalDate(start) : '');
-                           setCustomEnd(end ? formatLocalDate(end) : '');
-                         }}
-                       />
-                       <div className="flex justify-end pt-2 border-t border-zinc-100 mt-2">
-                         <button onClick={() => setShowDatePicker(false)} className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-2.5 text-sm font-bold transition-colors w-full sm:w-auto">
-                           Aplicar
-                         </button>
-                       </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Visualização */}
-              <div className="flex flex-col gap-1.5 w-full sm:w-auto shrink-0">
-                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Visualização</span>
-                <div className="flex items-center bg-white border border-zinc-200 rounded-lg p-2 shadow-sm px-3">
-                   <BarChart3 size={16} className="text-zinc-800 mr-2 shrink-0" />
-                   <select 
-                     value={periodo} 
-                     onChange={(e) => {
-                       setPeriodo(e.target.value);
-                       if (e.target.value === 'custom') {
-                         const today = new Date();
-                         const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-                         setCustomStart(firstDay.toISOString().split('T')[0]);
-                         setCustomEnd(today.toISOString().split('T')[0]);
-                         setShowDatePicker(true);
-                       } else {
-                         setShowDatePicker(false);
-                       }
-                     }}
-                     className="bg-transparent text-sm font-semibold text-zinc-900 outline-none cursor-pointer appearance-none pr-6 w-full min-w-[140px]"
-                     style={{ background: `url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2318181b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E") no-repeat right center`, backgroundSize: '16px' }}
-                   >
-                     <option value="hoje">Hoje</option>
-                     <option value="7d">Últimos 7 Dias</option>
-                     <option value="mes">Este Mês</option>
-                     <option value="custom">Personalizado</option>
-                   </select>
-                </div>
+            {periodo === 'custom' && (
+              <div className="relative">
+                <button onClick={() => setShowDatePicker(!showDatePicker)} className="flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 text-xs font-bold text-blue-700 sm:w-auto">
+                  <Calendar size={15} />
+                  {customStart ? customStart.split('-').reverse().join('/') : 'Início'} a {customEnd ? customEnd.split('-').reverse().join('/') : 'Fim'}
+                </button>
+                {showDatePicker && (
+                  <div className="absolute left-0 top-full z-50 mt-2 flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-xl animate-in fade-in zoom-in-95 duration-200">
+                    <DateRangePicker
+                      startDate={parseLocalDate(customStart)}
+                      endDate={parseLocalDate(customEnd)}
+                      onChange={(start, end) => {
+                        setCustomStart(start ? formatLocalDate(start) : '');
+                        setCustomEnd(end ? formatLocalDate(end) : '');
+                      }}
+                    />
+                    <button onClick={() => setShowDatePicker(false)} className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700">Aplicar período</button>
+                  </div>
+                )}
               </div>
-            </div>
-            
-            {/* Seção 3: Botões */}
-            <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 w-full lg:w-auto mt-2 sm:mt-0 shrink-0">
-              <button onClick={exportClientsCSV} disabled={exportingClients} className="flex flex-1 sm:flex-none items-center justify-center gap-2 bg-white text-blue-600 border border-blue-200 hover:bg-blue-50 transition-colors px-4 py-2.5 rounded-lg text-sm font-bold shadow-sm disabled:opacity-50 whitespace-nowrap" title="Exportar Base de Clientes (CRM)">
-                <Users size={16} />
-                <span>{exportingClients ? 'Gerando...' : 'Clientes'}</span>
-              </button>
-              <button onClick={exportCSV} className="flex flex-1 sm:flex-none items-center justify-center gap-2 bg-white text-emerald-600 border border-emerald-200 hover:bg-emerald-50 transition-colors px-4 py-2.5 rounded-lg text-sm font-bold shadow-sm whitespace-nowrap" title="Exportar para Excel (Contador)">
-                <FileSpreadsheet size={16} />
-                <span>Vendas</span>
-              </button>
-              <button onClick={exportPDF} className="flex flex-1 sm:flex-none items-center justify-center gap-2 bg-white text-zinc-700 border border-zinc-200 hover:bg-zinc-50 hover:text-zinc-900 transition-colors px-4 py-2.5 rounded-lg text-sm font-bold shadow-sm whitespace-nowrap">
-                <Download size={16} />
-                <span>Baixar PDF</span>
-              </button>
-            </div>
-
+            )}
           </div>
+          <p className="px-1 text-[11px] text-zinc-400">Os percentuais comparam automaticamente com o período anterior.</p>
         </div>
       </header>
 
@@ -262,53 +244,68 @@ const Reports = () => {
         <>
 
       {/* Row 1: KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="glass-card p-5 rounded-xl flex items-start gap-4">
-          <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
-            <DollarSign size={24} />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="glass-card flex min-h-[112px] items-start gap-3.5 rounded-xl p-4">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+            <DollarSign size={21} />
           </div>
-          <div>
-            <p className="text-xs font-medium text-zinc-300 uppercase tracking-wider mb-1">Faturamento Total</p>
-            <h3 className="text-2xl font-bold text-white font-heading mb-1">
+          <div className="min-w-0">
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-zinc-500">Faturamento</p>
+            <h3 className="mb-1 text-2xl font-bold text-white font-heading tabular-nums">
               {data.resumo.faturamento.atual.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
             </h3>
             <GrowthBadge value={data.resumo.faturamento.crescimento} />
           </div>
         </div>
 
-        <div className="glass-card p-5 rounded-xl flex items-start gap-4">
-          <div className="w-12 h-12 rounded-full bg-brand-500/10 text-brand-500 flex items-center justify-center shrink-0">
-            <Package size={24} />
+        <div className="glass-card flex min-h-[112px] items-start gap-3.5 rounded-xl p-4">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
+            <Package size={21} />
           </div>
-          <div>
-            <p className="text-xs font-medium text-zinc-300 uppercase tracking-wider mb-1">Total de Pedidos</p>
-            <h3 className="text-2xl font-bold text-white font-heading mb-1">{data.resumo.pedidos.atual}</h3>
+          <div className="min-w-0">
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-zinc-500">Pedidos</p>
+            <h3 className="mb-1 text-2xl font-bold text-white font-heading tabular-nums">{data.resumo.pedidos.atual}</h3>
             <GrowthBadge value={data.resumo.pedidos.crescimento} />
           </div>
         </div>
 
-        <div className="glass-card p-5 rounded-xl flex items-start gap-4">
-          <div className="w-12 h-12 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
-            <Receipt size={24} />
+        <div className="glass-card flex min-h-[112px] items-start gap-3.5 rounded-xl p-4">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+            <Receipt size={21} />
           </div>
-          <div>
-            <p className="text-xs font-medium text-zinc-300 uppercase tracking-wider mb-1">Ticket Médio</p>
-            <h3 className="text-2xl font-bold text-white font-heading mb-1">
+          <div className="min-w-0">
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-zinc-500">Ticket médio</p>
+            <h3 className="mb-1 text-2xl font-bold text-white font-heading tabular-nums">
               {data.resumo.ticket_medio.atual.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
             </h3>
             <GrowthBadge value={data.resumo.ticket_medio.crescimento} />
           </div>
         </div>
 
-        <div className="glass-card p-5 rounded-xl flex items-start gap-4">
-          <div className="w-12 h-12 rounded-full bg-violet-500/10 text-violet-500 flex items-center justify-center shrink-0">
-            <TrendingUp size={24} />
+        <div className="glass-card flex min-h-[112px] items-start gap-3.5 rounded-xl p-4">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+            <TrendingUp size={21} />
           </div>
-          <div>
-            <p className="text-xs font-medium text-zinc-300 uppercase tracking-wider mb-1">Lucro Líquido</p>
-            <h3 className="text-2xl font-bold text-white font-heading mb-1">{data.resumo.lucro.atual.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</h3>
+          <div className="min-w-0">
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-zinc-500">Lucro estimado</p>
+            <h3 className="mb-1 text-2xl font-bold text-white font-heading tabular-nums">{data.resumo.lucro.atual.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</h3>
             <GrowthBadge value={data.resumo.lucro.crescimento} />
           </div>
+        </div>
+      </div>
+
+      <div className="grid overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm sm:grid-cols-3">
+        <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3 sm:border-b-0 sm:border-r">
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-emerald-50 text-emerald-600"><Activity size={18} /></div>
+          <div><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Margem estimada</p><strong className="text-base text-slate-800">{margemEstimada.toFixed(1)}%</strong></div>
+        </div>
+        <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3 sm:border-b-0 sm:border-r">
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-blue-50 text-blue-600"><Receipt size={18} /></div>
+          <div><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Itens por pedido</p><strong className="text-base text-slate-800">{itensPorPedido.toFixed(1)}</strong><span className="ml-1 text-xs text-slate-400">({itensVendidos} itens)</span></div>
+        </div>
+        <div className="flex items-center gap-3 px-4 py-3">
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-amber-50 text-amber-600"><Award size={18} /></div>
+          <div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Produto líder</p><strong className="block truncate text-base text-slate-800">{data.produtos_top?.[0]?.nome || 'Sem vendas no período'}</strong></div>
         </div>
       </div>
 
@@ -340,7 +337,7 @@ const Reports = () => {
                 <RechartsTooltip 
                   contentStyle={{ backgroundColor: '#18181b', borderColor: '#ffffff1a', borderRadius: '8px', color: '#fff', fontSize: '12px' }}
                   itemStyle={{ color: '#f97316' }}
-                  formatter={(value: any, name: any) => [value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), name === 'vendas' ? 'Faturamento' : 'Lucro Líquido']}
+                  formatter={(value: any, name: any) => [value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), name === 'vendas' ? 'Faturamento' : 'Lucro estimado']}
                 />
                 <Area type="monotone" dataKey="vendas" stroke="#f97316" strokeWidth={2} fillOpacity={1} fill="url(#colorOrange)" activeDot={{ r: 4, fill: '#f97316', stroke: '#fff' }} dot={{ r: 2, fill: '#f97316', strokeWidth: 0 }} />
                 <Area type="monotone" dataKey="lucro" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorGreen)" activeDot={{ r: 4, fill: '#10b981', stroke: '#fff' }} dot={{ r: 2, fill: '#10b981', strokeWidth: 0 }} />
@@ -353,7 +350,7 @@ const Reports = () => {
         <div className="glass-card p-5 rounded-xl flex flex-col">
           <h3 className="text-sm font-bold text-white font-heading mb-4">Vendas por Categoria</h3>
           <div className="flex-1 flex items-center justify-between">
-            <div className="w-1/2 h-[180px] relative">
+            <div className="relative h-[180px] w-[42%] shrink-0">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -374,17 +371,17 @@ const Reports = () => {
               </div>
             </div>
             
-            <div className="w-1/2 flex flex-col gap-3 pl-2">
+            <div className="flex w-[58%] min-w-0 flex-col gap-3 pl-3">
               {data.vendas_categoria.map((cat: any, idx: number) => (
-                <div key={idx} className="flex justify-between items-start text-xs">
-                  <div>
-                    <div className="flex items-center gap-1.5 text-zinc-200">
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: CAT_COLORS[idx % CAT_COLORS.length] }}></div>
-                      {cat.name}
+                <div key={idx} className="flex items-start justify-between gap-2 text-xs">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 text-zinc-200" title={cat.name}>
+                      <div className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: CAT_COLORS[idx % CAT_COLORS.length] }}></div>
+                      <span className="truncate">{cat.name}</span>
                     </div>
                     <div className="text-zinc-400 text-[10px] ml-3.5 mt-0.5">{cat.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
                   </div>
-                  <div className="font-medium text-white">{data.resumo.faturamento.atual > 0 ? ((cat.value / data.resumo.faturamento.atual) * 100).toFixed(1) : 0}%</div>
+                  <div className="shrink-0 font-medium text-white">{data.resumo.faturamento.atual > 0 ? ((cat.value / data.resumo.faturamento.atual) * 100).toFixed(1) : 0}%</div>
                 </div>
               ))}
             </div>
@@ -524,7 +521,7 @@ const Reports = () => {
           <thead>
             <tr className="bg-zinc-100 text-zinc-800">
               <th className="p-3 border border-zinc-300">Faturamento Total</th>
-              <th className="p-3 border border-zinc-300">Lucro Líquido</th>
+              <th className="p-3 border border-zinc-300">Lucro Estimado</th>
               <th className="p-3 border border-zinc-300">Total de Pedidos</th>
               <th className="p-3 border border-zinc-300">Ticket Médio</th>
               <th className="p-3 border border-zinc-300">Itens Vendidos</th>
