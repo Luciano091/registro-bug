@@ -328,10 +328,9 @@ const NewOrder = () => {
         </div>
       )}
 
-      <div className="order-workspace flex flex-col lg:flex-row gap-6 lg:h-[calc(100vh-9rem)]">
-        <div className="min-w-0 flex-1 flex flex-col gap-4">
-          <div className="flex flex-col xl:flex-row gap-4 mb-2 justify-between">
-            <div className="min-w-0 flex gap-2 p-1 bg-dark-800/50 backdrop-blur-md border border-white/5 rounded-xl overflow-x-auto shadow-lg">
+      <div className="order-workspace flex flex-col gap-4 lg:h-[calc(100vh-9rem)]">
+          <div className="flex shrink-0 flex-col justify-between gap-4 xl:flex-row">
+            <div className="min-w-0 flex flex-1 gap-2 p-1 bg-dark-800/50 backdrop-blur-md border border-white/5 rounded-xl overflow-x-auto shadow-lg">
               {categorias.map(cat => (
                 <button key={cat as string} onClick={() => setActiveCategory(cat as string)} className={`px-3 py-1.5 rounded-lg text-xs transition-all whitespace-nowrap ${activeCategory === cat ? 'bg-white/10 text-white font-medium shadow-sm' : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'}`}>
                   {cat as string}
@@ -344,7 +343,8 @@ const NewOrder = () => {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+        <div className="flex min-h-0 flex-1 flex-col gap-6 lg:flex-row">
+          <div className="min-w-0 flex-1 overflow-y-auto pr-2 custom-scrollbar">
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
               {filtered.map(produto => {
                 const configurable = (produto.grupos_opcoes || []).some((group: any) => group.ativo);
@@ -377,9 +377,8 @@ const NewOrder = () => {
               })}
             </div>
           </div>
-        </div>
 
-        <div className="w-full lg:w-80 glass-card rounded-2xl flex flex-col overflow-hidden h-[600px] lg:h-full shrink-0">
+          <div className="w-full lg:w-80 glass-card rounded-2xl flex flex-col overflow-hidden h-[600px] lg:h-full shrink-0">
           <div className="p-4 border-b border-white/5 bg-black/20 flex justify-between items-center">
             <h3 className="text-lg font-bold font-heading">Resumo do Pedido</h3>
             <span className="bg-brand-500/20 text-brand-400 text-xs px-2 py-1 rounded-md">{itens.length} itens</span>
@@ -405,6 +404,7 @@ const NewOrder = () => {
             <button onClick={() => setShowCheckout(true)} disabled={itens.length === 0} className="w-full premium-btn py-2.5 rounded-xl font-bold flex justify-center items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed">
               Avançar <ChevronRight size={18} />
             </button>
+          </div>
           </div>
         </div>
       </div>
