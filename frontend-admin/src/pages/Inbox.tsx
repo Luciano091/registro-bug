@@ -196,7 +196,7 @@ export default function Inbox() {
           {loading ? <p className="p-6 text-center text-sm text-slate-400">Carregando conversas...</p> : filtered.length === 0 ? (
             <div className="p-8 text-center text-slate-400"><MessageCircle className="mx-auto mb-3 opacity-30" size={38} /><p className="text-sm">Nenhuma conversa recebida.</p></div>
           ) : filtered.map(item => (
-            <button key={item.id} onClick={() => setSelectedId(item.id)} className={`w-full border-b border-slate-100 p-4 text-left transition hover:bg-slate-50 ${selectedId === item.id ? 'bg-orange-50/70' : ''}`}>
+            <button key={item.id} onClick={() => setSelectedId(item.id)} className={`w-full border-b border-l-2 border-b-slate-100 p-4 text-left transition hover:bg-slate-50 ${selectedId === item.id ? 'border-l-orange-500 bg-slate-50' : 'border-l-transparent bg-white'}`}>
               <div className="flex items-start gap-3">
                 <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-full font-bold ${item.handoff_requested ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-600'}`}>{(item.nome || 'C')[0].toUpperCase()}</div>
                 <div className="min-w-0 flex-1">
@@ -220,7 +220,7 @@ export default function Inbox() {
             </div>
             <div className="flex shrink-0 items-center gap-2">
               {selected.telefone && <a href={`tel:+${selected.telefone}`} className="hidden rounded-xl border border-slate-200 p-2.5 text-slate-500 hover:bg-slate-50 sm:block" aria-label="Ligar"><Phone size={18} /></a>}
-              <button onClick={() => void deleteConversation()} disabled={deleting} className="rounded-xl border border-red-200 p-2.5 text-red-500 hover:bg-red-50 disabled:opacity-50" aria-label="Excluir conversa do painel" title="Excluir conversa do painel"><Trash2 size={18} /></button>
+              <button onClick={() => void deleteConversation()} disabled={deleting} className="rounded-xl border border-slate-200 p-2.5 text-slate-500 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600 disabled:opacity-50" aria-label="Excluir conversa do painel" title="Excluir conversa do painel"><Trash2 size={18} /></button>
               {selected.atendimento_modo === 'human' ? (
                 <button onClick={() => void updateMode('bot')} className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2.5 text-xs font-bold text-white hover:bg-emerald-700"><Bot size={16} /> <span className="hidden sm:inline">Devolver ao robô</span></button>
               ) : (
