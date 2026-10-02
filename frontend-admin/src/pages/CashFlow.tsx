@@ -22,6 +22,11 @@ interface Caixa {
   movimentacoes: Movimentacao[];
 }
 
+const formatCurrency = (value: number) => value.toLocaleString('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+});
+
 export default function CashFlow() {
   const [loading, setLoading] = useState(true);
   
@@ -167,55 +172,55 @@ export default function CashFlow() {
   const saldoAtual = caixa.saldo_inicial + totalEntradas - totalSaidas;
 
   return (
-    <div className="p-4 md:p-8 space-y-6 animate-fade-in relative">
+    <div className="relative space-y-5 p-4 animate-fade-in md:p-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-heading font-bold gradient-text">Gestão de Caixa</h1>
-          <p className="text-zinc-300">Operador: <span className="text-white font-medium">{caixa.operador}</span> | Aberto em: {new Date(caixa.data_abertura).toLocaleString()}</p>
+          <h1 className="font-heading text-3xl font-bold tracking-tight text-slate-900">Gestão de Caixa</h1>
+          <p className="mt-1 text-sm text-slate-500">Operador: <span className="font-semibold text-slate-700">{caixa.operador}</span> <span className="mx-1 text-slate-300">•</span> Aberto em {new Date(caixa.data_abertura).toLocaleString()}</p>
         </div>
-        <button onClick={handleFecharCaixa} className="bg-red-500/10 text-red-500 hover:bg-red-500/20 px-6 py-3 rounded-xl font-bold transition-colors flex items-center gap-2 border border-red-500/20">
+        <button onClick={handleFecharCaixa} className="flex items-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-600 transition-colors hover:bg-red-50">
           <Lock size={18} /> Fechar Caixa
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="glass-card p-6 rounded-2xl flex flex-col justify-center">
-          <span className="text-zinc-300 text-sm font-medium mb-1 flex items-center gap-2"><DollarSign size={16}/> Saldo Inicial</span>
-          <span className="text-2xl font-bold text-white">R$ {caixa.saldo_inicial.toFixed(2)}</span>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="flex min-h-24 flex-col justify-center rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <span className="mb-1.5 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500"><DollarSign size={15}/> Saldo inicial</span>
+          <span className="text-2xl font-bold tracking-tight text-slate-800">{formatCurrency(caixa.saldo_inicial)}</span>
         </div>
-        <div className="glass-card p-6 rounded-2xl flex flex-col justify-center bg-green-500/5 border-green-500/20">
-          <span className="text-emerald-400 text-sm font-medium mb-1 flex items-center gap-2"><ArrowUpCircle size={16}/> Entradas (Vendas + Sup)</span>
-          <span className="text-2xl font-bold text-emerald-400">R$ {totalEntradas.toFixed(2)}</span>
+        <div className="flex min-h-24 flex-col justify-center rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <span className="mb-1.5 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500"><ArrowUpCircle className="text-emerald-500" size={15}/> Entradas</span>
+          <span className="text-2xl font-bold tracking-tight text-emerald-600">{formatCurrency(totalEntradas)}</span>
         </div>
-        <div className="glass-card p-6 rounded-2xl flex flex-col justify-center bg-red-500/5 border-red-500/20">
-          <span className="text-red-400 text-sm font-medium mb-1 flex items-center gap-2"><ArrowDownCircle size={16}/> Saídas (Sangrias)</span>
-          <span className="text-2xl font-bold text-red-400">R$ {totalSaidas.toFixed(2)}</span>
+        <div className="flex min-h-24 flex-col justify-center rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <span className="mb-1.5 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500"><ArrowDownCircle className="text-red-500" size={15}/> Saídas</span>
+          <span className="text-2xl font-bold tracking-tight text-red-600">{formatCurrency(totalSaidas)}</span>
         </div>
-        <div className="glass-card p-6 rounded-2xl flex flex-col justify-center bg-brand-500/5 border-brand-500/30">
-          <span className="text-brand-400 text-sm font-medium mb-1 flex items-center gap-2"><Wallet size={16}/> Saldo Atual Projetado</span>
-          <span className="text-3xl font-bold text-brand-400 drop-shadow-[0_0_8px_rgba(249,115,22,0.5)]">R$ {saldoAtual.toFixed(2)}</span>
+        <div className="flex min-h-24 flex-col justify-center rounded-xl border border-orange-200 bg-orange-50/70 p-4 shadow-sm">
+          <span className="mb-1.5 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-orange-700"><Wallet size={15}/> Saldo projetado</span>
+          <span className="text-2xl font-bold tracking-tight text-orange-600">{formatCurrency(saldoAtual)}</span>
         </div>
       </div>
 
-      <div className="flex gap-4">
+      <div className="flex flex-wrap justify-end gap-2">
         <button 
           onClick={() => { setMovTipo("sangria"); setShowMovModal(true); }}
-          className="flex-1 glass-card hover:bg-white/5 p-4 rounded-xl border border-red-500/30 text-red-400 font-bold flex items-center justify-center gap-2 transition-colors"
+          className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 shadow-sm transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
         >
-          <ArrowDownCircle size={20} /> Fazer Sangria (Retirada)
+          <ArrowDownCircle className="text-red-500" size={17} /> Fazer sangria
         </button>
         <button 
           onClick={() => { setMovTipo("suprimento"); setShowMovModal(true); }}
-          className="flex-1 glass-card hover:bg-white/5 p-4 rounded-xl border border-emerald-500/30 text-emerald-400 font-bold flex items-center justify-center gap-2 transition-colors"
+          className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 shadow-sm transition-colors hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
         >
-          <ArrowUpCircle size={20} /> Fazer Suprimento (Entrada)
+          <ArrowUpCircle className="text-emerald-500" size={17} /> Fazer suprimento
         </button>
       </div>
 
-      <div className="glass-card rounded-2xl overflow-hidden border border-white/10">
-        <div className="p-4 border-b border-white/5 flex items-center gap-2">
-          <History className="text-brand-500" size={20} />
-          <h2 className="font-bold text-lg text-white">Histórico de Movimentações</h2>
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="flex items-center gap-2 border-b border-slate-200 px-4 py-3.5">
+          <History className="text-slate-400" size={18} />
+          <h2 className="font-bold text-slate-800">Histórico de movimentações</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
@@ -233,10 +238,10 @@ export default function CashFlow() {
                 <tr key={idx} className="hover:bg-white/5 transition-colors">
                   <td className="p-4 text-zinc-200 text-sm">{new Date(mov.data).toLocaleString()}</td>
                   <td className="p-4">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      mov.tipo === 'venda' ? 'bg-brand-500/20 text-brand-400' :
-                      mov.tipo === 'suprimento' ? 'bg-emerald-500/20 text-emerald-400' :
-                      'bg-red-500/20 text-red-400'
+                    <span className={`rounded px-2 py-1 text-xs font-semibold ${
+                      mov.tipo === 'venda' ? 'bg-slate-100 text-slate-600' :
+                      mov.tipo === 'suprimento' ? 'bg-emerald-50 text-emerald-700' :
+                      'bg-red-50 text-red-700'
                     }`}>
                       {mov.tipo.toUpperCase()}
                     </span>
@@ -246,7 +251,7 @@ export default function CashFlow() {
                   <td className={`p-4 text-right font-medium ${
                     mov.tipo === 'sangria' || mov.tipo === 'estorno' ? 'text-red-400' : 'text-emerald-400'
                   }`}>
-                    {mov.tipo === 'sangria' || mov.tipo === 'estorno' ? '-' : '+'} R$ {mov.valor.toFixed(2)}
+                    {mov.tipo === 'sangria' || mov.tipo === 'estorno' ? '-' : '+'} {formatCurrency(mov.valor)}
                   </td>
                 </tr>
               ))}
