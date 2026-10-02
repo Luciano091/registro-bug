@@ -3,7 +3,7 @@ import { Check, Download, Share2, Smartphone } from 'lucide-react';
 
 const APK_URL = 'https://painel.ritmesa.com.br/ritmesa-entregador.apk';
 
-export default function DriverAppDownload({ dark = false }: { dark?: boolean }) {
+export default function DriverAppDownload({ dark = false, compact = false }: { dark?: boolean; compact?: boolean }) {
   const [copied, setCopied] = useState(false);
 
   const share = async () => {
@@ -20,6 +20,21 @@ export default function DriverAppDownload({ dark = false }: { dark?: boolean }) 
     setCopied(true);
     window.setTimeout(() => setCopied(false), 2500);
   };
+
+  if (compact) {
+    return (
+      <section className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-900 text-orange-400"><Smartphone size={20} /></div>
+          <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 className="font-heading font-bold text-slate-800">Aplicativo do entregador</h2><span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">v1.1.0</span></div><p className="truncate text-xs text-slate-500">Alertas, rota por GPS e navegação pelo Maps ou Waze.</p></div>
+        </div>
+        <div className="flex shrink-0 gap-2">
+          <a href={APK_URL} download="Ritmesa-Entregador-v1.1.0.apk" className="flex items-center justify-center gap-2 rounded-lg bg-orange-500 px-3.5 py-2.5 text-xs font-bold text-white hover:bg-orange-600"><Download size={15} /> Baixar APK</a>
+          <button type="button" onClick={share} className="flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50">{copied ? <Check size={15} className="text-emerald-500" /> : <Share2 size={15} />}{copied ? 'Copiado' : 'Compartilhar'}</button>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className={`relative overflow-hidden rounded-2xl border p-5 md:p-6 ${dark ? 'border-white/10 bg-slate-900/70 text-white' : 'border-orange-200 bg-gradient-to-br from-orange-50 to-white text-slate-900 shadow-sm'}`}>
