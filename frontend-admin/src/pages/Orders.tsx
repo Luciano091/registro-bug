@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 import { Search, Clock, Printer, CheckCircle2, Loader2, MessageCircle, X, Eye, MapPin, RotateCcw, Columns3, List, ChevronRight, Truck, AlertTriangle, Package, GripVertical, SlidersHorizontal } from 'lucide-react';
 import api from '../services/api';
@@ -87,6 +87,7 @@ const Orders = () => {
   const [confirmingPayment, setConfirmingPayment] = useState(false);
   const [quickFilter, setQuickFilter] = useState<'todos' | 'atrasados' | 'pagamento' | 'impressao'>('todos');
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const filtersRef = useRef<HTMLDivElement>(null);
   const [draggedOrderId, setDraggedOrderId] = useState<number | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
   const [, setClock] = useState(Date.now());
@@ -103,6 +104,22 @@ const Orders = () => {
     const timer = window.setInterval(() => setClock(Date.now()), 30000);
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (!filtersOpen) return;
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (!filtersRef.current?.contains(event.target as Node)) setFiltersOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setFiltersOpen(false);
+    };
+    document.addEventListener('pointerdown', closeOnOutsideClick);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsideClick);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [filtersOpen]);
 
   const changeViewMode = (mode: 'flow' | 'list') => {
     setViewMode(mode);
@@ -321,44 +338,48 @@ const Orders = () => {
         </div>
       </header>
 
-      <div className="mb-5 flex flex-wrap items-center gap-3">
-        <div className="relative min-w-[220px] flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
-          <input 
-            type="text" 
-            placeholder="Buscar por nome ou nº..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-700 shadow-sm transition-all focus:border-orange-300 focus:outline-none focus:ring-1 focus:ring-orange-200"
-          />
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <input
+              type="search"
+              aria-label="Buscar pedido por cliente ou número"
+              placeholder="Nome ou nº do pedido"
+              value={search}
+              onChange={event => setSearch(event.target.value)}
+              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-700 shadow-sm transition-all focus:border-orange-300 focus:outline-none focus:ring-1 focus:ring-orange-200"
+            />
+          </div>
+          <div ref={filtersRef} className="relative">
+            <button type="button" onClick={() => setFiltersOpen(open => !open)} aria-expanded={filtersOpen} aria-controls="orders-filters" className={`inline-flex min-h-10 items-center gap-2 rounded-xl border px-3 text-sm font-semibold shadow-sm transition ${filtersOpen || quickFilter !== 'todos' || filter !== 'Hoje' ? 'border-orange-200 bg-orange-50 text-orange-700' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}>
+              <SlidersHorizontal size={16} /> Filtros <span className="text-xs font-medium opacity-75">· {filter.includes('-') ? filter.split('-').reverse().join('/') : filter}{quickFilter !== 'todos' ? ' +1' : ''}</span>
+            </button>
+            {filtersOpen && <div id="orders-filters" className="absolute left-0 top-full z-30 mt-2 w-[calc(100vw-3rem)] space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-xl sm:left-auto sm:right-0 sm:w-[420px] xl:left-0 xl:right-auto xl:w-[520px]">
+              <div>
+                <p className="mb-2 text-xs font-semibold text-slate-500">Período</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  {['Hoje', 'Ontem', 'Semana', 'Mês', 'Todos'].map(f => (
+                    <button key={f} type="button" onClick={() => setFilter(f)} className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${filter === f ? 'border-orange-200 bg-orange-50 text-orange-700' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}>{f}</button>
+                  ))}
+                  <input type="month" aria-label="Selecionar um mês específico" value={filter.includes('-') ? filter : ''} onChange={event => setFilter(event.target.value || 'Mês')} className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-sm text-slate-600 outline-none hover:border-orange-300" />
+                </div>
+              </div>
+              <div>
+                <p className="mb-2 text-xs font-semibold text-slate-500">Situação</p>
+                <div className="flex flex-wrap items-center gap-2" aria-label="Filtros rápidos">
+                  {[['todos', 'Todos'], ['atrasados', 'Atrasados'], ['pagamento', 'Pagamento pendente'], ['impressao', 'Falha de impressão']].map(([id, label]) => (
+                    <button key={id} type="button" onClick={() => setQuickFilter(id as typeof quickFilter)} className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${quickFilter === id ? 'border-orange-200 bg-orange-50 text-orange-700' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}>
+                      {id === 'atrasados' && <AlertTriangle className="mr-1 inline-block" size={13} />}{label}{id === 'impressao' && pendingPrintOrderId ? ' • 1' : ''}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>}
+          </div>
         </div>
-        <button type="button" onClick={() => setFiltersOpen(open => !open)} aria-expanded={filtersOpen} aria-controls="orders-filters" className={`inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl border px-3 text-sm font-semibold shadow-sm transition ${filtersOpen || quickFilter !== 'todos' || filter !== 'Hoje' ? 'border-orange-200 bg-orange-50 text-orange-700' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}>
-          <SlidersHorizontal size={16} /> Filtros <span className="text-xs font-medium opacity-75">· {filter.includes('-') ? filter.split('-').reverse().join('/') : filter}{quickFilter !== 'todos' ? ' +1' : ''}</span>
-        </button>
         <PrinterControl />
       </div>
-
-      {filtersOpen && <div id="orders-filters" className="mb-5 space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div>
-          <p className="mb-2 text-xs font-semibold text-slate-500">Período</p>
-          <div className="flex flex-wrap items-center gap-2">
-            {['Hoje', 'Ontem', 'Semana', 'Mês', 'Todos'].map(f => (
-              <button key={f} type="button" onClick={() => setFilter(f)} className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${filter === f ? 'border-orange-200 bg-orange-50 text-orange-700' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}>{f}</button>
-            ))}
-            <input type="month" aria-label="Selecionar um mês específico" value={filter.includes('-') ? filter : ''} onChange={event => setFilter(event.target.value || 'Mês')} className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-sm text-slate-600 outline-none hover:border-orange-300" />
-          </div>
-        </div>
-        <div>
-          <p className="mb-2 text-xs font-semibold text-slate-500">Situação</p>
-          <div className="flex flex-wrap items-center gap-2" aria-label="Filtros rápidos">
-            {[['todos', 'Todos'], ['atrasados', 'Atrasados'], ['pagamento', 'Pagamento pendente'], ['impressao', 'Falha de impressão']].map(([id, label]) => (
-              <button key={id} type="button" onClick={() => setQuickFilter(id as typeof quickFilter)} className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${quickFilter === id ? 'border-orange-200 bg-orange-50 text-orange-700' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}>
-                {id === 'atrasados' && <AlertTriangle className="mr-1 inline-block" size={13} />}{label}{id === 'impressao' && pendingPrintOrderId ? ' • 1' : ''}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>}
 
       {viewMode === 'flow' ? (
         <div className="flex min-h-[430px] flex-1 gap-4 overflow-x-auto pb-3 custom-scrollbar" aria-label="Fluxo de pedidos">
