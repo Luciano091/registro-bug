@@ -29,6 +29,7 @@ interface AppDataContextType {
   autoPrintEnabled: boolean;
   printerError: string | null;
   lastPrintedOrder: string | null;
+  pendingPrintOrderId: number | null;
 
   // Loading states (only for first load)
   ordersLoaded: boolean;
@@ -87,6 +88,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
   const [autoPrintEnabled, setAutoPrintEnabledState] = useState(PrinterService.getAutoPrintEnabled());
   const [printerError, setPrinterError] = useState<string | null>(null);
   const [lastPrintedOrder, setLastPrintedOrder] = useState<string | null>(null);
+  const [pendingPrintOrderId, setPendingPrintOrderId] = useState<number | null>(() => Number(localStorage.getItem(FAILED_PRINT_KEY)) || null);
   const autoPrintEnabledRef = useRef(autoPrintEnabled);
   const queuedPrintIds = useRef(new Set<number>());
   const printedOrderIds = useRef(loadPrintedOrderIds());
@@ -135,6 +137,7 @@ const showBrowserNotification = (title: string, body: string) => {
     localStorage.setItem(PRINTED_ORDERS_KEY, JSON.stringify(recentIds));
     if (failedPrintId.current === orderId) {
       failedPrintId.current = null;
+      setPendingPrintOrderId(null);
       localStorage.removeItem(FAILED_PRINT_KEY);
     }
   }, []);
@@ -156,6 +159,7 @@ const showBrowserNotification = (title: string, body: string) => {
     } catch (error: any) {
       const message = error?.message || error?.response?.data?.detail || 'Não foi possível imprimir a nova comanda.';
       failedPrintId.current = orderId;
+      setPendingPrintOrderId(orderId);
       localStorage.setItem(FAILED_PRINT_KEY, String(orderId));
       setPrinterError(message);
       void playOrderSound();
@@ -394,6 +398,7 @@ const showBrowserNotification = (title: string, body: string) => {
       autoPrintEnabled,
       printerError,
       lastPrintedOrder,
+      pendingPrintOrderId,
 
       ordersLoaded,
       produtosLoaded,

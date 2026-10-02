@@ -8,6 +8,7 @@ export const PrinterControl = () => {
     autoPrintEnabled,
     printerError,
     lastPrintedOrder,
+    pendingPrintOrderId,
     connectPrinter,
     testPrinter,
     setAutoPrintEnabled,
@@ -60,7 +61,7 @@ export const PrinterControl = () => {
           onClick={() => void run('connect', connectPrinter)}
           className="rounded-lg bg-orange-500 px-3 py-2 text-xs font-bold text-white transition hover:bg-orange-600 disabled:opacity-60"
         >
-          {connecting ? 'Conectando...' : 'Conectar'}
+          {connecting ? 'Conectando...' : pendingPrintOrderId ? 'Conectar e imprimir' : 'Conectar'}
         </button>
       ) : (
         <>
@@ -84,10 +85,14 @@ export const PrinterControl = () => {
         </>
       )}
 
-      {printerError && (
+      {(printerError || pendingPrintOrderId) && (
         <div className="flex w-full items-center justify-between gap-2 border-t border-red-100 px-1 pt-1 text-[11px] text-red-600">
-          <span className="min-w-0 truncate" title={printerError}>{printerError}</span>
-          {localStorage.getItem('ritmesa:last_failed_print_order') && (
+          <span className="min-w-0 leading-relaxed" title={printerError || undefined}>
+            {pendingPrintOrderId
+              ? `Há um pedido aguardando impressão. ${printerError || 'Conecte a impressora para imprimir.'}`
+              : printerError}
+          </span>
+          {pendingPrintOrderId && connected && (
             <button
               type="button"
               disabled={!connected || busyAction === 'retry'}

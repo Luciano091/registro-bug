@@ -9,6 +9,20 @@ type StatusListener = (status: PrinterStatus) => void;
 
 const AUTO_PRINT_KEY = 'ritmesa:auto_print_enabled';
 
+const friendlyPrinterError = (error: any) => {
+  const rawMessage = String(error?.message || error || '');
+  if (/failed to open serial port|cannot open|open.*serial/i.test(rawMessage)) {
+    return 'Não foi possível abrir a impressora. Confirme se ela está ligada e conectada ao Bluetooth.';
+  }
+  if (/device has been lost|disconnected|networkerror/i.test(rawMessage)) {
+    return 'A impressora foi desconectada. Ligue-a e conecte novamente.';
+  }
+  if (/already open|already locked|locked/i.test(rawMessage)) {
+    return 'A impressora já está sendo usada por outra aba ou aplicativo. Feche-o e tente novamente.';
+  }
+  return rawMessage || 'Não foi possível conectar à impressora.';
+};
+
 export class PrinterService {
   private static port: any | null = null;
   private static writer: any | null = null;
@@ -92,7 +106,7 @@ export class PrinterService {
       this.writer = null;
       const message = error?.name === 'NotFoundError'
         ? 'Nenhuma impressora foi selecionada.'
-        : error?.message || 'Não foi possível conectar à impressora.';
+        : friendlyPrinterError(error);
       this.setStatus({ state: 'error', message });
       throw new Error(message);
     }
@@ -136,7 +150,7 @@ export class PrinterService {
       }
       this.writer = null;
       this.port = null;
-      const message = error?.message || 'Falha ao enviar a comanda para a impressora.';
+      const message = friendlyPrinterError(error) || 'Falha ao enviar a comanda para a impressora.';
       this.setStatus({ state: 'error', message });
       throw new Error(message);
     }
