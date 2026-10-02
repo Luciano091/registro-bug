@@ -321,8 +321,8 @@ const Orders = () => {
         </div>
       </header>
 
-      <div className="mb-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(260px,360px)_auto] lg:items-center">
-        <div className="flex min-w-0 items-center gap-2 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+      <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex min-w-0 flex-wrap items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
           {['Hoje', 'Ontem', 'Semana', 'Mês', 'Todos'].map(f => (
             <button
               key={f}
@@ -342,7 +342,7 @@ const Orders = () => {
           />
         </div>
 
-        <div className="relative">
+        <div className="relative w-full lg:w-80">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
           <input 
             type="text" 
@@ -352,13 +352,14 @@ const Orders = () => {
             className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-700 shadow-sm transition-all focus:border-orange-300 focus:outline-none focus:ring-1 focus:ring-orange-200"
           />
         </div>
-        <div className="flex items-center gap-2">
-          <PrinterControl />
-          <button type="button" onClick={() => setFiltersOpen(open => !open)} aria-expanded={filtersOpen} className={`inline-flex min-h-10 items-center gap-2 rounded-xl border px-3 text-sm font-semibold shadow-sm transition ${filtersOpen || quickFilter !== 'todos' || filter !== 'Hoje' ? 'border-orange-200 bg-orange-50 text-orange-700' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}>
-            <SlidersHorizontal size={16} /> Filtros
-            {(quickFilter !== 'todos' || filter !== 'Hoje') && <span className="grid h-5 min-w-5 place-items-center rounded-full bg-orange-500 px-1 text-[11px] text-white">!</span>}
-          </button>
-        </div>
+      </div>
+
+      <div className="mb-5 flex flex-wrap items-center justify-end gap-2">
+        <PrinterControl />
+        <button type="button" onClick={() => setFiltersOpen(open => !open)} aria-expanded={filtersOpen} className={`inline-flex min-h-10 items-center gap-2 rounded-xl border px-3 text-sm font-semibold shadow-sm transition ${filtersOpen || quickFilter !== 'todos' || filter !== 'Hoje' ? 'border-orange-200 bg-orange-50 text-orange-700' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}>
+          <SlidersHorizontal size={16} /> Filtros
+          {(quickFilter !== 'todos' || filter !== 'Hoje') && <span className="grid h-5 min-w-5 place-items-center rounded-full bg-orange-500 px-1 text-[11px] text-white">!</span>}
+        </button>
       </div>
 
       {filtersOpen && <div className="mb-5 flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-sm" aria-label="Filtros rápidos">
