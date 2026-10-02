@@ -109,6 +109,13 @@ class WhatsAppGatewayTest(unittest.TestCase):
         self.assertEqual(detail["nome"], "Cliente Atualizado")
         self.assertEqual([item["status"] for item in detail["mensagens"]], ["received", "sent"])
 
+        result = whatsapp_gateway.delete_conversation(
+            conversation["id"], self.db, self.establishment_id,
+        )
+        self.assertEqual(result["status"], "deleted")
+        self.assertEqual(self.db.query(models.WhatsAppConversation).count(), 0)
+        self.assertEqual(self.db.query(models.WhatsAppChatMessage).count(), 0)
+
     def test_gateway_rejects_invalid_secret(self):
         with self.assertRaises(HTTPException) as context:
             whatsapp_gateway._gateway_auth("wrong")

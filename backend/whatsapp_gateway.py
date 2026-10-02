@@ -175,6 +175,23 @@ def conversation_detail(
     return _serialize_conversation(conversation, include_messages=True)
 
 
+@router.delete("/inbox/{conversation_id}")
+def delete_conversation(
+    conversation_id: int,
+    db: Session = Depends(get_db),
+    establishment_id: int = Depends(auth.require_permission("whatsapp.enviar")),
+):
+    conversation = db.query(models.WhatsAppConversation).filter(
+        models.WhatsAppConversation.id == conversation_id,
+        models.WhatsAppConversation.estabelecimento_id == establishment_id,
+    ).first()
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversa não encontrada.")
+    db.delete(conversation)
+    db.commit()
+    return {"status": "deleted", "conversation_id": conversation_id}
+
+
 @router.post("/inbox/{conversation_id}/read")
 def mark_read(
     conversation_id: int,

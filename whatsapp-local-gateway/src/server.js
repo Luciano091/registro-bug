@@ -60,6 +60,26 @@ const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, mil
 // Ambos representam contatos diretos e precisam chegar ao assistente.
 const isDirectChatId = (chatId = '') => chatId.endsWith('@c.us') || chatId.endsWith('@lid');
 
+const mediaLabels = {
+  image: '[Imagem recebida]',
+  video: '[Vídeo recebido]',
+  document: '[Documento recebido]',
+  sticker: '[Figurinha recebida]',
+  location: '[Localização recebida]',
+  contact_card: '[Contato recebido]',
+  contacts: '[Contatos recebidos]',
+};
+
+const normalizeIncomingText = (message) => {
+  if (isAudioType(message.type)) return '[Áudio recebido]';
+  if (message.hasMedia || mediaLabels[message.type]) return mediaLabels[message.type] || '[Arquivo recebido]';
+  const text = String(message.body || '').trim();
+  const compact = text.replace(/\s/g, '');
+  const looksEncoded = compact.length > 500 && /^[A-Za-z0-9+/=]+$/.test(compact);
+  if (looksEncoded || text.length > 4000) return '[Conteúdo não suportado recebido]';
+  return text;
+};
+
 const resolvePhoneNumber = async (chatId, contact = null) => {
   if (chatId.endsWith('@c.us')) {
     return contact?.number || contact?.id?.user || chatId.split('@')[0];
@@ -218,7 +238,8 @@ client.on('message_create', async (message) => {
 client.on('message', async (message) => {
   if (message.fromMe || message.from === 'status@broadcast' || !isDirectChatId(message.from)) return;
   const receivedAudio = isAudioType(message.type);
-  if (!receivedAudio && !message.body?.trim()) return;
+  const incomingText = normalizeIncomingText(message);
+  if (!incomingText) return;
 
   let contactName = message.from;
   let phoneNumber = null;
@@ -228,7 +249,6 @@ client.on('message', async (message) => {
     phoneNumber = await syncContactIdentity(message.from, contactName, contact);
   } catch {}
 
-  const incomingText = receivedAudio ? '[Áudio recebido]' : message.body;
   log(`${receivedAudio ? 'Áudio' : 'Mensagem'} recebido de ${contactName}.`);
   bridge.incoming({
     chat_id: message.from,
@@ -260,7 +280,7 @@ client.on('message', async (message) => {
 
   const previous = pendingMessages.get(message.from);
   if (previous?.timer) clearTimeout(previous.timer);
-  const messages = [...(previous?.messages || []), message];
+  const messages = [...(previous?.messages || []), { body: incomingText }];
   const timer = setTimeout(() => processMessages(message.from), 1100);
   pendingMessages.set(message.from, { messages, contactName, timer });
 });

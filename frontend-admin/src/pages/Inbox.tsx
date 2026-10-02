@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import {
   ArrowLeft, Bot, CheckCheck, Clock3, MessageCircle, Phone, RefreshCw,
-  Search, Send, UserRound, Wifi, WifiOff,
+  Search, Send, Trash2, UserRound, Wifi, WifiOff,
 } from 'lucide-react';
 import api from '../services/api';
 
@@ -49,6 +49,14 @@ const displayPhone = (conversation: Conversation) => {
   return number.length > 15 ? 'Número não disponibilizado pelo WhatsApp' : `+${number}`;
 };
 
+const displayMessage = (text: string) => {
+  const compact = text.replace(/\s/g, '');
+  if (compact.length > 500 && /^[A-Za-z0-9+/=]+$/.test(compact)) {
+    return '[Conteúdo antigo não suportado]';
+  }
+  return text;
+};
+
 export default function Inbox() {
   const [gateway, setGateway] = useState<Gateway>({ online: false, connection: 'offline', needs_qr: false });
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -58,6 +66,7 @@ export default function Inbox() {
   const [draft, setDraft] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -144,6 +153,24 @@ export default function Inbox() {
     }
   };
 
+  const deleteConversation = async () => {
+    if (!selected || deleting) return;
+    const customerName = selected.nome || 'este contato';
+    const confirmed = window.confirm(`Excluir do Ritmesa toda a conversa com ${customerName}?\n\nIsso não apagará a conversa no WhatsApp do telefone.`);
+    if (!confirmed) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/whatsapp/inbox/${selected.id}`);
+      setSelected(null);
+      setSelectedId(null);
+      await loadInbox();
+    } catch (requestError: any) {
+      setError(requestError.response?.data?.detail || 'Não foi possível excluir a conversa.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="flex h-[calc(100vh-80px)] min-h-0 overflow-hidden bg-slate-100 md:h-full">
       <section className={`${selectedId ? 'hidden md:flex' : 'flex'} w-full flex-col border-r border-slate-200 bg-white md:w-[360px] md:min-w-[320px]`}>
@@ -193,6 +220,7 @@ export default function Inbox() {
             </div>
             <div className="flex shrink-0 items-center gap-2">
               {selected.telefone && <a href={`tel:+${selected.telefone}`} className="hidden rounded-xl border border-slate-200 p-2.5 text-slate-500 hover:bg-slate-50 sm:block" aria-label="Ligar"><Phone size={18} /></a>}
+              <button onClick={() => void deleteConversation()} disabled={deleting} className="rounded-xl border border-red-200 p-2.5 text-red-500 hover:bg-red-50 disabled:opacity-50" aria-label="Excluir conversa do painel" title="Excluir conversa do painel"><Trash2 size={18} /></button>
               {selected.atendimento_modo === 'human' ? (
                 <button onClick={() => void updateMode('bot')} className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2.5 text-xs font-bold text-white hover:bg-emerald-700"><Bot size={16} /> <span className="hidden sm:inline">Devolver ao robô</span></button>
               ) : (
@@ -211,7 +239,7 @@ export default function Inbox() {
                 <div key={message.id} className={`flex ${outgoing ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[86%] rounded-2xl px-3.5 py-2.5 shadow-sm sm:max-w-[70%] ${outgoing ? 'rounded-tr-sm bg-[#d9fdd3]' : 'rounded-tl-sm bg-white'}`}>
                     {outgoing && <span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-emerald-700">{message.remetente === 'bot' ? 'Robô' : 'Atendente'}</span>}
-                    <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-800">{message.texto}</p>
+                    <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-800">{displayMessage(message.texto)}</p>
                     <div className="mt-1 flex items-center justify-end gap-1 text-[10px] text-slate-400"><span>{formatTime(message.criado_em)}</span>{outgoing && (message.status === 'queued' || message.status === 'dispatching' ? <Clock3 size={11} /> : <CheckCheck className={message.status === 'sent' ? 'text-blue-500' : 'text-red-500'} size={13} />)}</div>
                     {message.erro && <p className="mt-1 text-[10px] text-red-600">Falha: {message.erro}</p>}
                   </div>
