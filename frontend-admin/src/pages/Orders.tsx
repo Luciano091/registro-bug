@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-import { Search, Clock, Printer, CheckCircle2, Loader2, MessageCircle, X, Eye, MapPin, RotateCcw, Columns3, List, ChevronRight, Truck } from 'lucide-react';
+import { Search, Clock, Printer, CheckCircle2, Loader2, MessageCircle, X, Eye, MapPin, RotateCcw, Columns3, List, ChevronRight, Truck, AlertTriangle, Package, GripVertical } from 'lucide-react';
 import api from '../services/api';
 import { useAppData } from '../contexts/AppDataContext';
 import { can, readSession } from '../services/session';
@@ -30,6 +30,32 @@ const statusIcons: any = {
 
 const shortOrderNumber = (number: string) => number.split('-').pop() || number;
 const isDeliveryOrder = (order: any) => ['delivery', 'entrega'].includes((order.tipo_entrega || '').toLowerCase());
+const allowedTransitions: Record<string, string[]> = {
+  Novo: ['Em preparo', 'Cancelado'],
+  Recebido: ['Em preparo', 'Cancelado'],
+  'Em preparo': ['Pronto', 'Cancelado'],
+  Pronto: ['Saiu entrega', 'Finalizado', 'Cancelado'],
+  'Saiu entrega': ['Finalizado', 'Cancelado'],
+  Finalizado: [],
+  Concluído: [],
+  Entregue: [],
+  Cancelado: [],
+};
+const nextStatusFor = (order: any) => {
+  if (['Novo', 'Recebido'].includes(order.status)) return 'Em preparo';
+  if (order.status === 'Em preparo') return 'Pronto';
+  if (order.status === 'Pronto') return isDeliveryOrder(order) ? 'Saiu entrega' : 'Finalizado';
+  if (order.status === 'Saiu entrega') return 'Finalizado';
+  return null;
+};
+const nextStatusLabel = (status: string | null) => status === 'Em preparo' ? 'Iniciar preparo' : status === 'Pronto' ? 'Marcar pronto' : status === 'Saiu entrega' ? 'Saiu para entrega' : status === 'Finalizado' ? 'Finalizar' : '';
+const orderAgeMinutes = (order: any) => order.data ? Math.max(0, Math.floor((Date.now() - new Date(order.data).getTime()) / 60000)) : 0;
+const isLateOrder = (order: any) => !['Finalizado', 'Concluído', 'Entregue', 'Cancelado'].includes(order.status) && orderAgeMinutes(order) >= 30;
+const orderItemsSummary = (order: any) => {
+  const items = (order.itens || []).map((item: any) => `${item.quantidade}x ${item.produto_nome || item.produto?.nome || 'Produto'}`);
+  if (items.length <= 2) return items.join(' · ');
+  return `${items.slice(0, 2).join(' · ')} +${items.length - 2}`;
+};
 const formatElapsed = (value?: string) => {
   if (!value) return 'Agora';
   const minutes = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 60000));
@@ -59,14 +85,23 @@ const Orders = () => {
   const [cancelEstornado, setCancelEstornado] = useState(false);
   const [receivedMethod, setReceivedMethod] = useState('PIX');
   const [confirmingPayment, setConfirmingPayment] = useState(false);
+  const [quickFilter, setQuickFilter] = useState<'todos' | 'atrasados' | 'pagamento' | 'impressao'>('todos');
+  const [draggedOrderId, setDraggedOrderId] = useState<number | null>(null);
+  const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
+  const [, setClock] = useState(Date.now());
   const canConfirmPayment = can(readSession(), 'caixa.operar');
   const canUpdateOrders = can(readSession(), 'pedidos.atualizar');
-  const { orders: cachedOrders, ordersLoaded, refreshOrders, updateOrderStatus: optimisticUpdateStatus } = useAppData();
+  const { orders: cachedOrders, ordersLoaded, refreshOrders, updateOrderStatus: optimisticUpdateStatus, pendingPrintOrderId } = useAppData();
   const orders = cachedOrders;
 
   useEffect(() => {
     if (!ordersLoaded) void refreshOrders();
   }, [ordersLoaded, refreshOrders]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setClock(Date.now()), 30000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const changeViewMode = (mode: 'flow' | 'list') => {
     setViewMode(mode);
@@ -74,7 +109,13 @@ const Orders = () => {
   };
 
   const handleStatusChange = async (id: number, newStatus: string) => {
+    const currentOrder = orders.find(order => order.id === id);
+    if (!currentOrder || newStatus === currentOrder.status) return;
     if (newStatus === 'Cancelado') { setCancelModalOrderId(id); setCancelMotivo(''); setCancelEstornado(false); return; }
+    if (!(allowedTransitions[currentOrder.status] || []).includes(newStatus)) {
+      alert(`Não é possível mover o pedido de "${currentOrder.status}" para "${newStatus}".`);
+      return;
+    }
     try {
       optimisticUpdateStatus(id, newStatus);
       await api.put(`/pedidos/${id}/status?status=${encodeURIComponent(newStatus)}`);
@@ -207,9 +248,14 @@ const Orders = () => {
   };
 
   const filteredOrders = orders.filter(order => {
-    const matchesSearch = order.cliente.toLowerCase().includes(search.toLowerCase()) || 
-                          order.numero.includes(search);
+    const normalizedSearch = search.toLowerCase();
+    const matchesSearch = String(order.cliente || '').toLowerCase().includes(normalizedSearch) ||
+                          String(order.numero || '').includes(search);
     if (!matchesSearch) return false;
+
+    if (quickFilter === 'atrasados' && !isLateOrder(order)) return false;
+    if (quickFilter === 'pagamento' && (order.pagamento_confirmado_em || order.estornado || order.status === 'Cancelado')) return false;
+    if (quickFilter === 'impressao' && order.id !== pendingPrintOrderId) return false;
 
     if (filter === 'Todos') return true;
 
@@ -242,6 +288,18 @@ const Orders = () => {
 
     return true;
   });
+
+  const handleDrop = (event: React.DragEvent, column: typeof flowColumns[number]) => {
+    event.preventDefault();
+    const orderId = draggedOrderId;
+    setDraggedOrderId(null);
+    setDragOverColumn(null);
+    if (!orderId || !canUpdateOrders) return;
+    const order = orders.find(item => item.id === orderId);
+    if (!order) return;
+    const targetStatus = column.key === 'Recebido' ? 'Recebido' : column.key === 'Finalizado' ? 'Finalizado' : column.key;
+    if (targetStatus !== order.status) void handleStatusChange(orderId, targetStatus);
+  };
 
   return (
     <div className={`p-6 md:p-10 mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 h-full flex flex-col ${viewMode === 'flow' ? 'max-w-[1600px]' : 'max-w-6xl'}`}>
@@ -296,13 +354,22 @@ const Orders = () => {
         </div>
       </div>
 
+      <div className="mb-5 flex flex-wrap items-center gap-2" aria-label="Filtros rápidos">
+        <span className="mr-1 text-xs font-semibold text-slate-400">Atalhos:</span>
+        {[['todos', 'Todos'], ['atrasados', 'Atrasados'], ['pagamento', 'Pagamento pendente'], ['impressao', 'Falha de impressão']].map(([id, label]) => (
+          <button key={id} type="button" onClick={() => setQuickFilter(id as typeof quickFilter)} className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${quickFilter === id ? 'border-orange-200 bg-orange-50 text-orange-700' : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'}`}>
+            {id === 'atrasados' && <AlertTriangle className="mr-1 inline-block" size={13} />}{label}{id === 'impressao' && pendingPrintOrderId ? ' • 1' : ''}
+          </button>
+        ))}
+      </div>
+
       {viewMode === 'flow' ? (
         <div className="flex min-h-[430px] flex-1 gap-4 overflow-x-auto pb-3 custom-scrollbar" aria-label="Fluxo de pedidos">
           {flowColumns.map(column => {
             const columnOrders = filteredOrders.filter(order => column.statuses.includes(order.status));
             const columnTotal = columnOrders.reduce((total, order) => total + Number(order.total || 0), 0);
             return (
-              <section key={column.key} className={`min-w-[255px] xl:min-w-[180px] flex-1 self-start overflow-hidden rounded-2xl border border-slate-200 border-t-4 ${column.accent} bg-slate-50/80 shadow-sm`}>
+            <section key={column.key} onDragOver={event => { event.preventDefault(); setDragOverColumn(column.key); }} onDragLeave={() => setDragOverColumn(null)} onDrop={event => handleDrop(event, column)} className={`min-w-[255px] xl:min-w-[180px] flex-1 self-start overflow-hidden rounded-2xl border border-slate-200 border-t-4 ${column.accent} bg-slate-50/80 shadow-sm transition ${dragOverColumn === column.key ? 'ring-2 ring-orange-400 ring-offset-2' : ''}`}>
                 <div className="border-b border-slate-200 bg-white px-4 py-3">
                   <div className="flex items-center justify-between gap-2">
                     <h3 className="text-sm font-bold text-slate-800">{column.title}</h3>
@@ -317,15 +384,10 @@ const Orders = () => {
                   ) : columnOrders.length === 0 ? (
                     <div className="rounded-xl border border-dashed border-slate-200 bg-white/70 px-3 py-8 text-center text-xs text-slate-400">Nenhum pedido nesta etapa</div>
                   ) : columnOrders.map(order => {
-                    const nextStatus = ['Novo', 'Recebido'].includes(order.status)
-                      ? 'Em preparo'
-                      : order.status === 'Em preparo'
-                        ? 'Pronto'
-                        : order.status === 'Pronto' && !isDeliveryOrder(order)
-                          ? 'Finalizado'
-                          : null;
-                    const nextLabel = nextStatus === 'Em preparo' ? 'Iniciar preparo' : nextStatus === 'Pronto' ? 'Marcar pronto' : nextStatus === 'Finalizado' ? 'Finalizar' : '';
+                    const nextStatus = nextStatusFor(order);
+                    const nextLabel = nextStatusLabel(nextStatus);
                     const isFinished = column.key === 'Finalizado';
+                    const late = isLateOrder(order);
                     const customerInfo = <>
                       <span className="block truncate text-sm font-semibold text-slate-800">{order.cliente}</span>
                       <span className="mt-1 flex items-center gap-1 text-[11px] text-slate-500">
@@ -345,15 +407,18 @@ const Orders = () => {
                             void openOrderDetails(order);
                           }
                         } : undefined}
-                        className={`rounded-xl border bg-white p-3.5 shadow-sm transition hover:border-orange-200 hover:shadow-md ${isFinished ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2' : ''} ${order.origem === 'ifood' ? 'border-red-200' : 'border-slate-200'}`}
+                        draggable={canUpdateOrders && !isFinished}
+                        onDragStart={() => setDraggedOrderId(order.id)}
+                        onDragEnd={() => { setDraggedOrderId(null); setDragOverColumn(null); }}
+                        className={`rounded-xl border bg-white p-3.5 shadow-sm transition hover:border-orange-200 hover:shadow-md ${canUpdateOrders && !isFinished ? 'cursor-grab active:cursor-grabbing' : ''} ${isFinished ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2' : ''} ${late ? 'border-red-300' : order.origem === 'ifood' ? 'border-red-200' : 'border-slate-200'}`}
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div>
                             <div className="flex items-center gap-2">
                               <strong className="text-base text-slate-900">#{shortOrderNumber(order.numero)}</strong>
-                              {order.origem === 'ifood' && <span className="rounded-full bg-red-500 px-1.5 py-0.5 text-[9px] font-bold text-white">iFood</span>}
+                              {canUpdateOrders && !isFinished && <GripVertical className="text-slate-300" size={15} />}{order.origem === 'ifood' && <span className="rounded-full bg-red-500 px-1.5 py-0.5 text-[9px] font-bold text-white">iFood</span>}
                             </div>
-                            <span className="mt-0.5 block text-[11px] text-slate-400">{formatElapsed(order.data)}</span>
+                            <span className={`mt-0.5 block text-[11px] ${late ? 'font-bold text-red-600' : 'text-slate-400'}`}>{late ? `Atrasado • ${formatElapsed(order.data)}` : formatElapsed(order.data)}</span>
                           </div>
                           <strong className="shrink-0 text-sm text-orange-600">R$ {Number(order.total || 0).toFixed(2).replace('.', ',')}</strong>
                         </div>
@@ -362,9 +427,11 @@ const Orders = () => {
                           ? <div className="mt-3 block w-full text-left">{customerInfo}</div>
                           : <button type="button" onClick={() => void openOrderDetails(order)} className="mt-3 block w-full text-left">{customerInfo}</button>}
 
+                        {orderItemsSummary(order) && <div className="mt-2 flex items-start gap-1.5 text-[11px] text-slate-500"><Package size={13} className="mt-0.5 shrink-0 text-slate-400" /><span className="line-clamp-2">{orderItemsSummary(order)}</span></div>}
+
                         <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
                           <span className={`text-[10px] font-bold ${order.estornado ? 'text-slate-400' : order.pagamento_confirmado_em ? 'text-emerald-600' : 'text-amber-600'}`}>
-                            {order.estornado ? 'DEVOLVIDO' : order.pagamento_confirmado_em ? 'RECEBIDO' : 'A RECEBER'}
+                            {order.estornado ? 'DEVOLVIDO' : order.pagamento_confirmado_em ? 'PAGAMENTO RECEBIDO' : 'PAGAMENTO PENDENTE'}
                           </span>
                           {isFinished
                             ? <span className="text-[11px] font-semibold text-slate-500">Ver detalhes</span>
@@ -483,7 +550,7 @@ const Orders = () => {
                         R$ {order.total.toFixed(2)}
                       </span>
                       <span className={`mt-1 block text-[11px] font-semibold ${order.estornado ? 'text-zinc-400' : order.pagamento_confirmado_em ? 'text-emerald-400' : order.status === 'Cancelado' ? 'text-zinc-400' : 'text-amber-400'}`}>
-                        {order.estornado ? 'Devolução registrada' : order.pagamento_confirmado_em ? 'Recebido' : order.status === 'Cancelado' ? 'Cancelado' : 'A receber'}
+                        {order.estornado ? 'Devolução registrada' : order.pagamento_confirmado_em ? 'Pagamento recebido' : order.status === 'Cancelado' ? 'Cancelado' : 'Pagamento pendente'}
                       </span>
                     </td>
                     
@@ -494,14 +561,15 @@ const Orders = () => {
                           <span className="hidden sm:inline">{order.status}</span>
                         </div>
                         
-                        {/* Invisible by default, shows on hover to change status quickly */}
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-2">
+                          {canUpdateOrders && nextStatusFor(order) && <button type="button" onClick={() => void handleStatusChange(order.id, nextStatusFor(order) as string)} className="rounded-lg bg-orange-500 px-2.5 py-1.5 text-[11px] font-bold text-white hover:bg-orange-600">{nextStatusLabel(nextStatusFor(order))}</button>}
                           <select 
-                            className="bg-dark-900 border border-white/10 hover:border-brand-500/50 text-zinc-200 text-xs rounded-md px-2 py-1 outline-none cursor-pointer"
+                            aria-label={`Próxima etapa do pedido ${shortOrderNumber(order.numero)}`}
+                            className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600 outline-none hover:border-orange-300"
                             value={order.status}
                             onChange={(e) => handleStatusChange(order.id, e.target.value)}
                           >
-                            {Object.keys(statusColors).map(s => (
+                            {[order.status, ...(allowedTransitions[order.status] || [])].filter((status, index, values) => values.indexOf(status) === index).map(s => (
                               <option key={s} value={s}>{s}</option>
                             ))}
                           </select>
@@ -576,7 +644,7 @@ const Orders = () => {
                   <span className="text-zinc-400 block text-xs mb-1">Pagamento</span>
                   <span className="text-zinc-200 font-medium">{selectedOrder.forma_pagamento || '-'}</span>
                   <span className={`block mt-1 text-xs font-semibold ${selectedOrder.estornado ? 'text-zinc-400' : selectedOrder.pagamento_confirmado_em ? 'text-emerald-400' : 'text-amber-400'}`}>
-                    {selectedOrder.estornado ? 'Devolução registrada' : selectedOrder.pagamento_confirmado_em ? 'Recebido' : 'A receber'}
+                    {selectedOrder.estornado ? 'Devolução registrada' : selectedOrder.pagamento_confirmado_em ? 'Pagamento recebido' : 'Pagamento pendente'}
                   </span>
                 </div>
                 <div className="col-span-2 bg-dark-900 p-3 rounded-xl border border-white/5">

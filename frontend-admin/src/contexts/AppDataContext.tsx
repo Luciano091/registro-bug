@@ -250,7 +250,9 @@ const showBrowserNotification = (title: string, body: string) => {
     if (!localStorage.getItem('adminToken')) return;
     const requestId = ++ordersRequestId.current;
     try {
-      const response = await api.get('/pedidos/resumo');
+      // A tela operacional precisa dos itens para mostrar um resumo no card;
+      // o endpoint completo continua limitado aos 100 pedidos mais recentes.
+      const response = await api.get('/pedidos');
       if (requestId !== ordersRequestId.current) return;
       const incomingOrders: any[] = response.data;
       const incomingIds = new Set<number>(incomingOrders.filter(order => order.id < 1000000000).map(order => order.id));
