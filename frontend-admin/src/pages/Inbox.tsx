@@ -145,7 +145,7 @@ export default function Inbox() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-80px)] min-h-[620px] overflow-hidden bg-slate-100 md:h-screen">
+    <div className="flex h-[calc(100vh-80px)] min-h-0 overflow-hidden bg-slate-100 md:h-full">
       <section className={`${selectedId ? 'hidden md:flex' : 'flex'} w-full flex-col border-r border-slate-200 bg-white md:w-[360px] md:min-w-[320px]`}>
         <header className="border-b border-slate-200 p-4">
           <div className="flex items-center justify-between gap-3">
@@ -185,7 +185,7 @@ export default function Inbox() {
 
       {selected ? (
         <section className={`${selectedId ? 'flex' : 'hidden md:flex'} min-w-0 flex-1 flex-col bg-[#efeae2]`}>
-          <header className="flex min-h-16 items-center justify-between gap-3 border-b border-slate-200 bg-white px-3 py-2 sm:px-5">
+          <header className="flex min-h-16 shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-white px-3 pt-3 sm:px-5">
             <div className="flex min-w-0 items-center gap-3">
               <button onClick={() => setSelectedId(null)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 md:hidden" aria-label="Voltar"><ArrowLeft size={20} /></button>
               <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-100 font-bold text-brand-700">{(selected.nome || 'C')[0].toUpperCase()}</div>
