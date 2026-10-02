@@ -3,6 +3,20 @@ import type { ReactNode } from 'react';
 import api from '../services/api';
 import { connectOperationStream } from '../services/realtime';
 import { notificationSoundBase64 } from '../notificationSound';
+import { PrinterService } from '../services/PrinterService';
+import type { PrinterStatus } from '../services/PrinterService';
+import { formatOrderReceipt } from '../services/orderReceipt';
+
+const PRINTED_ORDERS_KEY = 'ritmesa:printed_order_ids';
+const FAILED_PRINT_KEY = 'ritmesa:last_failed_print_order';
+
+const loadPrintedOrderIds = () => {
+  try {
+    return new Set<number>(JSON.parse(localStorage.getItem(PRINTED_ORDERS_KEY) || '[]'));
+  } catch {
+    return new Set<number>();
+  }
+};
 
 interface AppDataContextType {
   // Data
@@ -11,6 +25,10 @@ interface AppDataContextType {
   dashboardResumo: any;
   caixa: any;
   realtimeConnected: boolean;
+  printerStatus: PrinterStatus;
+  autoPrintEnabled: boolean;
+  printerError: string | null;
+  lastPrintedOrder: string | null;
 
   // Loading states (only for first load)
   ordersLoaded: boolean;
@@ -23,6 +41,10 @@ interface AppDataContextType {
   refreshDashboard: () => Promise<void>;
   refreshCaixa: () => Promise<void>;
   playNotificationSound: () => Promise<void>;
+  connectPrinter: () => Promise<void>;
+  testPrinter: () => Promise<void>;
+  setAutoPrintEnabled: (enabled: boolean) => Promise<void>;
+  retryLastPrint: () => Promise<void>;
 
   // Optimistic updates
   addOptimisticOrder: (order: any) => void;
@@ -61,6 +83,14 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
   const knownOrderIds = useRef<Set<number> | null>(null);
   const ordersRequestId = useRef(0);
   const [realtimeConnected, setRealtimeConnected] = useState(false);
+  const [printerStatus, setPrinterStatus] = useState<PrinterStatus>(PrinterService.getStatus());
+  const [autoPrintEnabled, setAutoPrintEnabledState] = useState(PrinterService.getAutoPrintEnabled());
+  const [printerError, setPrinterError] = useState<string | null>(null);
+  const [lastPrintedOrder, setLastPrintedOrder] = useState<string | null>(null);
+  const autoPrintEnabledRef = useRef(autoPrintEnabled);
+  const queuedPrintIds = useRef(new Set<number>());
+  const printedOrderIds = useRef(loadPrintedOrderIds());
+  const failedPrintId = useRef<number | null>(Number(localStorage.getItem(FAILED_PRINT_KEY)) || null);
 
 
   // Track whether first load happened
@@ -98,6 +128,95 @@ const showBrowserNotification = (title: string, body: string) => {
     }
   }, [getOrderAudio]);
 
+  const markOrderPrinted = useCallback((orderId: number) => {
+    printedOrderIds.current.add(orderId);
+    const recentIds = [...printedOrderIds.current].slice(-150);
+    printedOrderIds.current = new Set(recentIds);
+    localStorage.setItem(PRINTED_ORDERS_KEY, JSON.stringify(recentIds));
+    if (failedPrintId.current === orderId) {
+      failedPrintId.current = null;
+      localStorage.removeItem(FAILED_PRINT_KEY);
+    }
+  }, []);
+
+  const printNewOrder = useCallback(async (orderId: number, force = false) => {
+    if (!autoPrintEnabledRef.current && !force) return;
+    if (!force && printedOrderIds.current.has(orderId)) return;
+    if (queuedPrintIds.current.has(orderId)) return;
+
+    queuedPrintIds.current.add(orderId);
+    setPrinterError(null);
+    try {
+      const response = await api.get(`/pedidos/${orderId}`);
+      const order = response.data;
+      const businessName = localStorage.getItem('estabelecimentoNome') || 'BisBurger';
+      await PrinterService.printReceipt(formatOrderReceipt(order, businessName), { requestPermission: false });
+      markOrderPrinted(orderId);
+      setLastPrintedOrder(String(order.numero || orderId).split('-').pop() || String(orderId));
+    } catch (error: any) {
+      const message = error?.message || error?.response?.data?.detail || 'Não foi possível imprimir a nova comanda.';
+      failedPrintId.current = orderId;
+      localStorage.setItem(FAILED_PRINT_KEY, String(orderId));
+      setPrinterError(message);
+      void playOrderSound();
+      showBrowserNotification('Falha na impressão', `O pedido precisa ser impresso manualmente. ${message}`);
+    } finally {
+      queuedPrintIds.current.delete(orderId);
+    }
+  }, [markOrderPrinted, playOrderSound]);
+
+  const connectPrinter = useCallback(async () => {
+    setPrinterError(null);
+    try {
+      await PrinterService.connect({ requestPermission: true });
+      if (failedPrintId.current && autoPrintEnabledRef.current) await printNewOrder(failedPrintId.current, true);
+    } catch (error: any) {
+      setPrinterError(error?.message || 'Não foi possível conectar à impressora.');
+      throw error;
+    }
+  }, [printNewOrder]);
+
+  const testPrinter = useCallback(async () => {
+    setPrinterError(null);
+    try {
+      await PrinterService.printTest();
+    } catch (error: any) {
+      const message = error?.message || 'Não foi possível imprimir o teste.';
+      setPrinterError(message);
+      throw error;
+    }
+  }, []);
+
+  const updateAutoPrint = useCallback(async (enabled: boolean) => {
+    setPrinterError(null);
+    if (enabled && PrinterService.getStatus().state !== 'connected') {
+      try {
+        await PrinterService.connect({ requestPermission: true });
+      } catch (error: any) {
+        setPrinterError(error?.message || 'Conecte a impressora antes de ativar a impressão automática.');
+        throw error;
+      }
+    }
+    autoPrintEnabledRef.current = enabled;
+    setAutoPrintEnabledState(enabled);
+    PrinterService.setAutoPrintEnabled(enabled);
+  }, []);
+
+  const retryLastPrint = useCallback(async () => {
+    if (!failedPrintId.current) return;
+    await printNewOrder(failedPrintId.current, true);
+  }, [printNewOrder]);
+
+  useEffect(() => {
+    const unsubscribe = PrinterService.subscribe(setPrinterStatus);
+    if (autoPrintEnabledRef.current) {
+      void PrinterService.connect({ requestPermission: false }).catch(error => {
+        setPrinterError(error?.message || 'Conecte a impressora para continuar imprimindo automaticamente.');
+      });
+    }
+    return unsubscribe;
+  }, []);
+
   useEffect(() => {
     if (orderSoundReady) return;
     const unlock = async () => {
@@ -131,11 +250,15 @@ const showBrowserNotification = (title: string, body: string) => {
       if (requestId !== ordersRequestId.current) return;
       const incomingOrders: any[] = response.data;
       const incomingIds = new Set<number>(incomingOrders.filter(order => order.id < 1000000000).map(order => order.id));
-      const hasNewOrder = knownOrderIds.current !== null && [...incomingIds].some(id => !knownOrderIds.current?.has(id));
+      const newOrderIds = knownOrderIds.current === null
+        ? []
+        : [...incomingIds].filter(id => !knownOrderIds.current?.has(id));
+      const hasNewOrder = newOrderIds.length > 0;
       knownOrderIds.current = incomingIds;
       setOrders(incomingOrders);
       if (hasNewOrder) {
         void playOrderSound();
+        newOrderIds.forEach(id => void printNewOrder(id));
         const businessName = localStorage.getItem('estabelecimentoNome') || 'seu estabelecimento';
         showBrowserNotification("Novo pedido!", `Um novo pedido acabou de chegar em ${businessName}.`);
       }
@@ -145,7 +268,7 @@ const showBrowserNotification = (title: string, body: string) => {
       // Even on error, mark as loaded so UI doesn't stay on skeleton forever
       setOrdersLoaded(true);
     }
-  }, [playOrderSound]);
+  }, [playOrderSound, printNewOrder]);
 
   const refreshProdutos = useCallback(async () => {
     try {
@@ -228,6 +351,9 @@ const showBrowserNotification = (title: string, body: string) => {
     void refreshProdutos();
     void refreshOrders();
     const stopRealtime = connectOperationStream(event => {
+      if (event.tipo === 'pedido.criado' && typeof event.pedido_id === 'number') {
+        void printNewOrder(event.pedido_id);
+      }
       void refreshOrders();
       void refreshDashboard();
       window.dispatchEvent(new CustomEvent('ritmesa:operation-update', { detail: event }));
@@ -255,7 +381,7 @@ const showBrowserNotification = (title: string, body: string) => {
       window.removeEventListener('ritmesa:orders-synced', refreshSyncedOrder);
       document.removeEventListener('visibilitychange', refreshVisible);
     };
-  }, [refreshProdutos, refreshOrders, refreshDashboard]);
+  }, [refreshProdutos, refreshOrders, refreshDashboard, printNewOrder]);
 
   return (
     <AppDataContext.Provider value={{
@@ -264,6 +390,10 @@ const showBrowserNotification = (title: string, body: string) => {
       dashboardResumo,
       caixa,
       realtimeConnected,
+      printerStatus,
+      autoPrintEnabled,
+      printerError,
+      lastPrintedOrder,
 
       ordersLoaded,
       produtosLoaded,
@@ -274,6 +404,10 @@ const showBrowserNotification = (title: string, body: string) => {
       refreshDashboard,
       refreshCaixa,
       playNotificationSound: playOrderSound,
+      connectPrinter,
+      testPrinter,
+      setAutoPrintEnabled: updateAutoPrint,
+      retryLastPrint,
 
       addOptimisticOrder,
       updateOrderStatus,

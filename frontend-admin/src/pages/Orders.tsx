@@ -6,6 +6,7 @@ import { useAppData } from '../contexts/AppDataContext';
 import { can, readSession } from '../services/session';
 import { PrinterService } from "../services/PrinterService";
 import { formatOrderReceipt } from '../services/orderReceipt';
+import { PrinterControl } from '../components/PrinterControl';
 
 const PAYMENT_METHODS = ['PIX', 'Cartão de Crédito', 'Cartão de Débito', 'Dinheiro'];
 
@@ -249,13 +250,16 @@ const Orders = () => {
           <h2 className="text-3xl font-bold tracking-tight text-white font-heading drop-shadow-sm">Pedidos</h2>
           <p className="text-zinc-300 mt-1">Gerencie e acompanhe os pedidos em andamento.</p>
         </div>
-        <div className="inline-flex w-fit rounded-xl border border-slate-200 bg-white p-1 shadow-sm" aria-label="Visualização dos pedidos">
-          <button type="button" aria-pressed={viewMode === 'flow'} onClick={() => changeViewMode('flow')} className={`flex min-h-9 items-center gap-2 rounded-lg px-3 text-sm font-semibold transition-colors ${viewMode === 'flow' ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
-            <Columns3 size={16} /> Fluxo
-          </button>
-          <button type="button" aria-pressed={viewMode === 'list'} onClick={() => changeViewMode('list')} className={`flex min-h-9 items-center gap-2 rounded-lg px-3 text-sm font-semibold transition-colors ${viewMode === 'list' ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
-            <List size={16} /> Lista
-          </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <PrinterControl />
+          <div className="inline-flex w-fit rounded-xl border border-slate-200 bg-white p-1 shadow-sm" aria-label="Visualização dos pedidos">
+            <button type="button" aria-pressed={viewMode === 'flow'} onClick={() => changeViewMode('flow')} className={`flex min-h-9 items-center gap-2 rounded-lg px-3 text-sm font-semibold transition-colors ${viewMode === 'flow' ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
+              <Columns3 size={16} /> Fluxo
+            </button>
+            <button type="button" aria-pressed={viewMode === 'list'} onClick={() => changeViewMode('list')} className={`flex min-h-9 items-center gap-2 rounded-lg px-3 text-sm font-semibold transition-colors ${viewMode === 'list' ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
+              <List size={16} /> Lista
+            </button>
+          </div>
         </div>
       </header>
 
