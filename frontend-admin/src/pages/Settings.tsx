@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, Store, Phone, MapPin, Clock, Lock, Truck } from 'lucide-react';
+import { ChevronDown, Save, Store, Phone, MapPin, Clock, Lock, Truck } from 'lucide-react';
 import api from '../services/api';
 import DriverAppDownload from '../components/DriverAppDownload';
 import DeliverySettingsModal from '../components/DeliverySettingsModal';
@@ -57,7 +57,7 @@ const Settings = () => {
   };
 
   return (
-    <div className="p-6 md:p-10 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
+    <div className="mx-auto max-w-5xl animate-in fade-in slide-in-from-bottom-4 p-6 pb-20 duration-700 md:p-10">
       <header className="mb-8 flex flex-col md:flex-row justify-between md:items-end gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-white font-heading drop-shadow-sm">Configurações</h2>
@@ -72,177 +72,51 @@ const Settings = () => {
         </button>
       </header>
 
-      <div className="relative overflow-hidden bg-dark-800/40 backdrop-blur-md border border-white/5 shadow-xl rounded-2xl p-6 md:p-8 shrink-0 mb-8">
-        <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-brand-500 to-rose-500"></div>
-        <h3 className="text-xl font-bold font-heading text-white border-b border-white/5 pb-3 mb-6">Dados do Estabelecimento</h3>
-        
-        <div className="space-y-6 max-w-2xl">
-          <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-zinc-300 mb-2">
-              <Store className="text-brand-400" size={18} /> Nome do estabelecimento
-            </label>
-            <input 
-              type="text" name="nome_empresa"
-              value={config.nome_empresa} onChange={handleChange}
-              className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all text-white font-medium"
-            />
+      <div className="space-y-5">
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+          <div className="mb-5 flex items-center gap-3 border-b border-slate-100 pb-4">
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-orange-50 text-orange-600"><Store size={20} /></div>
+            <div><h3 className="font-heading text-lg font-bold text-slate-800">Dados do estabelecimento</h3><p className="text-sm text-slate-500">Informações exibidas nos pedidos e canais de atendimento.</p></div>
           </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <label className="md:col-span-2"><span className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-600"><Store size={16} /> Nome do estabelecimento</span><input type="text" name="nome_empresa" value={config.nome_empresa} onChange={handleChange} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 font-medium text-slate-800 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100" /></label>
+            <label><span className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-600"><Phone size={16} /> Telefone principal</span><input type="text" name="telefone" value={config.telefone} onChange={handleChange} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-800 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100" /></label>
+            <label><span className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-600"><Clock size={16} /> Tempo médio de preparo (min)</span><input type="number" min="0" name="tempo_medio_preparo" value={config.tempo_medio_preparo} onChange={handleChange} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-800 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100" /></label>
+            <label className="md:col-span-2"><span className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-600"><MapPin size={16} /> Endereço</span><textarea name="endereco" rows={2} value={config.endereco} onChange={handleChange} className="w-full resize-none rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-800 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100" /></label>
+          </div>
+        </section>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-zinc-300 mb-2">
-                <Phone className="text-brand-400" size={18} /> Telefone Principal
-              </label>
-              <input 
-                type="text" name="telefone"
-                value={config.telefone} onChange={handleChange}
-                className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all text-white"
-              />
-            </div>
-            
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-zinc-300 mb-2">
-                <Clock className="text-brand-400" size={18} /> 
-              </label>
-              <input 
-                type="number" name="tempo_medio_preparo"
-                value={config.tempo_medio_preparo} onChange={handleChange}
-                className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all text-white font-mono"
-              />
-            </div>
-          </div>
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          <section className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex gap-3"><div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-orange-50 text-orange-600"><Truck size={20} /></div><div><h3 className="font-bold text-slate-800">Áreas e taxas de entrega</h3><p className="mt-1 text-sm leading-relaxed text-slate-500">Bairros, pedido mínimo, entrega grátis e raio de atendimento.</p></div></div>
+            {canManage && <button onClick={() => setDeliveryOpen(true)} className="mt-5 w-fit rounded-xl border border-orange-200 bg-orange-50 px-4 py-2.5 text-sm font-bold text-orange-700 transition hover:bg-orange-100">Configurar entregas</button>}
+          </section>
 
-          <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-zinc-300 mb-2">
-              <MapPin className="text-brand-400" size={18} /> Endereço
-            </label>
-            <textarea 
-              name="endereco" rows={2}
-              value={config.endereco} onChange={handleChange}
-              className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all text-white resize-none"
-            ></textarea>
-          </div>
-          
-        </div>
-        
-        {/* Integração iFood Section */}
-        <div className="glass border border-white/5 rounded-3xl p-6 md:p-8 mt-6 relative overflow-hidden group hover:border-red-500/30 transition-colors">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-red-500/5 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none group-hover:bg-red-500/10 transition-colors"></div>
-          
-          <div className="flex items-center gap-3 mb-6 relative z-10">
-            <div className="p-2.5 bg-red-500/10 rounded-xl text-red-500 flex items-center justify-center font-black">
-              iFood
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-white font-heading">Integração iFood (Hub de Pedidos)</h3>
-              <p className="text-zinc-300 text-sm">Conecte sua conta do Portal do Parceiro para receber pedidos direto na Cozinha.</p>
-            </div>
-            {config.ifood_status === 'conectado' ? (
-              <span className="ml-auto bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full text-xs font-bold border border-emerald-500/20">Conectado</span>
-            ) : (
-              <span className="ml-auto bg-zinc-500/10 text-zinc-400 px-3 py-1 rounded-full text-xs font-bold border border-white/5">Desconectado</span>
-            )}
-          </div>
-
-          <div className="space-y-4 relative z-10">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-zinc-300 mb-2">
-                  Client ID
-                </label>
-                <input 
-                  type="text" 
-                  name="ifood_client_id" 
-                  value={(config as any).ifood_client_id || ''} 
-                  onChange={handleChange}
-                  placeholder="Ex: a1b2c3d4-..."
-                  className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/50 transition-all text-white font-mono text-sm"
-                />
-              </div>
-              <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-zinc-300 mb-2">
-                  Client Secret
-                </label>
-                <input 
-                  type="password" 
-                  name="ifood_client_secret" 
-                  value={(config as any).ifood_client_secret || ''} 
-                  onChange={handleChange}
-                  placeholder="*****************"
-                  className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/50 transition-all text-white font-mono text-sm"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-zinc-300 mb-2">
-                Merchant ID (ID da Loja)
-              </label>
-              <input 
-                type="text" 
-                name="ifood_merchant_id" 
-                value={(config as any).ifood_merchant_id || ''} 
-                onChange={handleChange}
-                placeholder="Ex: 12345678-..."
-                className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/50 transition-all text-white font-mono text-sm"
-              />
-            </div>
-            
-            <div className="flex justify-end pt-4 border-t border-white/5 mt-4">
-              <button 
-                onClick={async () => {
-                   try {
-                     await api.post('/ifood/simulate-order');
-                     alert('Pedido iFood simulado com sucesso! Verifique a aba de Pedidos e KDS.');
-                   } catch(e) {
-                     alert('Erro ao simular pedido iFood.');
-                   }
-                }}
-                className="bg-white text-zinc-900 hover:bg-zinc-200 transition-colors px-4 py-2 rounded-lg font-bold text-sm"
-              >
-                Simular Pedido Teste
-              </button>
-            </div>
-          </div>
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="mb-4 flex gap-3"><div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-100 text-slate-600"><Lock size={20} /></div><div><h3 className="font-bold text-slate-800">Segurança</h3><p className="mt-1 text-sm text-slate-500">Altere a senha de acesso administrativo.</p></div></div>
+            <label><span className="mb-2 block text-sm font-medium text-slate-600">Nova senha de administrador</span><input type="password" name="senha_admin" value={config.senha_admin || ''} onChange={handleChange} placeholder="Deixe em branco para manter a atual" className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-800 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100" /></label>
+          </section>
         </div>
 
-        {/* Security Section */}
-        <div className="glass border border-white/5 rounded-3xl p-6 md:p-8 relative overflow-hidden group hover:border-brand-500/30 transition-colors">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-brand-500/5 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none group-hover:bg-brand-500/10 transition-colors"></div>
-          
-          <div className="flex items-center gap-3 mb-6 relative z-10">
-            <div className="p-2.5 bg-brand-500/10 rounded-xl text-brand-400">
-              <Lock size={24} />
+        <details className="group rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <summary className="flex cursor-pointer list-none items-center gap-3 p-5">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-red-50 text-sm font-black text-red-600">iFood</div>
+            <div className="min-w-0 flex-1"><h3 className="font-bold text-slate-800">Integração iFood</h3><p className="truncate text-sm text-slate-500">Credenciais do Hub de Pedidos.</p></div>
+            <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${config.ifood_status === 'conectado' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>{config.ifood_status === 'conectado' ? 'Conectado' : 'Desconectado'}</span>
+            <ChevronDown className="text-slate-400 transition-transform group-open:rotate-180" size={18} />
+          </summary>
+          <div className="space-y-4 border-t border-slate-100 p-5">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <label><span className="mb-2 block text-sm font-medium text-slate-600">Client ID</span><input type="text" name="ifood_client_id" value={(config as any).ifood_client_id || ''} onChange={handleChange} placeholder="Ex: a1b2c3d4-..." className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 font-mono text-sm text-slate-800 outline-none focus:border-orange-400" /></label>
+              <label><span className="mb-2 block text-sm font-medium text-slate-600">Client Secret</span><input type="password" name="ifood_client_secret" value={(config as any).ifood_client_secret || ''} onChange={handleChange} placeholder="*****************" className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 font-mono text-sm text-slate-800 outline-none focus:border-orange-400" /></label>
             </div>
-            <div>
-              <h3 className="text-xl font-bold text-white font-heading">Segurança</h3>
-              <p className="text-zinc-300 text-sm">Proteja o acesso ao painel de controle.</p>
-            </div>
+            <label><span className="mb-2 block text-sm font-medium text-slate-600">Merchant ID (ID da loja)</span><input type="text" name="ifood_merchant_id" value={(config as any).ifood_merchant_id || ''} onChange={handleChange} placeholder="Ex: 12345678-..." className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 font-mono text-sm text-slate-800 outline-none focus:border-orange-400" /></label>
+            <div className="flex justify-end border-t border-slate-100 pt-4"><button onClick={async () => { try { await api.post('/ifood/simulate-order'); alert('Pedido iFood simulado com sucesso! Verifique a aba de Pedidos e KDS.'); } catch { alert('Erro ao simular pedido iFood.'); } }} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-50">Simular pedido teste</button></div>
           </div>
+        </details>
 
-          <div className="space-y-6 relative z-10">
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-zinc-300 mb-2">
-                Senha de Administrador (PIN)
-              </label>
-              <input 
-                type="text" 
-                name="senha_admin" 
-                value={config.senha_admin || ''} 
-                onChange={handleChange}
-                placeholder="Ex: burger123"
-                className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all text-white"
-              />
-              <p className="text-xs text-zinc-400 mt-2">
-                Esta é a senha solicitada na tela de login para acessar o painel administrativo.
-              </p>
-            </div>
-          </div>
-        </div>
+        <DriverAppDownload />
       </div>
-
-      <section className="mb-8 flex flex-col gap-5 rounded-2xl border border-orange-500/20 bg-gradient-to-r from-orange-500/10 to-transparent p-6 md:flex-row md:items-center md:justify-between"><div className="flex gap-4"><div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-orange-500 text-white"><Truck size={23} /></div><div><h3 className="text-xl font-bold text-white">Áreas e taxas de entrega</h3><p className="mt-1 text-sm text-zinc-300">Configure bairros, pedido mínimo, entrega grátis e raio de atendimento.</p></div></div>{canManage && <button onClick={() => setDeliveryOpen(true)} className="premium-btn rounded-xl px-5 py-3 font-bold">Configurar entregas</button>}</section>
-
-      <DriverAppDownload dark />
       {deliveryOpen && <DeliverySettingsModal onClose={() => setDeliveryOpen(false)} />}
     </div>
   );
