@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-import { Search, Clock, Printer, CheckCircle2, Loader2, MessageCircle, X, Eye, MapPin, RotateCcw, Columns3, List, ChevronRight, Truck, AlertTriangle, Package, GripVertical } from 'lucide-react';
+import { Search, Clock, Printer, CheckCircle2, Loader2, MessageCircle, X, Eye, MapPin, RotateCcw, Columns3, List, ChevronRight, Truck, AlertTriangle, Package, GripVertical, SlidersHorizontal } from 'lucide-react';
 import api from '../services/api';
 import { useAppData } from '../contexts/AppDataContext';
 import { can, readSession } from '../services/session';
@@ -86,6 +86,7 @@ const Orders = () => {
   const [receivedMethod, setReceivedMethod] = useState('PIX');
   const [confirmingPayment, setConfirmingPayment] = useState(false);
   const [quickFilter, setQuickFilter] = useState<'todos' | 'atrasados' | 'pagamento' | 'impressao'>('todos');
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [draggedOrderId, setDraggedOrderId] = useState<number | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
   const [, setClock] = useState(Date.now());
@@ -303,13 +304,12 @@ const Orders = () => {
 
   return (
     <div className={`p-6 md:p-10 mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 h-full flex flex-col ${viewMode === 'flow' ? 'max-w-[1600px]' : 'max-w-6xl'}`}>
-      <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-white font-heading drop-shadow-sm">Pedidos</h2>
           <p className="text-zinc-300 mt-1">Gerencie e acompanhe os pedidos em andamento.</p>
         </div>
-        <div className="flex max-w-full flex-nowrap items-center gap-2 overflow-x-auto pb-1">
-          <PrinterControl />
+        <div className="flex max-w-full flex-nowrap items-center gap-2">
           <div className="inline-flex w-fit rounded-xl border border-slate-200 bg-white p-1 shadow-sm" aria-label="Visualização dos pedidos">
             <button type="button" aria-pressed={viewMode === 'flow'} onClick={() => changeViewMode('flow')} className={`flex min-h-9 items-center gap-2 rounded-lg px-3 text-sm font-semibold transition-colors ${viewMode === 'flow' ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
               <Columns3 size={16} /> Fluxo
@@ -321,23 +321,23 @@ const Orders = () => {
         </div>
       </header>
 
-      <div className="flex flex-col md:flex-row gap-4 mb-6 justify-between">
-        <div className="flex items-center gap-2 p-1 bg-dark-800/50 backdrop-blur-md border border-white/5 rounded-xl overflow-x-auto custom-scrollbar shadow-lg">
+      <div className="mb-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(260px,360px)_auto] lg:items-center">
+        <div className="flex min-w-0 items-center gap-2 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
           {['Hoje', 'Ontem', 'Semana', 'Mês', 'Todos'].map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-4 py-2 rounded-lg text-sm transition-all whitespace-nowrap ${filter === f ? 'bg-white/10 text-white font-medium shadow-sm' : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'}`}
+              className={`rounded-lg px-3 py-2 text-sm transition-all whitespace-nowrap ${filter === f ? 'bg-orange-50 font-semibold text-orange-700 shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
             >
               {f}
             </button>
           ))}
-          <div className="h-6 w-px bg-white/10 mx-1 shrink-0"></div>
+          <div className="mx-1 h-6 w-px shrink-0 bg-slate-200"></div>
           <input 
             type="month"
             value={filter.includes('-') ? filter : ''}
             onChange={(e) => setFilter(e.target.value || 'Mês')}
-            className={`bg-dark-900/50 border border-white/10 text-sm rounded-lg px-3 py-1.5 outline-none cursor-pointer hover:border-brand-500/50 transition-all ${filter.includes('-') ? 'text-brand-400 border-brand-500/50 shadow-[0_0_10px_rgba(249,115,22,0.1)]' : 'text-zinc-300'}`}
+            className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 outline-none transition-all hover:border-orange-300"
             title="Selecionar um mês específico"
           />
         </div>
@@ -349,19 +349,26 @@ const Orders = () => {
             placeholder="Buscar por nome ou nº..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full md:w-72 bg-dark-800/50 backdrop-blur-md border border-white/5 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all shadow-lg"
+            className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-700 shadow-sm transition-all focus:border-orange-300 focus:outline-none focus:ring-1 focus:ring-orange-200"
           />
+        </div>
+        <div className="flex items-center gap-2">
+          <PrinterControl />
+          <button type="button" onClick={() => setFiltersOpen(open => !open)} aria-expanded={filtersOpen} className={`inline-flex min-h-10 items-center gap-2 rounded-xl border px-3 text-sm font-semibold shadow-sm transition ${filtersOpen || quickFilter !== 'todos' || filter !== 'Hoje' ? 'border-orange-200 bg-orange-50 text-orange-700' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}>
+            <SlidersHorizontal size={16} /> Filtros
+            {(quickFilter !== 'todos' || filter !== 'Hoje') && <span className="grid h-5 min-w-5 place-items-center rounded-full bg-orange-500 px-1 text-[11px] text-white">!</span>}
+          </button>
         </div>
       </div>
 
-      <div className="mb-5 flex flex-wrap items-center gap-2" aria-label="Filtros rápidos">
+      {filtersOpen && <div className="mb-5 flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-sm" aria-label="Filtros rápidos">
         <span className="mr-1 text-xs font-semibold text-slate-400">Atalhos:</span>
         {[['todos', 'Todos'], ['atrasados', 'Atrasados'], ['pagamento', 'Pagamento pendente'], ['impressao', 'Falha de impressão']].map(([id, label]) => (
           <button key={id} type="button" onClick={() => setQuickFilter(id as typeof quickFilter)} className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${quickFilter === id ? 'border-orange-200 bg-orange-50 text-orange-700' : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'}`}>
             {id === 'atrasados' && <AlertTriangle className="mr-1 inline-block" size={13} />}{label}{id === 'impressao' && pendingPrintOrderId ? ' • 1' : ''}
           </button>
         ))}
-      </div>
+      </div>}
 
       {viewMode === 'flow' ? (
         <div className="flex min-h-[430px] flex-1 gap-4 overflow-x-auto pb-3 custom-scrollbar" aria-label="Fluxo de pedidos">
