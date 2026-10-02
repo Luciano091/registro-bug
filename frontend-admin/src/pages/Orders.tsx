@@ -88,6 +88,7 @@ const Orders = () => {
   const [quickFilter, setQuickFilter] = useState<'todos' | 'atrasados' | 'pagamento' | 'impressao'>('todos');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filtersRef = useRef<HTMLDivElement>(null);
+  const monthPickerRef = useRef<HTMLInputElement>(null);
   const [draggedOrderId, setDraggedOrderId] = useState<number | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
   const [, setClock] = useState(Date.now());
@@ -353,13 +354,18 @@ const Orders = () => {
             <button type="button" onClick={() => setFiltersOpen(open => !open)} aria-expanded={filtersOpen} aria-controls="orders-filters" className={`inline-flex min-h-10 items-center gap-2 rounded-xl border px-3 text-sm font-semibold shadow-sm transition ${filtersOpen || filter !== 'Hoje' ? 'border-orange-200 bg-orange-50 text-orange-700' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}>
               <CalendarDays size={16} /> {filter.includes('-') ? filter.split('-').reverse().join('/') : filter}
             </button>
-            {filtersOpen && <div id="orders-filters" className="absolute right-0 top-full z-30 mt-2 w-72 max-w-[calc(100vw-3rem)] rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
-              <p className="mb-3 text-xs font-semibold text-slate-500">Período dos pedidos</p>
-              <div className="flex flex-wrap items-center gap-2">
+            {filtersOpen && <div id="orders-filters" className="absolute right-0 top-full z-30 mt-2 w-64 max-w-[calc(100vw-3rem)] rounded-xl border border-slate-200 bg-white p-3 shadow-xl">
+              <p className="mb-2 text-xs font-semibold text-slate-500">Período dos pedidos</p>
+              <div className="grid grid-cols-2 gap-2">
                 {['Hoje', 'Ontem', 'Semana', 'Mês', 'Todos'].map(f => (
-                  <button key={f} type="button" onClick={() => { setFilter(f); setFiltersOpen(false); }} className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${filter === f ? 'border-orange-200 bg-orange-50 text-orange-700' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}>{f}</button>
+                  <button key={f} type="button" onClick={() => { setFilter(f); setFiltersOpen(false); }} className={`rounded-lg border px-3 py-2 text-left text-xs font-semibold transition ${filter === f ? 'border-orange-200 bg-orange-50 text-orange-700' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}>{f}</button>
                 ))}
-                <input type="month" aria-label="Selecionar um mês específico" value={filter.includes('-') ? filter : ''} onChange={event => { setFilter(event.target.value || 'Mês'); if (event.target.value) setFiltersOpen(false); }} className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-sm text-slate-600 outline-none hover:border-orange-300" />
+                <div className="relative">
+                  <button type="button" onClick={() => { try { monthPickerRef.current?.showPicker(); } catch { monthPickerRef.current?.focus(); monthPickerRef.current?.click(); } }} className={`flex h-full w-full items-center gap-1.5 rounded-lg border px-2 py-2 text-left text-xs font-semibold transition ${filter.includes('-') ? 'border-orange-200 bg-orange-50 text-orange-700' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}>
+                    <CalendarDays size={13} /> Escolher mês
+                  </button>
+                  <input ref={monthPickerRef} type="month" aria-label="Selecionar um mês específico" value={filter.includes('-') ? filter : ''} onChange={event => { setFilter(event.target.value || 'Mês'); if (event.target.value) setFiltersOpen(false); }} className="pointer-events-none absolute inset-0 h-full w-full opacity-0" tabIndex={-1} />
+                </div>
               </div>
             </div>}
           </div>
