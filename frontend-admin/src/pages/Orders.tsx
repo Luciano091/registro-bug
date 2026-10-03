@@ -350,6 +350,17 @@ const Orders = () => {
           ))}
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <input
+              type="search"
+              aria-label="Buscar pedido por cliente ou número"
+              placeholder="Nome ou nº do pedido"
+              value={search}
+              onChange={event => setSearch(event.target.value)}
+              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-700 shadow-sm transition-all focus:border-orange-300 focus:outline-none focus:ring-1 focus:ring-orange-200"
+            />
+          </div>
           <div ref={filtersRef} className="relative">
             <button type="button" onClick={() => setFiltersOpen(open => !open)} aria-expanded={filtersOpen} aria-controls="orders-filters" className={`inline-flex min-h-10 items-center gap-2 rounded-xl border px-3 text-sm font-semibold shadow-sm transition ${filtersOpen || filter !== 'Hoje' ? 'border-orange-200 bg-orange-50 text-orange-700' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}>
               <CalendarDays size={16} /> {filter.includes('-') ? filter.split('-').reverse().join('/') : filter} <ChevronDown size={14} className={`transition-transform ${filtersOpen ? 'rotate-180' : ''}`} />
@@ -368,17 +379,6 @@ const Orders = () => {
                 </div>
               </div>
             </div>}
-          </div>
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <input
-              type="search"
-              aria-label="Buscar pedido por cliente ou número"
-              placeholder="Nome ou nº do pedido"
-              value={search}
-              onChange={event => setSearch(event.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-700 shadow-sm transition-all focus:border-orange-300 focus:outline-none focus:ring-1 focus:ring-orange-200"
-            />
           </div>
         </div>
       </div>
