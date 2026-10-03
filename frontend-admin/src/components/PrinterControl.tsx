@@ -46,7 +46,7 @@ export const PrinterControl = () => {
         : 'Ligue a impressora para conectar';
 
   return (
-    <div className={`relative flex h-12 w-[350px] max-w-full flex-nowrap items-center gap-2 overflow-hidden rounded-xl border bg-white px-2.5 py-1.5 shadow-sm ${pendingPrintOrderId || printerError ? 'border-red-200' : 'border-slate-200'}`} title={printerError || undefined}>
+    <div className={`relative flex h-12 w-[350px] max-w-full flex-nowrap items-center gap-2 overflow-hidden rounded-xl border bg-white px-2.5 py-1.5 shadow-sm ${pendingPrintOrderId || printerError ? 'border-red-200' : 'border-slate-200'}`} title={printerError || (connecting ? 'Conectando impressora' : connected ? 'Impressora conectada' : 'Impressora desconectada')}>
       <div className="flex min-w-0 flex-1 items-center gap-2 px-1">
         {connecting ? (
           <Loader2 className="shrink-0 animate-spin text-orange-500" size={17} />
@@ -56,7 +56,7 @@ export const PrinterControl = () => {
           <Printer className="shrink-0 text-slate-400" size={17} />
         )}
         <div className="min-w-0 flex-1 leading-tight">
-          <p className="truncate text-xs font-bold text-slate-700">{connecting ? 'Conectando impressora' : connected ? 'Impressora pronta' : 'Impressora desconectada'}</p>
+          <p className="truncate text-xs font-bold text-slate-700">{connecting ? 'Conectando...' : connected ? 'Conectada' : 'Impressora offline'}</p>
           <p className={`mt-0.5 truncate text-[10px] ${pendingPrintOrderId || printerError ? 'text-red-600' : 'text-slate-400'}`}>{statusDetail}</p>
         </div>
       </div>
