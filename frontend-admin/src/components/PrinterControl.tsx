@@ -29,7 +29,7 @@ export const PrinterControl = () => {
 
   if (printerStatus.state === 'unsupported') {
     return (
-      <div className="flex h-[54px] w-[390px] max-w-full items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 text-xs font-medium text-amber-800">
+      <div className="flex h-12 w-[350px] max-w-full items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 text-xs font-medium text-amber-800">
         <AlertCircle size={16} /> Use Chrome ou Edge para imprimir
       </div>
     );
@@ -38,7 +38,7 @@ export const PrinterControl = () => {
   const connected = printerStatus.state === 'connected';
   const connecting = printerStatus.state === 'connecting' || busyAction === 'connect';
   const statusDetail = pendingPrintOrderId
-    ? 'Há um pedido aguardando impressão'
+    ? '1 pedido pendente'
     : printerError
       ? printerError
       : connected
@@ -46,14 +46,14 @@ export const PrinterControl = () => {
         : 'Ligue a impressora para conectar';
 
   return (
-    <div className={`relative flex h-[54px] w-[390px] max-w-full flex-nowrap items-center gap-2 overflow-hidden rounded-xl border bg-white px-2.5 py-1.5 shadow-sm ${pendingPrintOrderId || printerError ? 'border-red-200' : 'border-slate-200'}`} title={printerError || undefined}>
+    <div className={`relative flex h-12 w-[350px] max-w-full flex-nowrap items-center gap-2 overflow-hidden rounded-xl border bg-white px-2.5 py-1.5 shadow-sm ${pendingPrintOrderId || printerError ? 'border-red-200' : 'border-slate-200'}`} title={printerError || undefined}>
       <div className="flex min-w-0 flex-1 items-center gap-2 px-1">
         {connecting ? (
-          <Loader2 className="animate-spin text-orange-500" size={17} />
+          <Loader2 className="shrink-0 animate-spin text-orange-500" size={17} />
         ) : connected ? (
-          <CheckCircle2 className="text-emerald-500" size={17} />
+          <CheckCircle2 className="shrink-0 text-emerald-500" size={17} />
         ) : (
-          <Printer className="text-slate-400" size={17} />
+          <Printer className="shrink-0 text-slate-400" size={17} />
         )}
         <div className="min-w-0 flex-1 leading-tight">
           <p className="truncate text-xs font-bold text-slate-700">{connecting ? 'Conectando impressora' : connected ? 'Impressora pronta' : 'Impressora desconectada'}</p>

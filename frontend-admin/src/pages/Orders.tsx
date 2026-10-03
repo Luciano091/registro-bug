@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 
-import { Search, Clock, Printer, CheckCircle2, Loader2, MessageCircle, X, Eye, MapPin, RotateCcw, Columns3, List, ChevronRight, Truck, AlertTriangle, Package, GripVertical, CalendarDays } from 'lucide-react';
+import { Search, Clock, Printer, CheckCircle2, Loader2, MessageCircle, X, Eye, MapPin, RotateCcw, Columns3, List, ChevronRight, ChevronDown, Truck, AlertTriangle, Package, GripVertical, CalendarDays } from 'lucide-react';
 import api from '../services/api';
 import { useAppData } from '../contexts/AppDataContext';
 import { can, readSession } from '../services/session';
@@ -352,7 +352,7 @@ const Orders = () => {
         <div className="flex flex-wrap items-center gap-2">
           <div ref={filtersRef} className="relative">
             <button type="button" onClick={() => setFiltersOpen(open => !open)} aria-expanded={filtersOpen} aria-controls="orders-filters" className={`inline-flex min-h-10 items-center gap-2 rounded-xl border px-3 text-sm font-semibold shadow-sm transition ${filtersOpen || filter !== 'Hoje' ? 'border-orange-200 bg-orange-50 text-orange-700' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}>
-              <CalendarDays size={16} /> {filter.includes('-') ? filter.split('-').reverse().join('/') : filter}
+              <CalendarDays size={16} /> {filter.includes('-') ? filter.split('-').reverse().join('/') : filter} <ChevronDown size={14} className={`transition-transform ${filtersOpen ? 'rotate-180' : ''}`} />
             </button>
             {filtersOpen && <div id="orders-filters" className="absolute right-0 top-full z-30 mt-2 w-64 max-w-[calc(100vw-3rem)] rounded-xl border border-slate-200 bg-white p-3 shadow-xl">
               <p className="mb-2 text-xs font-semibold text-slate-500">Período dos pedidos</p>
