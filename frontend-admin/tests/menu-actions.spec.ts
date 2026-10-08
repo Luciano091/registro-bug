@@ -52,4 +52,27 @@ test.describe('Ações dos produtos no cardápio', () => {
     await card.getByRole('button', { name: 'Editar Guaraná Lata 350ml' }).click();
     await expect(page.getByRole('heading', { name: 'Editar Produto' })).toBeVisible();
   });
+
+  test('calcula markup sem alterar o preço existente até o percentual ser editado', async ({ page }) => {
+    await page.goto('/cardapio');
+    await page.getByRole('button', { name: 'Editar Guaraná Lata 350ml' }).click();
+
+    const custo = page.getByRole('spinbutton', { name: 'Preço Custo (R$)' });
+    const preco = page.getByRole('spinbutton', { name: 'Preço Venda (R$)' });
+    const markup = page.getByRole('spinbutton', { name: 'Markup sobre o custo (%)' });
+
+    await expect(custo).toHaveValue('2.7');
+    await expect(preco).toHaveValue('5');
+    await expect(markup).toHaveValue('85.19');
+
+    await markup.fill('100');
+    await expect(preco).toHaveValue('5.40');
+
+    await preco.fill('8.10');
+    await expect(markup).toHaveValue('200');
+
+    await custo.fill('3');
+    await expect(preco).toHaveValue('8.10');
+    await expect(markup).toHaveValue('170');
+  });
 });

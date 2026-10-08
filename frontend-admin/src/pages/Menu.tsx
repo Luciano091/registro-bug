@@ -8,6 +8,13 @@ import CategoriesModal from '../components/CategoriesModal';
 import ProductAvailabilityModal from '../components/ProductAvailabilityModal';
 import CouponsModal from '../components/CouponsModal';
 
+const calcularMarkup = (custo: string, preco: string) => {
+  const custoNumero = Number(custo);
+  const precoNumero = Number(preco);
+  if (!custo || !preco || !Number.isFinite(custoNumero) || !Number.isFinite(precoNumero) || custoNumero <= 0) return '';
+  return (((precoNumero / custoNumero) - 1) * 100).toFixed(2).replace(/\.?0+$/, '');
+};
+
 const Menu = () => {
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -20,6 +27,7 @@ const Menu = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [removerFundo, setRemoverFundo] = useState(false);
   const [novoProduto, setNovoProduto] = useState({ nome: '', preco: '', preco_compra: '', categoria: '', descricao: '', imagem_url: '', controlar_estoque: false, estoque: '', is_promocao: false, is_destaque: false, preco_promocao: '', is_combo: false });
+  const [markup, setMarkup] = useState('');
 
   const [activeCategory, setActiveCategory] = useState('Todos');
 
@@ -33,6 +41,7 @@ const Menu = () => {
 
 
   const openEditProductModal = (item: any) => {
+    setMarkup(calcularMarkup(String(item.preco_compra ?? ''), String(item.preco ?? '')));
     setNovoProduto({ 
       nome: item.nome, 
       preco: item.preco.toString(), 
@@ -121,6 +130,7 @@ const Menu = () => {
       
       setShowModal(false);
             setNovoProduto({ nome: '', preco: '', preco_compra: '', categoria: '', descricao: '', imagem_url: '', controlar_estoque: false, estoque: '', is_promocao: false, is_destaque: false, preco_promocao: '', is_combo: false });
+      setMarkup('');
       setEditingId(null);
       refreshProdutos();
     } catch (error) {
@@ -198,6 +208,7 @@ const Menu = () => {
         <button 
           onClick={() => {
             setEditingId(null);
+            setMarkup('');
                   setNovoProduto({ nome: '', preco: '', preco_compra: '', categoria: '', descricao: '', imagem_url: '', controlar_estoque: false, estoque: '', is_promocao: false, is_destaque: false, preco_promocao: '', is_combo: false });
             setShowModal(true);
           }}
@@ -429,28 +440,65 @@ const Menu = () => {
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-zinc-300 mb-1">Preço Custo (R$)</label>
+                  <label htmlFor="produto-preco-custo" className="block text-sm text-zinc-300 mb-1">Preço Custo (R$)</label>
                   <input 
+                    id="produto-preco-custo"
                     type="number" 
                     step="0.01" 
+                    min="0"
                     value={novoProduto.preco_compra} 
-                    onChange={e => setNovoProduto({...novoProduto, preco_compra: e.target.value})} 
+                    onChange={e => {
+                      const custo = e.target.value;
+                      setNovoProduto({...novoProduto, preco_compra: custo});
+                      setMarkup(calcularMarkup(custo, novoProduto.preco));
+                    }}
                     placeholder="10.00"
                     className="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all text-zinc-200 placeholder-zinc-600"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-zinc-300 mb-1">Preço Venda (R$)</label>
+                  <label htmlFor="produto-preco-venda" className="block text-sm text-zinc-300 mb-1">Preço Venda (R$)</label>
                   <input 
+                    id="produto-preco-venda"
                     required 
                     type="number" 
                     step="0.01" 
+                    min="0"
                     value={novoProduto.preco} 
-                    onChange={e => setNovoProduto({...novoProduto, preco: e.target.value})} 
+                    onChange={e => {
+                      const preco = e.target.value;
+                      setNovoProduto({...novoProduto, preco});
+                      setMarkup(calcularMarkup(novoProduto.preco_compra, preco));
+                    }}
                     placeholder="25.90"
                     className="w-full bg-dark-900 border border-brand-500/30 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all text-white placeholder-zinc-600 font-bold"
                   />
                 </div>
+              </div>
+
+              <div className="rounded-xl border border-white/10 bg-dark-900 p-4">
+                <label htmlFor="produto-markup" className="block text-sm text-zinc-300 mb-1">Markup sobre o custo (%)</label>
+                <input
+                  id="produto-markup"
+                  type="number"
+                  step="0.01"
+                  min="-100"
+                  value={markup}
+                  disabled={!novoProduto.preco_compra || Number(novoProduto.preco_compra) <= 0}
+                  onChange={e => {
+                    const percentual = e.target.value;
+                    setMarkup(percentual);
+                    const custo = Number(novoProduto.preco_compra);
+                    const valor = Number(percentual);
+                    if (percentual !== '' && Number.isFinite(valor) && valor >= -100 && custo > 0) {
+                      const preco = Math.round((custo * (1 + valor / 100) + Number.EPSILON) * 100) / 100;
+                      setNovoProduto({...novoProduto, preco: preco.toFixed(2)});
+                    }
+                  }}
+                  placeholder="Informe o custo primeiro"
+                  className="w-full rounded-xl border border-white/10 bg-dark-800 px-4 py-3 text-white outline-none focus:border-brand-500 disabled:cursor-not-allowed disabled:opacity-50"
+                />
+                <p className="mt-2 text-xs text-zinc-400">Preço de venda = custo × (1 + markup ÷ 100). Alterar o markup atualiza o preço acima; promoções não mudam.</p>
               </div>
 
               <div className="bg-dark-900 border border-white/5 p-4 rounded-xl space-y-4">
