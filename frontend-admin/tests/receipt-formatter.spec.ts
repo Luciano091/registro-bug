@@ -34,6 +34,11 @@ test('formata pedido completo para bobina termica de 58 mm', () => {
   expect(receipt).toContain('Cashback utilizado');
   expect(receipt).toContain('Cliente:\n\x1B!\x38LUCIANO\nSEVERIANO\x1B!\x00');
   expect(receipt).toContain('Endereco:\n\x1B!\x38Rua B, 122\x1B!\x00');
+  expect(receipt.indexOf('Cliente:')).toBeLessThan(receipt.indexOf('Endereco:'));
+  expect(receipt.indexOf('Endereco:')).toBeLessThan(receipt.indexOf('Tel:'));
+  expect(receipt.indexOf('Bairro: Centro')).toBeLessThan(receipt.indexOf('[ITENS DO PEDIDO]'));
+  expect(receipt.match(/Endereco:/g)).toHaveLength(1);
+  expect(receipt).toContain('[RECEBIMENTO]\nTipo: Delivery');
   const highlighted = [...receipt.matchAll(/\x1B!\x38([\s\S]*?)\x1B!\x00/g)];
   expect(highlighted).toHaveLength(2);
   for (const [, text] of highlighted) {
@@ -41,6 +46,20 @@ test('formata pedido completo para bobina termica de 58 mm', () => {
   }
   const withoutPrintCommands = receipt.replace(/\x1B!./g, '');
   expect(Math.max(...withoutPrintCommands.split('\n').map(line => line.length))).toBeLessThanOrEqual(32);
+});
+
+test('nao imprime endereco em destaque para retirada', () => {
+  const receipt = formatOrderReceipt({
+    numero: '004',
+    cliente: 'ANA SILVA',
+    tipo_entrega: 'retirada',
+    endereco: 'Rua que nao deve aparecer',
+    itens: [],
+  }, 'BisBurger');
+
+  expect(receipt).not.toContain('Endereco:');
+  expect(receipt).toContain('Tipo: Retirada no balcao');
+  expect([...receipt.matchAll(/\x1B!\x38([\s\S]*?)\x1B!\x00/g)]).toHaveLength(1);
 });
 
 test('quebra nome e endereco longos sem cortar informacoes no texto ampliado', () => {

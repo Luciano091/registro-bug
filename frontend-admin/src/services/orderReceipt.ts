@@ -61,6 +61,8 @@ const addPair = (lines: string[], label: string, value: string) => {
 
 export const formatOrderReceipt = (order: any, businessName: string) => {
   const separator = '-'.repeat(RECEIPT_WIDTH);
+  const deliveryType = String(order.tipo_entrega || '').toLowerCase();
+  const isDelivery = ['delivery', 'entrega'].includes(deliveryType);
   const lines: string[] = [
     separator,
     center(businessName.toUpperCase()),
@@ -70,6 +72,10 @@ export const formatOrderReceipt = (order: any, businessName: string) => {
   ];
 
   lines.push('Cliente:', largeText(String(order.cliente || 'Cliente nao informado')));
+  if (isDelivery) {
+    lines.push('Endereco:', largeText(String(order.endereco || 'Endereco nao informado')));
+    if (order.bairro) lines.push(...wrap(String(order.bairro), RECEIPT_WIDTH - 8, 'Bairro: '));
+  }
   if (order.telefone) lines.push(`Tel: ${order.telefone}`);
   const date = new Date(order.data);
   if (!Number.isNaN(date.getTime())) {
@@ -110,11 +116,8 @@ export const formatOrderReceipt = (order: any, businessName: string) => {
   lines.push(`Status: ${order.pagamento_confirmado_em ? 'PAGO' : 'PENDENTE'}`);
 
   lines.push('', '[RECEBIMENTO]');
-  const deliveryType = String(order.tipo_entrega || '').toLowerCase();
-  if (['delivery', 'entrega'].includes(deliveryType)) {
+  if (isDelivery) {
     lines.push('Tipo: Delivery');
-    lines.push('Endereco:', largeText(String(order.endereco || 'Endereco nao informado')));
-    if (order.bairro) lines.push(...wrap(String(order.bairro), RECEIPT_WIDTH - 8, 'Bairro: '));
   } else if (['salao', 'salão', 'mesa'].includes(deliveryType)) {
     lines.push('Tipo: Mesa/Salao');
   } else {
