@@ -265,7 +265,7 @@ function AppContent() {
             )}
             <div className="min-w-0">
               <strong className="truncate">{estabelecimento.nome_empresa || 'Meu estabelecimento'}</strong>
-              <span className="flex items-center gap-1.5"><img src="/brand/ritmesa-mark.png" alt="" /> Gestão por Ritmesa</span>
+              {session?.perfil !== 'entregador' && <span className="flex items-center gap-1.5"><img src="/brand/ritmesa-mark.png" alt="" /> Gestão por Ritmesa</span>}
             </div>
           </div>
           <Routes>
