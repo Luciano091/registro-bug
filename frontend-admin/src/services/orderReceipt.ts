@@ -71,16 +71,16 @@ export const formatOrderReceipt = (order: any, businessName: string) => {
     `PEDIDO #${String(order.numero || '').split('-').pop() || order.numero}`,
   ];
 
+  const date = new Date(order.data);
+  if (!Number.isNaN(date.getTime())) {
+    lines.push(`Data: ${date.toLocaleDateString('pt-BR')} ${date.toLocaleTimeString('pt-BR')}`);
+  }
   lines.push('Cliente:', largeText(String(order.cliente || 'Cliente nao informado')));
   if (isDelivery) {
     lines.push('Endereco:', largeText(String(order.endereco || 'Endereco nao informado')));
     if (order.bairro) lines.push(...wrap(String(order.bairro), RECEIPT_WIDTH - 8, 'Bairro: '));
   }
   if (order.telefone) lines.push(`Tel: ${order.telefone}`);
-  const date = new Date(order.data);
-  if (!Number.isNaN(date.getTime())) {
-    lines.push(`Data: ${date.toLocaleDateString('pt-BR')} ${date.toLocaleTimeString('pt-BR')}`);
-  }
 
   lines.push('', '[ITENS DO PEDIDO]');
   for (const item of order.itens || []) {

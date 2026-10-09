@@ -34,6 +34,8 @@ test('formata pedido completo para bobina termica de 58 mm', () => {
   expect(receipt).toContain('Cashback utilizado');
   expect(receipt).toContain('Cliente:\n\x1B!\x38LUCIANO\nSEVERIANO\x1B!\x00');
   expect(receipt).toContain('Endereco:\n\x1B!\x38Rua B, 122\x1B!\x00');
+  expect(receipt).toMatch(/PEDIDO #002\nData: 26\/09\/2026 .*\nCliente:/);
+  expect(receipt.indexOf('Data:')).toBeLessThan(receipt.indexOf('Cliente:'));
   expect(receipt.indexOf('Cliente:')).toBeLessThan(receipt.indexOf('Endereco:'));
   expect(receipt.indexOf('Endereco:')).toBeLessThan(receipt.indexOf('Tel:'));
   expect(receipt.indexOf('Bairro: Centro')).toBeLessThan(receipt.indexOf('[ITENS DO PEDIDO]'));
