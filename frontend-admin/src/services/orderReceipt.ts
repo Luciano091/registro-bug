@@ -1,4 +1,7 @@
 const RECEIPT_WIDTH = 32;
+const LARGE_TEXT_WIDTH = RECEIPT_WIDTH / 2;
+const LARGE_TEXT_ON = '\x1B!\x38'; // ESC/POS: negrito, altura e largura dobradas.
+const LARGE_TEXT_OFF = '\x1B!\x00';
 
 const asNumber = (value: unknown) => {
   const parsed = Number(value ?? 0);
@@ -43,6 +46,9 @@ const wrap = (value: string, width = RECEIPT_WIDTH, prefix = '') => {
   return lines.map((line, index) => `${index === 0 ? prefix : ' '.repeat(prefix.length)}${line}`);
 };
 
+const largeText = (value: string) =>
+  `${LARGE_TEXT_ON}${wrap(value, LARGE_TEXT_WIDTH).join('\n')}${LARGE_TEXT_OFF}`;
+
 const addPair = (lines: string[], label: string, value: string) => {
   const spacing = RECEIPT_WIDTH - label.length - value.length;
   if (spacing >= 1) {
@@ -63,7 +69,7 @@ export const formatOrderReceipt = (order: any, businessName: string) => {
     `PEDIDO #${String(order.numero || '').split('-').pop() || order.numero}`,
   ];
 
-  lines.push(...wrap(String(order.cliente || 'Cliente nao informado'), RECEIPT_WIDTH - 9, 'Cliente: '));
+  lines.push('Cliente:', largeText(String(order.cliente || 'Cliente nao informado')));
   if (order.telefone) lines.push(`Tel: ${order.telefone}`);
   const date = new Date(order.data);
   if (!Number.isNaN(date.getTime())) {
@@ -107,7 +113,7 @@ export const formatOrderReceipt = (order: any, businessName: string) => {
   const deliveryType = String(order.tipo_entrega || '').toLowerCase();
   if (['delivery', 'entrega'].includes(deliveryType)) {
     lines.push('Tipo: Delivery');
-    lines.push(...wrap(String(order.endereco || 'Endereco nao informado'), RECEIPT_WIDTH - 10, 'Endereco: '));
+    lines.push('Endereco:', largeText(String(order.endereco || 'Endereco nao informado')));
     if (order.bairro) lines.push(...wrap(String(order.bairro), RECEIPT_WIDTH - 8, 'Bairro: '));
   } else if (['salao', 'salão', 'mesa'].includes(deliveryType)) {
     lines.push('Tipo: Mesa/Salao');
