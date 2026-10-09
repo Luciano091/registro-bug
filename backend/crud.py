@@ -1418,23 +1418,28 @@ def get_ficha_tecnica(db: Session, produto_id: int, estabelecimento_id: int):
 def update_ficha_tecnica(db: Session, produto_id: int, itens: list[schemas.ProdutoInsumoCreate], estabelecimento_id: int):
     produto = db.query(models.Produto).filter(models.Produto.id == produto_id, models.Produto.estabelecimento_id == estabelecimento_id).first()
     if not produto:
-        return []
-    # Limpa ficha anterior
+        raise ValueError("Produto não encontrado neste estabelecimento.")
+    insumo_ids = [item.insumo_id for item in itens]
+    if len(insumo_ids) != len(set(insumo_ids)):
+        raise ValueError("Um insumo não pode aparecer duas vezes na ficha técnica.")
+    if any(not math.isfinite(item.quantidade) or item.quantidade <= 0 for item in itens):
+        raise ValueError("Informe uma quantidade maior que zero para cada insumo.")
+    insumos = db.query(models.Insumo).filter(
+        models.Insumo.estabelecimento_id == estabelecimento_id,
+        models.Insumo.id.in_(insumo_ids),
+    ).all() if insumo_ids else []
+    if len(insumos) != len(insumo_ids):
+        raise ValueError("Um ou mais insumos não pertencem a este estabelecimento.")
+
+    # Valida todos os itens antes de substituir a ficha anterior.
+    quantidades = {item.insumo_id: item.quantidade for item in itens}
+    total_cost = sum(insumo.custo_unitario * quantidades[insumo.id] for insumo in insumos)
     db.query(models.ProdutoInsumo).filter(models.ProdutoInsumo.produto_id == produto_id).delete()
-    
-    total_cost = 0.0
     for item in itens:
         db_item = models.ProdutoInsumo(produto_id=produto_id, insumo_id=item.insumo_id, quantidade=item.quantidade)
         db.add(db_item)
-        
-        # Calculate cost
-        insumo = db.query(models.Insumo).filter(models.Insumo.id == item.insumo_id, models.Insumo.estabelecimento_id == estabelecimento_id).first()
-        if insumo:
-            total_cost += insumo.custo_unitario * item.quantidade
 
-    # Atualiza preco de compra do produto
     produto.preco_compra = total_cost
-        
     db.commit()
     return get_ficha_tecnica(db, produto_id, estabelecimento_id)
 

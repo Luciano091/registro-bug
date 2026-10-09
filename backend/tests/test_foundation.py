@@ -73,6 +73,25 @@ class FoundationTests(unittest.TestCase):
         self.assertNotIn("configuracoes.visualizar", auth.PERMISSOES_POR_PERFIL["entregador"])
         self.assertEqual(auth.PERMISSOES_POR_PERFIL["proprietario"], {"*"})
 
+    def test_technical_sheet_saves_cost_and_rejects_foreign_ingredients_without_erasing_it(self):
+        first = self.create_establishment("Ficha A", "ficha-a", "ficha-a@teste.com")
+        second = self.create_establishment("Ficha B", "ficha-b", "ficha-b@teste.com")
+        product = crud.create_produto(self.db, schemas.ProdutoCreate(nome="Bis Clássico", categoria="Lanches", preco=16.99), first.id)
+        bread = crud.create_insumo(self.db, schemas.InsumoCreate(nome="Pão", unidade_medida="UN", custo_unitario=1.5), first.id)
+        foreign = crud.create_insumo(self.db, schemas.InsumoCreate(nome="Insumo externo", unidade_medida="UN", custo_unitario=9), second.id)
+
+        saved = crud.update_ficha_tecnica(self.db, product.id, [schemas.ProdutoInsumoCreate(insumo_id=bread.id, quantidade=2)], first.id)
+        self.assertEqual(len(saved), 1)
+        self.assertEqual(saved[0].insumo.nome, "Pão")
+        self.assertEqual(product.preco_compra, 3)
+
+        with self.assertRaisesRegex(ValueError, "não pertencem"):
+            crud.update_ficha_tecnica(self.db, product.id, [schemas.ProdutoInsumoCreate(insumo_id=foreign.id, quantidade=1)], first.id)
+        with self.assertRaisesRegex(ValueError, "maior que zero"):
+            crud.update_ficha_tecnica(self.db, product.id, [schemas.ProdutoInsumoCreate(insumo_id=bread.id, quantidade=0)], first.id)
+        self.assertEqual([item.insumo_id for item in crud.get_ficha_tecnica(self.db, product.id, first.id)], [bread.id])
+        self.assertEqual(product.preco_compra, 3)
+
     def test_manual_payment_confirmation_posts_one_cash_sale(self):
         establishment = self.create_establishment("Caixa Manual", "caixa-manual", "caixa@teste.com")
         other = self.create_establishment("Outro Caixa", "outro-caixa", "outro-caixa@teste.com")

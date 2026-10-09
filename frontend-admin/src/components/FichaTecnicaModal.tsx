@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Search, Save, Package } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import api from '../services/api';
+
+type Insumo = { id: number; nome: string; unidade_medida: string; custo_unitario: number };
+type ItemFicha = { insumo_id: number; quantidade: number; insumo?: Insumo };
 
 interface FichaTecnicaModalProps {
   produtoId: number;
@@ -9,9 +13,14 @@ interface FichaTecnicaModalProps {
 }
 
 const FichaTecnicaModal = ({ produtoId, produtoNome, onClose }: FichaTecnicaModalProps) => {
-  const [insumos, setInsumos] = useState<any[]>([]);
-  const [ficha, setFicha] = useState<any[]>([]);
+  const [insumos, setInsumos] = useState<Insumo[]>([]);
+  const [ficha, setFicha] = useState<ItemFicha[]>([]);
   const [loading, setLoading] = useState(true);
+  const [insumosError, setInsumosError] = useState('');
+  const [fichaError, setFichaError] = useState('');
+  const [saveError, setSaveError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [dirty, setDirty] = useState(false);
   
   const [searchInsumo, setSearchInsumo] = useState('');
   
@@ -20,21 +29,21 @@ const FichaTecnicaModal = ({ produtoId, produtoNome, onClose }: FichaTecnicaModa
   }, [produtoId]);
 
   const fetchDados = async () => {
-    try {
-      const [resInsumos, resFicha] = await Promise.all([
-        api.get('/insumos'),
-        api.get(`/produtos/${produtoId}/ficha-tecnica`)
-      ]);
-      setInsumos(resInsumos.data);
-      setFicha(resFicha.data);
-    } catch (error) {
-      console.error("Erro ao carregar dados", error);
-    } finally {
-      setLoading(false);
-    }
+    setLoading(true);
+    setInsumosError('');
+    setFichaError('');
+    const [resInsumos, resFicha] = await Promise.allSettled([
+      api.get<Insumo[]>('/insumos'),
+      api.get<ItemFicha[]>(`/produtos/${produtoId}/ficha-tecnica`)
+    ]);
+    if (resInsumos.status === 'fulfilled') setInsumos(resInsumos.value.data);
+    else setInsumosError(resInsumos.reason?.response?.data?.detail || 'Não foi possível carregar os insumos.');
+    if (resFicha.status === 'fulfilled') setFicha(resFicha.value.data);
+    else setFichaError(resFicha.reason?.response?.data?.detail || 'Não foi possível carregar a ficha técnica.');
+    setLoading(false);
   };
 
-  const addInsumoToFicha = (insumo: any) => {
+  const addInsumoToFicha = (insumo: Insumo) => {
     // Verifica se ja tem
     if (ficha.find(i => i.insumo_id === insumo.id)) {
       alert("Insumo já adicionado à ficha técnica.");
@@ -46,22 +55,31 @@ const FichaTecnicaModal = ({ produtoId, produtoNome, onClose }: FichaTecnicaModa
       insumo: insumo,
       quantidade: 1
     }]);
+    setDirty(true);
+    setSaveError('');
     setSearchInsumo('');
   };
 
   const updateQuantidade = (index: number, novaQtde: string) => {
-    const newFicha = [...ficha];
-    newFicha[index].quantidade = parseFloat(novaQtde) || 0;
-    setFicha(newFicha);
+    setFicha(current => current.map((item, itemIndex) => itemIndex === index ? { ...item, quantidade: Number(novaQtde) } : item));
+    setDirty(true);
+    setSaveError('');
   };
 
   const removeInsumo = (index: number) => {
-    const newFicha = [...ficha];
-    newFicha.splice(index, 1);
-    setFicha(newFicha);
+    setFicha(current => current.filter((_, itemIndex) => itemIndex !== index));
+    setDirty(true);
+    setSaveError('');
   };
 
   const handleSave = async () => {
+    if (loading || fichaError || !dirty || saving) return;
+    if (ficha.some(item => !Number.isFinite(item.quantidade) || item.quantidade <= 0)) {
+      setSaveError('Informe uma quantidade maior que zero para cada insumo.');
+      return;
+    }
+    setSaving(true);
+    setSaveError('');
     try {
       const payload = ficha.map(item => ({
         insumo_id: item.insumo_id,
@@ -71,9 +89,10 @@ const FichaTecnicaModal = ({ produtoId, produtoNome, onClose }: FichaTecnicaModa
       await api.put(`/produtos/${produtoId}/ficha-tecnica`, payload);
       alert("Ficha técnica salva com sucesso!");
       onClose();
-    } catch (error) {
-      alert("Erro ao salvar ficha técnica.");
-      console.error(error);
+    } catch (error: any) {
+      setSaveError(error.response?.data?.detail || 'Não foi possível salvar a ficha técnica.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -84,7 +103,7 @@ const FichaTecnicaModal = ({ produtoId, produtoNome, onClose }: FichaTecnicaModa
     }, 0);
   };
 
-  const filteredInsumos = insumos.filter(i => i.nome.toLowerCase().includes(searchInsumo.toLowerCase()));
+  const filteredInsumos = insumos.filter(i => i.nome.toLowerCase().includes(searchInsumo.trim().toLowerCase()));
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -119,11 +138,18 @@ const FichaTecnicaModal = ({ produtoId, produtoNome, onClose }: FichaTecnicaModa
             <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 max-h-[300px]">
               {loading ? (
                 <p className="text-sm text-zinc-400">Carregando...</p>
+              ) : insumosError ? (
+                <div role="alert" className="text-sm text-red-600"><p>{insumosError}</p><button type="button" onClick={() => void fetchDados()} className="mt-2 font-semibold underline">Tentar novamente</button></div>
+              ) : filteredInsumos.length === 0 ? (
+                <div className="text-sm text-slate-600 space-y-2">
+                  <p>{insumos.length === 0 ? 'Nenhum insumo cadastrado neste estabelecimento.' : 'Nenhum insumo encontrado para esta busca.'}</p>
+                  {insumos.length === 0 && <Link to="/insumos" onClick={onClose} className="inline-block font-semibold text-orange-700 underline">Cadastrar insumos</Link>}
+                </div>
               ) : filteredInsumos.map(insumo => (
                 <div key={insumo.id} className="flex justify-between items-center p-2 hover:bg-white/5 rounded-lg mb-1 group transition-colors">
                   <div>
                     <p className="text-sm text-white font-medium">{insumo.nome}</p>
-                    <p className="text-[10px] text-zinc-400">{insumo.custo_unitario.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} / {insumo.unidade_medida}</p>
+                    <p className="text-[10px] text-zinc-400">{Number(insumo.custo_unitario).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} / {insumo.unidade_medida}</p>
                   </div>
                   <button 
                     onClick={() => addInsumoToFicha(insumo)}
@@ -141,19 +167,22 @@ const FichaTecnicaModal = ({ produtoId, produtoNome, onClose }: FichaTecnicaModa
             <h4 className="text-sm font-bold text-zinc-300 mb-4 uppercase tracking-wider">Ingredientes do Produto</h4>
             
             <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 max-h-[300px]">
-              {ficha.length === 0 ? (
+              {fichaError ? (
+                <div role="alert" className="text-sm text-red-600"><p>{fichaError}</p><button type="button" onClick={() => void fetchDados()} className="mt-2 font-semibold underline">Tentar novamente</button></div>
+              ) : ficha.length === 0 ? (
                 <p className="text-sm text-zinc-400 text-center mt-10">Nenhum insumo adicionado.</p>
               ) : (
                 ficha.map((item, index) => (
                   <div key={index} className="flex items-center gap-3 mb-3 p-3 bg-dark-900 border border-white/5 rounded-xl">
                     <div className="flex-1">
                       <p className="text-sm text-white font-semibold">{item.insumo?.nome}</p>
-                      <p className="text-xs text-zinc-400">{(item.insumo?.custo_unitario * (item.quantidade || 0)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                      <p className="text-xs text-zinc-400">{(Number(item.insumo?.custo_unitario || 0) * (item.quantidade || 0)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <input 
                         type="number" 
                         step="0.001"
+                        min="0.001"
                         value={item.quantidade}
                         onChange={(e) => updateQuantidade(index, e.target.value)}
                         className="w-20 bg-[#131313] border border-white/10 rounded-lg p-1.5 text-center text-white text-sm focus:outline-none focus:border-brand-500"
@@ -180,11 +209,13 @@ const FichaTecnicaModal = ({ produtoId, produtoNome, onClose }: FichaTecnicaModa
               </div>
               <button 
                 onClick={handleSave}
+                disabled={loading || !!fichaError || !dirty || saving}
                 className="w-full premium-btn py-3 rounded-xl font-bold flex items-center justify-center gap-2"
               >
                 <Save size={18} />
-                Salvar Ficha Técnica
+                {saving ? 'Salvando...' : 'Salvar Ficha Técnica'}
               </button>
+              {saveError && <p role="alert" className="mt-2 text-sm text-red-600">{saveError}</p>}
             </div>
           </div>
         </div>

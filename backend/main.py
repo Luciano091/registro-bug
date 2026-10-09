@@ -1432,7 +1432,10 @@ def get_ficha_tecnica(produto_id: int, db: Session = Depends(get_db), estabeleci
 
 @app.put("/produtos/{produto_id}/ficha-tecnica", response_model=List[schemas.ProdutoInsumo])
 def update_ficha_tecnica(produto_id: int, itens: List[schemas.ProdutoInsumoCreate], db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("estoque.gerenciar"))):
-    return crud.update_ficha_tecnica(db, produto_id, itens, estabelecimento_id)
+    try:
+        return crud.update_ficha_tecnica(db, produto_id, itens, estabelecimento_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
 
 @app.post("/pedidos/{pedido_id}/cancelar", response_model=schemas.Pedido)
