@@ -591,6 +591,12 @@ def delivery_board(db: Session = Depends(get_db), usuario: auth.UsuarioAutentica
     entregador_id = usuario.usuario_id if usuario.perfil == "entregador" else None
     return crud.get_pedidos_entrega(db, usuario.estabelecimento_id, entregador_id)
 
+@app.get("/entregas/historico", response_model=List[schemas.PedidoEntregaResumo])
+def delivery_history(limit: int = Query(20, ge=1, le=100), offset: int = Query(0, ge=0), db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("entregas.visualizar"))):
+    if usuario.perfil != "entregador" or not usuario.usuario_id:
+        raise HTTPException(status_code=403, detail="Histórico disponível apenas para entregadores.")
+    return crud.get_historico_entregas(db, usuario.estabelecimento_id, usuario.usuario_id, limit, offset)
+
 @app.get("/entregas/entregadores", response_model=List[schemas.Usuario])
 def delivery_drivers(db: Session = Depends(get_db), usuario: auth.UsuarioAutenticado = Depends(auth.require_user_permission("entregas.visualizar"))):
     return crud.get_entregadores(db, usuario.estabelecimento_id)

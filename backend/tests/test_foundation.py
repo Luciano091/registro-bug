@@ -673,6 +673,10 @@ class FoundationTests(unittest.TestCase):
         order = crud.atualizar_status_entrega(self.db, order.id, "entregue", driver_session)
         self.assertEqual(order.status, "Finalizado")
         self.assertEqual(driver.status_entrega, "disponivel")
+        self.assertEqual(crud.get_historico_entregas(self.db, first.id, driver.id), [order])
+        self.assertEqual(crud.get_historico_entregas(self.db, second.id, driver.id), [])
+        self.assertEqual(crud.get_historico_entregas(self.db, first.id, foreign_driver.id), [])
+        self.assertEqual(crud.get_historico_entregas(self.db, first.id, driver.id, limit=1, offset=1), [])
 
     def test_driver_can_see_and_accept_ready_unassigned_delivery(self):
         establishment = self.create_establishment("Entrega Livre", "entrega-livre", "livre@teste.com")

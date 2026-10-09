@@ -1055,6 +1055,17 @@ def get_pedidos_entrega(db: Session, estabelecimento_id: int, entregador_id: int
         ))
     return query.order_by(models.Pedido.data).all()
 
+def get_historico_entregas(db: Session, estabelecimento_id: int, entregador_id: int, limit: int = 20, offset: int = 0):
+    return db.query(models.Pedido).join(models.Entrega).options(
+        joinedload(models.Pedido.entrega).joinedload(models.Entrega.entregador),
+    ).filter(
+        models.Pedido.estabelecimento_id == estabelecimento_id,
+        models.Entrega.estabelecimento_id == estabelecimento_id,
+        models.Entrega.entregador_id == entregador_id,
+        models.Entrega.status == "entregue",
+        models.Entrega.entregue_em.is_not(None),
+    ).order_by(models.Entrega.entregue_em.desc(), models.Pedido.id.desc()).offset(offset).limit(limit).all()
+
 def get_pedido_entrega(db: Session, pedido_id: int, estabelecimento_id: int):
     return db.query(models.Pedido).options(
         joinedload(models.Pedido.entrega).joinedload(models.Entrega.entregador),
