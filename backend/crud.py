@@ -1413,7 +1413,7 @@ def delete_insumo(db: Session, insumo_id: int, estabelecimento_id: int):
 # --- Ficha Tecnica ---
 def get_ficha_tecnica(db: Session, produto_id: int, estabelecimento_id: int):
     produto = db.query(models.Produto).filter(models.Produto.id == produto_id, models.Produto.estabelecimento_id == estabelecimento_id).first()
-    return db.query(models.ProdutoInsumo).filter(models.ProdutoInsumo.produto_id == produto_id).all() if produto else []
+    return db.query(models.ProdutoInsumo).options(joinedload(models.ProdutoInsumo.insumo)).filter(models.ProdutoInsumo.produto_id == produto_id).all() if produto else []
 
 def update_ficha_tecnica(db: Session, produto_id: int, itens: list[schemas.ProdutoInsumoCreate], estabelecimento_id: int):
     produto = db.query(models.Produto).filter(models.Produto.id == produto_id, models.Produto.estabelecimento_id == estabelecimento_id).first()

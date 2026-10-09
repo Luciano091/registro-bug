@@ -800,10 +800,23 @@ class ProdutoInsumoBase(BaseModel):
 class ProdutoInsumoCreate(ProdutoInsumoBase):
     pass
 
-class ProdutoInsumo(ProdutoInsumoBase):
+class InsumoFicha(BaseModel):
+    id: int
+    nome: Optional[str] = None
+    unidade_medida: Optional[str] = None
+    custo_unitario: Optional[float] = None
+    controlar_estoque: Optional[bool] = None
+    estoque: Optional[float] = None
+
+    class Config:
+        from_attributes = True
+
+class ProdutoInsumo(BaseModel):
     id: int
     produto_id: int
-    insumo: Optional[Insumo] = None
+    insumo_id: Optional[int] = None
+    quantidade: Optional[float] = None
+    insumo: Optional[InsumoFicha] = None
     
     class Config:
         from_attributes = True

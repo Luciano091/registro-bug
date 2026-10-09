@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Plus, Trash2, Search, Save, Package } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 
-type Insumo = { id: number; nome: string; unidade_medida: string; custo_unitario: number };
-type ItemFicha = { insumo_id: number; quantidade: number; insumo?: Insumo };
+type Insumo = { id: number; nome: string | null; unidade_medida: string | null; custo_unitario: number | null };
+type ItemFicha = { insumo_id: number | null; quantidade: number | null; insumo?: Insumo | null };
 
 interface FichaTecnicaModalProps {
   produtoId: number;
@@ -21,6 +21,7 @@ const FichaTecnicaModal = ({ produtoId, produtoNome, onClose }: FichaTecnicaModa
   const [saveError, setSaveError] = useState('');
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const loadRequest = useRef(0);
   
   const [searchInsumo, setSearchInsumo] = useState('');
   
@@ -29,13 +30,17 @@ const FichaTecnicaModal = ({ produtoId, produtoNome, onClose }: FichaTecnicaModa
   }, [produtoId]);
 
   const fetchDados = async () => {
+    const request = ++loadRequest.current;
     setLoading(true);
     setInsumosError('');
     setFichaError('');
+    setFicha([]);
+    setDirty(false);
     const [resInsumos, resFicha] = await Promise.allSettled([
       api.get<Insumo[]>('/insumos'),
       api.get<ItemFicha[]>(`/produtos/${produtoId}/ficha-tecnica`)
     ]);
+    if (request !== loadRequest.current) return;
     if (resInsumos.status === 'fulfilled') setInsumos(resInsumos.value.data);
     else setInsumosError(resInsumos.reason?.response?.data?.detail || 'Não foi possível carregar os insumos.');
     if (resFicha.status === 'fulfilled') setFicha(resFicha.value.data);
@@ -44,6 +49,7 @@ const FichaTecnicaModal = ({ produtoId, produtoNome, onClose }: FichaTecnicaModa
   };
 
   const addInsumoToFicha = (insumo: Insumo) => {
+    if (fichaError) return;
     // Verifica se ja tem
     if (ficha.find(i => i.insumo_id === insumo.id)) {
       alert("Insumo já adicionado à ficha técnica.");
@@ -74,7 +80,11 @@ const FichaTecnicaModal = ({ produtoId, produtoNome, onClose }: FichaTecnicaModa
 
   const handleSave = async () => {
     if (loading || fichaError || !dirty || saving) return;
-    if (ficha.some(item => !Number.isFinite(item.quantidade) || item.quantidade <= 0)) {
+    if (ficha.some(item => !item.insumo_id || !item.insumo?.nome || item.insumo.custo_unitario == null)) {
+      setSaveError('Remova e adicione novamente os insumos indisponíveis antes de salvar.');
+      return;
+    }
+    if (ficha.some(item => !Number.isFinite(item.quantidade) || (item.quantidade ?? 0) <= 0)) {
       setSaveError('Informe uma quantidade maior que zero para cada insumo.');
       return;
     }
@@ -98,12 +108,13 @@ const FichaTecnicaModal = ({ produtoId, produtoNome, onClose }: FichaTecnicaModa
 
   const calcularCustoTotal = () => {
     return ficha.reduce((total, item) => {
-      const custoUni = item.insumo?.custo_unitario || 0;
+      const custoUni = item.insumo?.custo_unitario ?? 0;
       return total + (custoUni * (item.quantidade || 0));
     }, 0);
   };
 
-  const filteredInsumos = insumos.filter(i => i.nome.toLowerCase().includes(searchInsumo.trim().toLowerCase()));
+  const filteredInsumos = insumos.filter(i => (i.nome || '').toLowerCase().includes(searchInsumo.trim().toLowerCase()));
+  const hasInvalidItems = ficha.some(item => !item.insumo_id || !item.insumo?.nome || item.insumo.custo_unitario == null || !Number.isFinite(item.quantidade) || (item.quantidade ?? 0) <= 0);
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -148,11 +159,12 @@ const FichaTecnicaModal = ({ produtoId, produtoNome, onClose }: FichaTecnicaModa
               ) : filteredInsumos.map(insumo => (
                 <div key={insumo.id} className="flex justify-between items-center p-2 hover:bg-white/5 rounded-lg mb-1 group transition-colors">
                   <div>
-                    <p className="text-sm text-white font-medium">{insumo.nome}</p>
+                    <p className="text-sm text-white font-medium">{insumo.nome || `Insumo #${insumo.id}`}</p>
                     <p className="text-[10px] text-zinc-400">{Number(insumo.custo_unitario).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} / {insumo.unidade_medida}</p>
                   </div>
                   <button 
                     onClick={() => addInsumoToFicha(insumo)}
+                    disabled={!!fichaError || !insumo.nome || insumo.custo_unitario == null}
                     className="p-1.5 bg-brand-500/10 text-brand-500 rounded-md hover:bg-brand-500 hover:text-white transition-colors"
                   >
                     <Plus size={16} />
@@ -175,7 +187,8 @@ const FichaTecnicaModal = ({ produtoId, produtoNome, onClose }: FichaTecnicaModa
                 ficha.map((item, index) => (
                   <div key={index} className="flex items-center gap-3 mb-3 p-3 bg-dark-900 border border-white/5 rounded-xl">
                     <div className="flex-1">
-                      <p className="text-sm text-white font-semibold">{item.insumo?.nome}</p>
+                      <p className="text-sm text-white font-semibold">{item.insumo?.nome || `Insumo indisponível${item.insumo_id ? ` (#${item.insumo_id})` : ''}`}</p>
+                      {!item.insumo?.nome ? <p className="text-xs text-red-600">Insumo indisponível. Remova e adicione outro.</p> : item.insumo.custo_unitario == null ? <p className="text-xs text-red-600">Cadastre o custo deste insumo em Insumos.</p> : null}
                       <p className="text-xs text-zinc-400">{(Number(item.insumo?.custo_unitario || 0) * (item.quantidade || 0)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -183,7 +196,7 @@ const FichaTecnicaModal = ({ produtoId, produtoNome, onClose }: FichaTecnicaModa
                         type="number" 
                         step="0.001"
                         min="0.001"
-                        value={item.quantidade}
+                        value={item.quantidade ?? ''}
                         onChange={(e) => updateQuantidade(index, e.target.value)}
                         className="w-20 bg-[#131313] border border-white/10 rounded-lg p-1.5 text-center text-white text-sm focus:outline-none focus:border-brand-500"
                       />
@@ -201,16 +214,17 @@ const FichaTecnicaModal = ({ produtoId, produtoNome, onClose }: FichaTecnicaModa
             </div>
             
             <div className="mt-4 pt-4 border-t border-white/10">
+              {hasInvalidItems && <p role="alert" className="mb-3 text-sm text-red-600">Há itens incompletos nesta ficha. Corrija a quantidade ou o cadastro do insumo antes de salvar.</p>}
               <div className="flex justify-between items-center mb-4">
                 <span className="text-zinc-300">Custo Total Calculado:</span>
                 <span className="text-xl font-bold font-price text-brand-400">
-                  {calcularCustoTotal().toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  {fichaError || hasInvalidItems ? '—' : calcularCustoTotal().toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                 </span>
               </div>
               <button 
                 onClick={handleSave}
-                disabled={loading || !!fichaError || !dirty || saving}
-                className="w-full premium-btn py-3 rounded-xl font-bold flex items-center justify-center gap-2"
+                disabled={loading || !!fichaError || hasInvalidItems || !dirty || saving}
+                className="w-full premium-btn py-3 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 <Save size={18} />
                 {saving ? 'Salvando...' : 'Salvar Ficha Técnica'}

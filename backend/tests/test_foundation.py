@@ -5,7 +5,7 @@ import unittest
 import datetime
 from pathlib import Path
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy import event
 from sqlalchemy.orm import sessionmaker
 
@@ -91,6 +91,23 @@ class FoundationTests(unittest.TestCase):
             crud.update_ficha_tecnica(self.db, product.id, [schemas.ProdutoInsumoCreate(insumo_id=bread.id, quantidade=0)], first.id)
         self.assertEqual([item.insumo_id for item in crud.get_ficha_tecnica(self.db, product.id, first.id)], [bread.id])
         self.assertEqual(product.preco_compra, 3)
+
+    def test_technical_sheet_can_read_incomplete_legacy_ingredient_without_deleting_it(self):
+        establishment = self.create_establishment("Ficha Legada", "ficha-legada", "ficha-legada@teste.com")
+        product = crud.create_produto(self.db, schemas.ProdutoCreate(nome="Bis Clássico", categoria="Lanches", preco=16.99), establishment.id)
+        ingredient = crud.create_insumo(self.db, schemas.InsumoCreate(nome="Pão", unidade_medida="UN", custo_unitario=1.5), establishment.id)
+        saved = crud.update_ficha_tecnica(self.db, product.id, [schemas.ProdutoInsumoCreate(insumo_id=ingredient.id, quantidade=1)], establishment.id)
+        row_id = saved[0].id
+        self.db.execute(text("UPDATE produto_insumos SET quantidade = NULL WHERE id = :id"), {"id": row_id})
+        self.db.execute(text("UPDATE insumos SET custo_unitario = NULL WHERE id = :id"), {"id": ingredient.id})
+        self.db.commit()
+        self.db.expire_all()
+
+        row = crud.get_ficha_tecnica(self.db, product.id, establishment.id)[0]
+        serialized = schemas.ProdutoInsumo.model_validate(row).model_dump()
+        self.assertIsNone(serialized["quantidade"])
+        self.assertIsNone(serialized["insumo"]["custo_unitario"])
+        self.assertEqual(self.db.query(models.ProdutoInsumo).filter_by(id=row_id).count(), 1)
 
     def test_manual_payment_confirmation_posts_one_cash_sale(self):
         establishment = self.create_establishment("Caixa Manual", "caixa-manual", "caixa@teste.com")
