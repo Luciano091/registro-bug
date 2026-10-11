@@ -5,6 +5,7 @@ import { NetworkProvider } from './contexts/NetworkContext';
 import { CartProvider } from './contexts/CartContext';
 import PublicMenu from './pages/PublicMenu';
 import LandingPage from './pages/LandingPage';
+import BisBurgerLinks from './pages/BisBurgerLinks';
 import { getEstablishmentSlug } from './services/api';
 
 function AppRouter() {
@@ -23,6 +24,8 @@ function AppRouter() {
   // If there is a slug (e.g., bisburger.ritmesa.com.br or localhost:5173/bisburger)
   return (
     <Routes>
+      <Route path="/conecte" element={slug === 'bisburger' ? <BisBurgerLinks /> : <Navigate to="/" replace />} />
+      <Route path="/bisburger/conecte" element={slug === 'bisburger' ? <BisBurgerLinks /> : <Navigate to="/" replace />} />
       <Route path="/" element={<PublicMenu />} />
       <Route path="/mesa/:mesaNumero" element={<PublicMenu />} />
       {/* Fallback backward compatibility for path-based routes */}
