@@ -123,23 +123,40 @@
   .product-tile { min-height: 132px; }
   .product-tile:hover { background-color: #ffffff; border-color: #fdba74; box-shadow: 0 8px 24px rgba(15,23,42,.07); }
   .order-workspace > .glass-card { border-top: 2px solid #f9731670; }
-  .login-screen { background: radial-gradient(circle at 80% 0%, rgba(249,115,22,.13), transparent 30%), linear-gradient(135deg,#f8fafc,#eef2f7); }
+  .login-screen { background: radial-gradient(circle at 80% 0%, rgba(249,115,22,.13), transparent 30%), linear-gradient(135deg,#f8fafc,#eef2f7); min-height: 100dvh; }
   .platform-login { background: radial-gradient(circle at 50% 0%, rgba(249,115,22,.14), transparent 28%), linear-gradient(135deg,#f8fafc,#eef2f7); }
-  .login-panel { max-width: 420px; }
-  .login-brand { display: flex; align-items: center; gap: 11px; color: #172033; }
+  .login-panel { max-width: 390px; }
+  .login-brand { display: flex; align-items: center; gap: 10px; color: #172033; }
   .login-brand strong, .login-brand span { display: block; }
-  .login-brand strong { font-size: 17px; }
-  .login-brand span { color: #64748b; font-size: 11px; }
-  .login-form { padding: 32px; background: #ffffff; border-color: #e2e8f0; box-shadow: 0 24px 70px rgba(15,23,42,.11); }
-  .login-form input { font-size: 1rem; font-weight: 500; letter-spacing: 0.1em; }
+  .login-brand strong { font-size: 16px; font-weight: 700; line-height: 1.2; }
+  .login-brand span { color: #64748b; font-size: 11px; line-height: 1.2; }
+  .login-form { padding: 22px 24px; background: #ffffff; border-color: #e2e8f0; box-shadow: 0 16px 45px rgba(15,23,42,.07); }
+  .login-form input { font-size: 0.9375rem; font-weight: 500; }
+  .login-form input[type="password"] { letter-spacing: 0.12em; }
   .login-form input::placeholder { letter-spacing: normal; }
+
+  @media (max-height: 720px) {
+    .login-screen { padding-top: 12px !important; padding-bottom: 12px !important; }
+    .login-header-group { margin-bottom: 12px !important; }
+    .login-brand { margin-bottom: 8px !important; }
+    .login-form { padding: 18px 22px !important; }
+    .login-footer { margin-top: 10px !important; }
+  }
+
+  @media (max-height: 600px) {
+    .login-lock-badge { display: none !important; }
+    .login-header-group { margin-bottom: 8px !important; }
+    .login-brand { margin-bottom: 6px !important; }
+    .login-form { padding: 16px 20px !important; }
+    .login-footer { margin-top: 8px !important; }
+  }
   @media (max-width: 767px) {
     body.salon-modal-open .mobile-bottom-nav { display: none; }
     .admin-main > div { padding-left: 20px; padding-right: 20px; }
     .admin-main header { padding-bottom: 20px; }
     .dashboard-page .dashboard-header { padding-bottom: 16px; }
     .dashboard-stats > div { min-height: 100px; padding: 15px; }
-    .login-form { padding: 24px; }
+    .login-form { padding: 20px; }
     .driver-mobile-brand { height: 52px; padding: 0 18px; gap: 10px; }
     .driver-mobile-brand .mobile-tenant-logo { width: 32px; height: 32px; border-radius: 9px; }
     .driver-mobile-brand strong { font-size: 16px; }

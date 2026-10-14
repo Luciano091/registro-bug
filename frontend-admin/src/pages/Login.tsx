@@ -60,97 +60,109 @@ const Login = () => {
   };
 
   return (
-    <div className="login-screen min-h-screen bg-dark-950 flex flex-col items-center justify-center p-4">
-      <div className="login-panel w-full max-w-sm animate-in zoom-in-95 duration-500">
+    <div className="login-screen min-h-screen flex flex-col items-center justify-center p-3 sm:p-4 selection:bg-brand-500/20">
+      <div className="login-panel w-full animate-in zoom-in-95 duration-300">
         
-        <div className="flex flex-col items-center mb-8">
-          <div className="login-brand mb-8">
-            <div className="brand-mark"><img src="/brand/ritmesa-mark.png" alt="" /></div>
+        <div className="login-header-group flex flex-col items-center mb-3 sm:mb-4 text-center">
+          <div className="login-brand mb-2.5 sm:mb-3">
+            <div className="brand-mark"><img src="/brand/ritmesa-mark.png" alt="Ritmesa" /></div>
             <div><strong>Ritmesa</strong><span>Seu negócio no ritmo certo</span></div>
           </div>
-          <div className="w-14 h-14 bg-orange-50 rounded-2xl border border-orange-100 flex items-center justify-center mb-5">
-            <Lock size={24} className="text-brand-600" />
+          <div className="login-lock-badge w-10 h-10 bg-orange-50 rounded-xl border border-orange-100 flex items-center justify-center mb-2 text-brand-600 shadow-sm">
+            <Lock size={19} />
           </div>
-          <h1 className="text-3xl font-bold font-heading text-slate-900 mb-2">Acesse sua operação</h1>
-          <p className="text-zinc-400 text-center">
+          <h1 className="text-xl sm:text-2xl font-bold font-heading text-slate-900 tracking-tight">Acesse sua operação</h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-0.5 max-w-xs">
             Entre para acompanhar pedidos, caixa e cardápio.
           </p>
         </div>
 
-        <div className="login-form bg-dark-900 border border-white/5 p-6 rounded-3xl shadow-2xl">
-          <form onSubmit={handleLogin} className="space-y-6">
+        <div className="login-form bg-white border border-slate-200 rounded-2xl sm:rounded-3xl shadow-xl shadow-slate-900/5">
+          <form onSubmit={handleLogin} className="space-y-3.5 sm:space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">E-mail</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">E-mail</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="seuemail@restaurante.com.br"
                 autoComplete="username"
-                className="w-full bg-white border border-slate-200 rounded-2xl px-5 py-4 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10 transition-all text-slate-900 placeholder-slate-400"
+                className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 sm:py-3 text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10 transition-all text-slate-900 placeholder:text-slate-400"
               />
-              <p className="mt-2 text-xs text-slate-500">No primeiro acesso antigo, você ainda pode entrar apenas com a senha.</p>
+              <p className="mt-1 text-[11px] text-slate-400 leading-tight">No primeiro acesso antigo, você ainda pode entrar apenas com a senha.</p>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Senha</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Senha</label>
               <div className="relative">
                 <input 
                   type={showPassword ? "text" : "password"}
                   value={senha}
                   onChange={(e) => setSenha(e.target.value)}
                   placeholder="Senha de acesso"
-                  className="w-full bg-dark-950 border border-white/10 rounded-2xl pl-5 pr-12 py-4 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all text-white placeholder-zinc-600 text-center text-lg tracking-widest font-bold"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3.5 pr-11 py-2.5 sm:py-3 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10 transition-all text-slate-900 placeholder:text-slate-400 text-center text-base sm:text-lg tracking-widest font-bold"
                   autoComplete="current-password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 transition-colors"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-slate-600 transition-colors"
+                  aria-label={showPassword ? "Ocultar senha" : "Ver senha"}
                 >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
               {erro && (
-                <p className="text-red-400 text-sm mt-3 text-center animate-in slide-in-from-top-1">{erro}</p>
+                <p className="text-red-600 bg-red-50 border border-red-200 rounded-lg p-2 text-xs font-medium mt-2 text-center animate-in slide-in-from-top-1">{erro}</p>
               )}
             </div>
 
-            
-            <div className="flex justify-end mt-2">
-              <button type="button" onClick={() => setForgotModal(true)} className="text-sm text-brand-400 hover:text-brand-300 font-medium transition-colors">
+            <div className="flex justify-end pt-0.5">
+              <button type="button" onClick={() => setForgotModal(true)} className="text-xs text-brand-600 hover:text-brand-700 font-medium transition-colors">
                 Esqueci minha senha
               </button>
             </div>
-            <button
 
+            <button
+              type="submit"
               disabled={!senha || loading}
-              className="w-full bg-brand-500 hover:bg-brand-400 disabled:opacity-50 disabled:hover:bg-brand-500 text-white font-bold rounded-2xl py-4 flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-brand-500/25"
+              className="w-full bg-brand-500 hover:bg-brand-600 disabled:opacity-50 disabled:hover:bg-brand-500 text-white font-bold rounded-xl py-2.5 sm:py-3 px-4 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-[0.99] shadow-lg shadow-brand-500/20 text-sm sm:text-base mt-2"
             >
               {loading ? (
-                <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
               ) : (
                 <>
-                  Entrar no painel <ArrowRight size={20} />
+                  Entrar no painel <ArrowRight size={18} />
                 </>
               )}
             </button>
           </form>
         </div>
         
-        <div className="mt-8 text-center text-sm text-slate-500">
+        <div className="login-footer mt-3 text-center text-xs text-slate-400">
           Plataforma de gestão para food service
         </div>
 
       </div>
       {forgotModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <form onSubmit={handleForgot} className="relative w-full max-w-sm rounded-3xl border border-white/10 bg-dark-900 p-6 shadow-2xl">
-            <button type="button" onClick={() => { setForgotModal(false); setForgotSuccess(false); setForgotError(''); }} className="absolute right-4 top-4 text-zinc-400 hover:text-white"><X size={20} /></button>
-            <h2 className="mb-2 text-2xl font-bold text-white">Recuperar senha</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
+          <form onSubmit={handleForgot} className="relative w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+            <button type="button" onClick={() => { setForgotModal(false); setForgotSuccess(false); setForgotError(''); }} className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 p-1"><X size={18} /></button>
+            <h2 className="mb-1 text-xl font-bold text-slate-900">Recuperar senha</h2>
             {forgotSuccess ? (
-              <div className="py-6 text-center"><CheckCircle2 className="mx-auto mb-4 text-emerald-500" size={42} /><p className="text-zinc-300">Se o e-mail existir, enviaremos um link válido por 15 minutos.</p><button type="button" onClick={() => { setForgotModal(false); setForgotSuccess(false); }} className="mt-6 w-full rounded-xl bg-white/5 py-3 font-bold text-white">Voltar ao login</button></div>
+              <div className="py-4 text-center">
+                <CheckCircle2 className="mx-auto mb-3 text-emerald-500" size={38} />
+                <p className="text-sm text-slate-600">Se o e-mail existir, enviaremos um link válido por 15 minutos.</p>
+                <button type="button" onClick={() => { setForgotModal(false); setForgotSuccess(false); }} className="mt-5 w-full rounded-xl bg-slate-100 hover:bg-slate-200 py-2.5 text-sm font-bold text-slate-700 transition">Voltar ao login</button>
+              </div>
             ) : (
-              <><p className="mb-5 text-sm text-zinc-400">Digite o e-mail cadastrado no painel.</p><input type="email" required value={forgotEmail} onChange={event => setForgotEmail(event.target.value)} placeholder="seu@email.com" className="w-full rounded-xl border border-white/10 bg-dark-950 px-4 py-3 text-white outline-none focus:border-brand-500" />{forgotError && <p className="mt-3 text-sm text-red-400">{forgotError}</p>}<button disabled={forgotLoading} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 py-3 font-bold text-white disabled:opacity-50">{forgotLoading ? <Loader2 className="animate-spin" size={20} /> : 'Enviar link'}</button></>
+              <>
+                <p className="mb-4 text-xs text-slate-500">Digite o e-mail cadastrado no painel.</p>
+                <input type="email" required value={forgotEmail} onChange={event => setForgotEmail(event.target.value)} placeholder="seu@email.com" className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20" />
+                {forgotError && <p className="mt-2 text-xs text-red-500">{forgotError}</p>}
+                <button disabled={forgotLoading} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 hover:bg-brand-600 py-2.5 text-sm font-bold text-white shadow-md shadow-brand-500/20 disabled:opacity-50">
+                  {forgotLoading ? <Loader2 className="animate-spin" size={18} /> : 'Enviar link'}
+                </button>
+              </>
             )}
           </form>
         </div>
