@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, ArrowRight, Eye, EyeOff, CheckCircle2, X, Loader2 } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff, CheckCircle2, X, Loader2 } from 'lucide-react';
 import api from '../services/api';
 
 const Login = () => {
@@ -63,43 +63,58 @@ const Login = () => {
     <div className="login-screen min-h-screen flex flex-col items-center justify-center p-3 sm:p-4 selection:bg-brand-500/20">
       <div className="login-panel w-full animate-in zoom-in-95 duration-300">
         
-        <div className="login-header-group flex flex-col items-center mb-3 sm:mb-4 text-center">
-          <div className="login-brand mb-2.5 sm:mb-3">
-            <div className="brand-mark"><img src="/brand/ritmesa-mark.png" alt="Ritmesa" /></div>
-            <div><strong>Ritmesa</strong><span>Seu negócio no ritmo certo</span></div>
+        <div className="login-brand mb-5 flex items-center justify-center gap-3">
+          <div className="brand-mark">
+            <img src="/brand/ritmesa-mark.png" alt="Ritmesa" />
           </div>
-          <div className="login-lock-badge w-10 h-10 bg-orange-50 rounded-xl border border-orange-100 flex items-center justify-center mb-2 text-brand-600 shadow-sm">
-            <Lock size={19} />
+          <div className="text-left">
+            <strong className="block text-base font-bold text-slate-900 leading-tight">Ritmesa</strong>
+            <span className="block text-xs text-slate-500 leading-tight">Seu negócio no ritmo certo</span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-bold font-heading text-slate-900 tracking-tight">Acesse sua operação</h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-0.5 max-w-xs">
-            Entre para acompanhar pedidos, caixa e cardápio.
-          </p>
         </div>
 
         <div className="login-form bg-white border border-slate-200 rounded-2xl sm:rounded-3xl shadow-xl shadow-slate-900/5">
-          <form onSubmit={handleLogin} className="space-y-3.5 sm:space-y-4">
+          <div className="mb-6 text-left">
+            <h1 className="text-xl sm:text-2xl font-bold font-heading text-slate-900 tracking-tight">Acesse sua operação</h1>
+            <p className="mt-1 text-xs sm:text-sm text-slate-500">
+              Entre para acompanhar pedidos, caixa e cardápio.
+            </p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">E-mail</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5 text-left">E-mail</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="seuemail@restaurante.com.br"
                 autoComplete="username"
-                className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 sm:py-3 text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10 transition-all text-slate-900 placeholder:text-slate-400"
+                className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 sm:py-3 text-sm focus:outline-none transition-all text-slate-900 placeholder:text-slate-400 text-left"
               />
-              <p className="mt-1 text-[11px] text-slate-400 leading-tight">No primeiro acesso antigo, você ainda pode entrar apenas com a senha.</p>
+              <p className="mt-1.5 text-xs text-slate-400 text-left leading-normal">
+                Acesso antigo? Entre preenchendo apenas a senha.
+              </p>
             </div>
+
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Senha</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-semibold text-slate-700">Senha</label>
+                <button
+                  type="button"
+                  onClick={() => setForgotModal(true)}
+                  className="text-xs text-brand-600 hover:text-brand-700 font-medium transition-colors"
+                >
+                  Esqueci minha senha
+                </button>
+              </div>
               <div className="relative">
                 <input 
                   type={showPassword ? "text" : "password"}
                   value={senha}
                   onChange={(e) => setSenha(e.target.value)}
-                  placeholder="Senha de acesso"
-                  className="w-full bg-white border border-slate-200 rounded-xl px-3.5 pr-11 py-2.5 sm:py-3 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10 transition-all text-slate-900 placeholder:text-slate-400 text-center text-base sm:text-lg tracking-widest font-bold"
+                  placeholder="Sua senha de acesso"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3.5 pr-11 py-2.5 sm:py-3 focus:outline-none transition-all text-slate-900 placeholder:text-slate-400 text-left text-sm sm:text-base font-medium"
                   autoComplete="current-password"
                 />
                 <button
@@ -114,12 +129,6 @@ const Login = () => {
               {erro && (
                 <p className="text-red-600 bg-red-50 border border-red-200 rounded-lg p-2 text-xs font-medium mt-2 text-center animate-in slide-in-from-top-1">{erro}</p>
               )}
-            </div>
-
-            <div className="flex justify-end pt-0.5">
-              <button type="button" onClick={() => setForgotModal(true)} className="text-xs text-brand-600 hover:text-brand-700 font-medium transition-colors">
-                Esqueci minha senha
-              </button>
             </div>
 
             <button
@@ -138,8 +147,15 @@ const Login = () => {
           </form>
         </div>
         
-        <div className="login-footer mt-3 text-center text-xs text-slate-400">
-          Plataforma de gestão para food service
+        <div className="login-footer mt-4 text-center text-xs text-slate-400">
+          <a
+            href="https://wa.me/5582998218008?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20com%20o%20acesso%20ao%20painel%20Ritmesa"
+            target="_blank"
+            rel="noreferrer"
+            className="hover:text-slate-600 transition-colors"
+          >
+            Precisa de ajuda? Fale com o suporte
+          </a>
         </div>
 
       </div>
