@@ -192,10 +192,10 @@ const NewOrder = () => {
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto animate-in fade-in duration-500 min-h-screen text-zinc-100 flex flex-col">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto animate-in fade-in duration-500 min-h-screen text-slate-900 flex flex-col">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4 md:mb-5">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-white font-heading drop-shadow-sm">Novo Pedido</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900 font-heading drop-shadow-sm">Novo Pedido</h2>
           <p className="mt-1 text-sm text-zinc-400">O número do pedido aparece após a confirmação.</p>
         </div>
       </header>
@@ -330,16 +330,30 @@ const NewOrder = () => {
 
       <div className="order-workspace flex flex-col gap-4 lg:h-[calc(100vh-9rem)]">
           <div className="flex shrink-0 flex-col justify-between gap-4 xl:flex-row">
-            <div className="min-w-0 flex flex-1 gap-2 p-1 bg-dark-800/50 backdrop-blur-md border border-white/5 rounded-xl overflow-x-auto shadow-lg">
+            <div className="min-w-0 flex flex-1 gap-2 p-1.5 bg-white border border-slate-200 rounded-xl overflow-x-auto shadow-sm">
               {categorias.map(cat => (
-                <button key={cat as string} onClick={() => setActiveCategory(cat as string)} className={`px-3 py-1.5 rounded-lg text-xs transition-all whitespace-nowrap ${activeCategory === cat ? 'bg-white/10 text-white font-medium shadow-sm' : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'}`}>
+                <button 
+                  key={cat as string} 
+                  onClick={() => setActiveCategory(cat as string)} 
+                  className={`px-3.5 py-1.5 rounded-lg text-xs transition-all whitespace-nowrap font-medium ${
+                    activeCategory === cat 
+                      ? 'bg-brand-500 text-white font-bold shadow-sm' 
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  }`}
+                >
                   {cat as string}
                 </button>
               ))}
             </div>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={16} />
-              <input type="text" placeholder="Buscar produto..." value={search} onChange={e => setSearch(e.target.value)} className="w-full md:w-64 bg-dark-800/50 backdrop-blur-md border border-white/5 rounded-xl pl-9 pr-3 py-2 text-xs focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all shadow-lg" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <input 
+                type="text" 
+                placeholder="Buscar produto..." 
+                value={search} 
+                onChange={e => setSearch(e.target.value)} 
+                className="w-full md:w-64 bg-white border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all shadow-sm" 
+              />
             </div>
           </div>
 
@@ -350,25 +364,34 @@ const NewOrder = () => {
                 const configurable = (produto.grupos_opcoes || []).some((group: any) => group.ativo);
                 const line = itens.find(i => i.produto.id === produto.id && i.opcoes.length === 0);
                 const count = configurable ? 0 : (line?.quantidade || 0);
+                const totalNoPedido = itens.filter(i => i.produto.id === produto.id).reduce((sum, i) => sum + i.quantidade, 0);
+
                 return (
-                  <div key={produto.id} className="product-tile glass-card p-4 rounded-xl flex flex-col justify-between group">
+                  <div key={produto.id} className="product-tile glass-card p-4 rounded-xl flex flex-col justify-between group border border-slate-200 bg-white hover:border-brand-400 hover:shadow-md transition-all">
                     <div>
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-brand-500/10 text-brand-400 border border-brand-500/20 mb-1.5">
-                        {produto.categoria}
-                      </span>
-                      <h4 className="font-bold text-white text-sm font-heading group-hover:text-brand-400 transition-colors line-clamp-2">{produto.nome}</h4>
+                      <div className="flex items-center justify-between gap-1 mb-1.5">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-brand-50 text-brand-600 border border-brand-200/70">
+                          {produto.categoria}
+                        </span>
+                        {totalNoPedido > 0 && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-brand-500 text-white shadow-sm" title="Quantidade deste produto já no pedido">
+                            {totalNoPedido} no pedido
+                          </span>
+                        )}
+                      </div>
+                      <h4 className="font-bold text-slate-900 text-sm font-heading group-hover:text-brand-600 transition-colors line-clamp-2">{produto.nome}</h4>
                     </div>
-                    <div className="flex justify-between items-center mt-3 pt-3 border-t border-white/5">
-                      <span className="font-bold text-zinc-200 text-sm">{produto.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                    <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-100">
+                      <span className="font-bold text-slate-900 text-sm">{produto.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
                       {count === 0 ? (
-                        <button onClick={() => handleAddProduct(produto)} className="text-brand-400 hover:text-brand-300 p-1.5 bg-brand-500/10 hover:bg-brand-500/20 rounded-lg transition-colors">
+                        <button onClick={() => handleAddProduct(produto)} className="text-brand-600 hover:text-brand-700 p-1.5 bg-brand-50 hover:bg-brand-100 border border-brand-200/60 rounded-lg transition-colors">
                           <Plus size={16} />
                         </button>
                       ) : (
-                        <div className="flex items-center gap-2 bg-dark-900 border border-white/10 rounded-lg px-1.5 py-0.5">
-                          <button onClick={() => updateQuantity(line!.id, -1)} className="p-1 hover:text-brand-400 text-zinc-300 transition-colors"><Minus size={14} /></button>
-                          <span className="font-bold w-4 text-center text-xs">{count}</span>
-                          <button onClick={() => updateQuantity(line!.id, 1)} className="p-1 hover:text-brand-400 text-zinc-300 transition-colors"><Plus size={14} /></button>
+                        <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-1.5 py-0.5">
+                          <button onClick={() => updateQuantity(line!.id, -1)} className="p-1 hover:text-brand-600 text-slate-600 transition-colors"><Minus size={14} /></button>
+                          <span className="font-extrabold w-4 text-center text-xs text-slate-900 tabular-nums">{count}</span>
+                          <button onClick={() => updateQuantity(line!.id, 1)} className="p-1 hover:text-brand-600 text-slate-600 transition-colors"><Plus size={14} /></button>
                         </div>
                       )}
                     </div>
@@ -378,33 +401,94 @@ const NewOrder = () => {
             </div>
           </div>
 
-          <div className="w-full lg:w-80 glass-card rounded-2xl flex flex-col overflow-hidden h-[600px] lg:h-full shrink-0">
-          <div className="p-4 border-b border-white/5 bg-black/20 flex justify-between items-center">
-            <h3 className="text-lg font-bold font-heading">Resumo do Pedido</h3>
-            <span className="bg-brand-500/20 text-brand-400 text-xs px-2 py-1 rounded-md">{itens.length} itens</span>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {itens.map((item) => (
-              <div key={item.id} className="flex items-center justify-between bg-dark-900 p-2.5 rounded-xl border border-white/5">
-                <div className="min-w-0 flex-1 pr-2"><p className="font-bold text-zinc-200 text-xs leading-tight line-clamp-1">{item.produto.nome}</p>{item.opcoes.length > 0 && <p className="mt-1 truncate text-[10px] text-zinc-500">{item.opcoes.map(option => option.nome).join(' · ')}</p>}</div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <button onClick={() => updateQuantity(item.id, -1)} className="text-zinc-300 hover:text-brand-400"><Minus size={14} /></button>
-                  <span className="text-xs font-bold w-4 text-center">{item.quantidade}</span>
-                  <button onClick={() => updateQuantity(item.id, 1)} className="text-zinc-300 hover:text-brand-400"><Plus size={14} /></button>
-                  <button onClick={() => handleRemoveProduct(item.id)} className="ml-1 text-red-500 hover:text-red-400"><Trash2 size={14} /></button>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="p-4 border-t border-white/5 bg-black/20">
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-zinc-300 text-sm">Total</span>
-              <span className="text-2xl font-bold gradient-text font-heading">{total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+          <div className="w-full lg:w-80 glass-card rounded-2xl flex flex-col overflow-hidden h-[600px] lg:h-full shrink-0 border border-slate-200 bg-white shadow-sm">
+            <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+              <h3 className="text-base font-bold text-slate-900 font-heading">Resumo do Pedido</h3>
+              <span className="bg-brand-50 text-brand-600 border border-brand-200 text-xs font-bold px-2.5 py-1 rounded-lg">
+                {itens.reduce((acc, i) => acc + i.quantidade, 0)} {itens.reduce((acc, i) => acc + i.quantidade, 0) === 1 ? 'item' : 'itens'}
+              </span>
             </div>
-            <button onClick={() => setShowCheckout(true)} disabled={itens.length === 0} className="w-full premium-btn py-2.5 rounded-xl font-bold flex justify-center items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed">
-              Avançar <ChevronRight size={18} />
-            </button>
-          </div>
+            <div className="flex-1 overflow-y-auto p-3 space-y-2.5 custom-scrollbar">
+              {itens.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400">
+                  <p className="text-sm font-medium">Nenhum item adicionado</p>
+                  <p className="text-xs text-slate-400 mt-1">Selecione produtos ao lado para montar o pedido</p>
+                </div>
+              ) : (
+                itens.map((item) => (
+                  <div key={item.id} className="bg-slate-50/80 hover:bg-slate-50 p-3 rounded-xl border border-slate-200 transition-colors">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className="inline-flex items-center justify-center min-w-6 h-6 px-1.5 rounded-md bg-brand-500 text-white font-extrabold text-xs shrink-0 shadow-sm">
+                            {item.quantidade}x
+                          </span>
+                          <p className="font-bold text-slate-900 text-sm leading-tight truncate">{item.produto.nome}</p>
+                        </div>
+                        {item.opcoes.length > 0 && (
+                          <p className="mt-1 pl-7 text-[11px] text-slate-500 line-clamp-2">
+                            {item.opcoes.map(option => option.nome).join(' · ')}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="font-bold text-slate-900 text-sm block">
+                          {(item.precoUnitario * item.quantidade).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        </span>
+                        {item.quantidade > 1 && (
+                          <span className="text-[10px] text-slate-400 block">
+                            {item.precoUnitario.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} un
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 mt-1">
+                      <span className="text-[11px] font-medium text-slate-500">Quantidade:</span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button 
+                          onClick={() => updateQuantity(item.id, -1)} 
+                          className="h-7 w-7 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 hover:border-slate-300 text-slate-700 flex items-center justify-center transition-colors shadow-sm"
+                          title="Diminuir quantidade"
+                        >
+                          <Minus size={14} />
+                        </button>
+                        <span className="text-sm font-extrabold text-slate-900 w-6 text-center tabular-nums">{item.quantidade}</span>
+                        <button 
+                          onClick={() => updateQuantity(item.id, 1)} 
+                          className="h-7 w-7 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 hover:border-slate-300 text-slate-700 flex items-center justify-center transition-colors shadow-sm"
+                          title="Aumentar quantidade"
+                        >
+                          <Plus size={14} />
+                        </button>
+                        <button 
+                          onClick={() => handleRemoveProduct(item.id)} 
+                          className="h-7 w-7 rounded-lg text-rose-500 hover:bg-rose-50 hover:text-rose-600 flex items-center justify-center ml-1 transition-colors"
+                          title="Remover produto do pedido"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="p-4 border-t border-slate-100 bg-slate-50">
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-slate-600 text-sm font-semibold">Total do Pedido</span>
+                <span className="text-2xl font-black text-brand-600 font-heading">
+                  {total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </span>
+              </div>
+              <button 
+                onClick={() => setShowCheckout(true)} 
+                disabled={itens.length === 0} 
+                className="w-full premium-btn py-3 rounded-xl font-bold flex justify-center items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-brand-500/20"
+              >
+                Avançar <ChevronRight size={18} />
+              </button>
+            </div>
           </div>
         </div>
       </div>

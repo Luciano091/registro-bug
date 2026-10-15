@@ -96,7 +96,7 @@
   .admin-main header { padding-bottom: 24px; border-bottom: 1px solid #e5eaf0; }
   .admin-main header h2 { font-size: clamp(1.6rem, 2.5vw, 2rem); letter-spacing: -0.035em; }
   .admin-main header p { color: #64748b; font-size: 0.875rem; }
-  .admin-main .text-white, .admin-main .text-zinc-50 { color: #172033; }
+  .admin-main .text-white, .admin-main .text-zinc-50, .admin-main .text-zinc-100 { color: #172033; }
   .admin-main .text-zinc-200, .admin-main .text-zinc-300 { color: #475569; }
   .admin-main .text-zinc-400 { color: #64748b; }
   .admin-main .text-zinc-500, .admin-main .text-zinc-600 { color: #94a3b8; }
