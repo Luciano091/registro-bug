@@ -175,7 +175,7 @@ def public_products(slug: str, skip: int = 0, limit: int = 500, canal: str = Non
 @app.get("/public/{slug}/categorias", response_model=List[schemas.Categoria])
 def public_categories(slug: str, db: Session = Depends(get_db)):
     estabelecimento = require_public_establishment(slug, db)
-    return crud.get_categorias(db, estabelecimento.id, somente_disponiveis=True)
+    return crud.get_categorias(db, estabelecimento.id, somente_disponiveis=True, somente_com_produtos=True)
 
 @app.post("/public/{slug}/cupons/validar", response_model=schemas.CupomValidado)
 def public_validate_coupon(slug: str, payload: schemas.CupomValidar, db: Session = Depends(get_db)):

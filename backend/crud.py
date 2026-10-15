@@ -159,8 +159,20 @@ def set_produto_setor(db: Session, produto_id: int, setor_id: int | None, estabe
     produto.setor_producao_id = setor_id; db.commit(); db.refresh(produto); return produto
 
 # --- Categorias e disponibilidade ---
-def get_categorias(db: Session, estabelecimento_id: int, somente_disponiveis: bool = False):
-    categorias = db.query(models.Categoria).filter(models.Categoria.estabelecimento_id == estabelecimento_id).order_by(models.Categoria.ordem, models.Categoria.nome).all()
+def get_categorias(db: Session, estabelecimento_id: int, somente_disponiveis: bool = False, somente_com_produtos: bool = False):
+    query = db.query(models.Categoria).filter(models.Categoria.estabelecimento_id == estabelecimento_id)
+    if somente_com_produtos:
+        query = query.filter(
+            db.query(models.Produto.id).filter(
+                models.Produto.estabelecimento_id == estabelecimento_id,
+                models.Produto.ativo == True,
+                or_(
+                    models.Produto.categoria_id == models.Categoria.id,
+                    func.lower(func.trim(models.Produto.categoria)) == func.lower(func.trim(models.Categoria.nome))
+                )
+            ).exists()
+        )
+    categorias = query.order_by(models.Categoria.ordem, models.Categoria.nome).all()
     return [categoria for categoria in categorias if not somente_disponiveis or (categoria.ativo and dentro_do_horario(categoria.dias_semana, categoria.horario_inicio, categoria.horario_fim))]
 
 def get_categoria(db: Session, categoria_id: int, estabelecimento_id: int):

@@ -130,11 +130,23 @@ const PublicMenu = () => {
     );
   }
 
-  const configuredNames = categoriasConfiguradas.map(categoria => categoria.nome);
-  const legacyNames = Array.from(new Set(produtos.map(p => p.categoria?.trim()).filter(Boolean))) as string[];
+  const availableCategorySet = new Set(
+    produtos.map(p => p.categoria?.trim()).filter(Boolean)
+  );
+  const configuredNames = categoriasConfiguradas
+    .map(categoria => categoria.nome?.trim())
+    .filter(nome => Boolean(nome) && availableCategorySet.has(nome));
+  const legacyNames = Array.from(availableCategorySet) as string[];
   const uniqueCategories = [...configuredNames, ...legacyNames.filter(nome => !configuredNames.includes(nome))];
 
   const categories = ['Todos', ...uniqueCategories];
+
+  useEffect(() => {
+    if (activeCategory !== 'Todos' && !categories.includes(activeCategory)) {
+      setActiveCategory('Todos');
+    }
+  }, [categories, activeCategory]);
+
   const filteredProducts = activeCategory === 'Todos' 
     ? produtos 
     : produtos.filter(p => p.categoria === activeCategory);
