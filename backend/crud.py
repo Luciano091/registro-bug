@@ -1916,7 +1916,7 @@ def limpar_dados_teste(db: Session, estabelecimento_id: int):
         models.Caixa.status == "aberto"
     ).update({
         models.Caixa.status: "fechado",
-        models.Caixa.fechado_em: models.get_now()
+        models.Caixa.data_fechamento: models.get_now()
     }, synchronize_session=False)
 
     # 11. Deletar todos os clientes de teste
