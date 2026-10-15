@@ -1831,3 +1831,129 @@ def get_cupom_destaque(db: Session, estabelecimento_id: int):
         (models.Cupom.fim == None) | (models.Cupom.fim >= now),
         (models.Cupom.limite_usos == None) | (models.Cupom.limite_usos > models.Cupom.usos)
     ).order_by(models.Cupom.valor.desc()).first()
+
+def limpar_dados_teste(db: Session, estabelecimento_id: int):
+    # 1. Obter pedidos do estabelecimento
+    pedidos = db.query(models.Pedido).filter(models.Pedido.estabelecimento_id == estabelecimento_id).all()
+    pedidos_ids = [p.id for p in pedidos]
+    pedidos_numeros = [f"Pedido #{p.numero}" for p in pedidos]
+
+    # 2. Obter itens dos pedidos e estornar estoque baixado por testes
+    itens = db.query(models.ItemPedido).filter(models.ItemPedido.pedido_id.in_(pedidos_ids)).all() if pedidos_ids else []
+    itens_ids = [i.id for i in itens]
+    for item in itens:
+        if item.produto:
+            _repor_estoque_produto(item.produto, item.quantidade)
+            for ficha in getattr(item.produto, "fichas_tecnicas", []):
+                if ficha.insumo and ficha.insumo.controlar_estoque:
+                    ficha.insumo.estoque += item.quantidade * ficha.quantidade
+
+    # 3. Deletar opções de itens de pedido
+    opcoes_deletadas = 0
+    if itens_ids:
+        opcoes_deletadas = db.query(models.ItemPedidoOpcao).filter(
+            models.ItemPedidoOpcao.item_pedido_id.in_(itens_ids)
+        ).delete(synchronize_session=False)
+
+    # 4. Deletar itens de pedido
+    itens_deletados = 0
+    if pedidos_ids:
+        itens_deletados = db.query(models.ItemPedido).filter(
+            models.ItemPedido.pedido_id.in_(pedidos_ids)
+        ).delete(synchronize_session=False)
+
+    # 5. Deletar entregas
+    entregas_deletadas = db.query(models.Entrega).filter(
+        models.Entrega.estabelecimento_id == estabelecimento_id
+    ).delete(synchronize_session=False)
+
+    # 6. Deletar pedidos
+    pedidos_deletados = db.query(models.Pedido).filter(
+        models.Pedido.estabelecimento_id == estabelecimento_id
+    ).delete(synchronize_session=False)
+
+    # 7. Desvincular comandas das mesas e resetar mesas
+    mesas_resetadas = db.query(models.Mesa).filter(
+        models.Mesa.estabelecimento_id == estabelecimento_id
+    ).update({
+        models.Mesa.status: "livre",
+        models.Mesa.cliente_nome: None,
+        models.Mesa.comanda_id: None,
+        models.Mesa.garcom_id: None,
+        models.Mesa.aberta_em: None,
+    }, synchronize_session=False)
+
+    # 8. Deletar comandas de salão de teste
+    comandas = db.query(models.Comanda).filter(models.Comanda.estabelecimento_id == estabelecimento_id).all()
+    comandas_ids = [c.id for c in comandas]
+    comanda_pagamentos_deletados = 0
+    comanda_itens_deletados = 0
+    comandas_deletadas = 0
+    if comandas_ids:
+        comanda_pagamentos_deletados = db.query(models.ComandaPagamento).filter(
+            models.ComandaPagamento.comanda_id.in_(comandas_ids)
+        ).delete(synchronize_session=False)
+        comanda_itens_deletados = db.query(models.ComandaItem).filter(
+            models.ComandaItem.comanda_id.in_(comandas_ids)
+        ).delete(synchronize_session=False)
+        comandas_deletadas = db.query(models.Comanda).filter(
+            models.Comanda.estabelecimento_id == estabelecimento_id
+        ).delete(synchronize_session=False)
+
+    # 9. Deletar movimentações de venda no caixa geradas por pedidos de teste
+    caixas = db.query(models.Caixa).filter(models.Caixa.estabelecimento_id == estabelecimento_id).all()
+    caixas_ids = [c.id for c in caixas]
+    vendas_deletadas = 0
+    if caixas_ids:
+        vendas_query = db.query(models.MovimentacaoCaixa).filter(
+            models.MovimentacaoCaixa.caixa_id.in_(caixas_ids),
+            or_(
+                models.MovimentacaoCaixa.tipo == "venda",
+                models.MovimentacaoCaixa.descricao.in_(pedidos_numeros) if pedidos_numeros else False
+            )
+        )
+        vendas_deletadas = vendas_query.delete(synchronize_session=False)
+
+    # 10. Fechar caixas abertos antigos de teste
+    caixas_fechados = db.query(models.Caixa).filter(
+        models.Caixa.estabelecimento_id == estabelecimento_id,
+        models.Caixa.status == "aberto"
+    ).update({
+        models.Caixa.status: "fechado",
+        models.Caixa.fechado_em: models.get_now()
+    }, synchronize_session=False)
+
+    # 11. Deletar todos os clientes de teste
+    clientes_deletados = db.query(models.Cliente).filter(
+        models.Cliente.estabelecimento_id == estabelecimento_id
+    ).delete(synchronize_session=False)
+
+    # 12. Resetar contadores de uso de cupons para 0
+    cupons_resetados = db.query(models.Cupom).filter(
+        models.Cupom.estabelecimento_id == estabelecimento_id
+    ).update({models.Cupom.usos: 0}, synchronize_session=False)
+
+    # 13. Deletar logs de auditoria de teste
+    logs_deletados = db.query(models.LogAuditoria).filter(
+        models.LogAuditoria.estabelecimento_id == estabelecimento_id,
+        models.LogAuditoria.entidade.in_(["pedido", "entrega", "comanda", "caixa", "cliente"])
+    ).delete(synchronize_session=False)
+
+    db.commit()
+
+    return {
+        "pedidos_removidos": pedidos_deletados,
+        "itens_pedido_removidos": itens_deletados,
+        "opcoes_pedido_removidas": opcoes_deletadas,
+        "entregas_removidas": entregas_deletadas,
+        "comandas_removidas": comandas_deletadas,
+        "comanda_itens_removidos": comanda_itens_deletados,
+        "comanda_pagamentos_removidos": comanda_pagamentos_deletados,
+        "movimentacoes_venda_removidas": vendas_deletadas,
+        "caixas_antigos_fechados": caixas_fechados,
+        "clientes_teste_removidos": clientes_deletados,
+        "cupons_usos_resetados": cupons_resetados,
+        "mesas_liberadas": mesas_resetadas,
+        "logs_auditoria_removidos": logs_deletados,
+    }
+

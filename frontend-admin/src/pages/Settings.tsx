@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronDown, Save, Store, Phone, MapPin, Clock, Lock, Truck } from 'lucide-react';
+import { ChevronDown, Save, Store, Phone, MapPin, Clock, Lock, Truck, Trash2 } from 'lucide-react';
 import api from '../services/api';
 import DriverAppDownload from '../components/DriverAppDownload';
 import DeliverySettingsModal from '../components/DeliverySettingsModal';
@@ -7,6 +7,7 @@ import { can, readSession } from '../services/session';
 
 const Settings = () => {
   const [deliveryOpen, setDeliveryOpen] = useState(false);
+  const [isCleaning, setIsCleaning] = useState(false);
   const canManage = can(readSession(), 'configuracoes.gerenciar');
   const [config, setConfig] = useState({
     nome_empresa: 'Carregando...',
@@ -22,6 +23,40 @@ const Settings = () => {
     ifood_merchant_id: '',
     ifood_status: 'desconectado'
   });
+
+  const handleLimparDadosTeste = async () => {
+    const confirmou = window.confirm(
+      "ATENÇÃO: Deseja realmente executar a LIMPEZA CIRÚRGICA DE TESTES?\n\n" +
+      "• Todos os pedidos de teste, comandas, entregas e clientes de teste serão excluídos.\n" +
+      "• O caixa e cupons serão reiniciados para o início oficial das operações.\n\n" +
+      "✓ Seu CARDÁPIO, PRODUTOS, PREÇOS, TAXAS e CONFIGURAÇÕES serão 100% PRESERVADOS.\n\n" +
+      "Deseja continuar?"
+    );
+    if (!confirmou) return;
+
+    try {
+      setIsCleaning(true);
+      const { data } = await api.post('/admin/manutencao/limpar-dados-teste');
+      const det = data.detalhes || {};
+      alert(
+        `✅ Limpeza cirúrgica realizada com sucesso!\n\n` +
+        `• Pedidos removidos: ${det.pedidos_removidos ?? 0}\n` +
+        `• Itens removidos: ${det.itens_pedido_removidos ?? 0}\n` +
+        `• Clientes de teste removidos: ${det.clientes_teste_removidos ?? 0}\n` +
+        `• Vendas do caixa limpas: ${det.movimentacoes_venda_removidas ?? 0}\n` +
+        `• Comandas removidas: ${det.comandas_removidas ?? 0}\n` +
+        `• Mesas liberadas: ${det.mesas_liberadas ?? 0}\n\n` +
+        `Tudo limpo e pronto para o início da operação oficial!`
+      );
+      window.location.reload();
+    } catch (error: any) {
+      console.error(error);
+      const msg = error.response?.data?.detail || 'Erro ao executar a limpeza de teste.';
+      alert(`Falha: ${msg}`);
+    } finally {
+      setIsCleaning(false);
+    }
+  };
 
   useEffect(() => {
     const fetchConfig = async () => {
@@ -116,6 +151,35 @@ const Settings = () => {
         </details>
 
         <DriverAppDownload />
+
+        {canManage && (
+          <section className="rounded-2xl border border-rose-200 bg-rose-50/40 p-5 shadow-sm md:p-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex gap-3">
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-rose-100 text-rose-600">
+                  <Trash2 size={20} />
+                </div>
+                <div>
+                  <h3 className="font-heading text-lg font-bold text-slate-800">Limpeza de Testes (Pré-Inauguração)</h3>
+                  <p className="text-sm text-slate-600 mt-0.5">
+                    Remove pedidos, comandas, entregas, movimentações de venda no caixa e clientes cadastrados em testes.
+                  </p>
+                  <p className="text-xs font-semibold text-rose-700 mt-1">
+                    ✓ Cardápio, produtos, fotos, adicionais, preços, taxas e configurações serão 100% preservados.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleLimparDadosTeste}
+                disabled={isCleaning}
+                className="shrink-0 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold px-5 py-2.5 text-sm transition-all shadow-md shadow-rose-600/20 disabled:opacity-50"
+              >
+                {isCleaning ? 'Limpando dados...' : 'Zerar Dados de Teste'}
+              </button>
+            </div>
+          </section>
+        )}
       </div>
       {deliveryOpen && <DeliverySettingsModal onClose={() => setDeliveryOpen(false)} />}
     </div>

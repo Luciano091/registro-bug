@@ -1044,6 +1044,24 @@ def update_configuracao(
         raise HTTPException(status_code=403, detail="Somente o proprietário pode alterar a senha principal.")
     return crud.update_configuracao(db=db, config=config, estabelecimento_id=atual.estabelecimento_id)
 
+@app.post("/admin/manutencao/limpar-dados-teste")
+def limpar_dados_teste_endpoint(
+    db: Session = Depends(get_db),
+    atual: auth.UsuarioAutenticado = Depends(auth.require_user_permission("configuracoes.gerenciar")),
+):
+    if atual.perfil not in ("proprietario", "gerente") and not atual.pode("*"):
+        raise HTTPException(status_code=403, detail="Somente o proprietário ou gerente pode executar a limpeza de teste.")
+    resultado = crud.limpar_dados_teste(db, atual.estabelecimento_id)
+    crud.create_audit_log(
+        db, atual.estabelecimento_id, "sistema.limpeza_testes",
+        atual.usuario_id, "sistema", atual.estabelecimento_id, resultado
+    )
+    return {
+        "status": "sucesso",
+        "mensagem": "Limpeza cirúrgica de testes realizada com sucesso.",
+        "detalhes": resultado
+    }
+
 # --- Dashboard & Relatorios ---
 @app.get("/dashboard/resumo")
 def get_dashboard_resumo(db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("dashboard.visualizar"))):
