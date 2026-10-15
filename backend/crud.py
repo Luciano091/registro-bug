@@ -1843,10 +1843,10 @@ def limpar_dados_teste(db: Session, estabelecimento_id: int):
     itens_ids = [i.id for i in itens]
     for item in itens:
         if item.produto:
-            _repor_estoque_produto(item.produto, item.quantidade)
-            for ficha in getattr(item.produto, "fichas_tecnicas", []):
-                if ficha.insumo and ficha.insumo.controlar_estoque:
-                    ficha.insumo.estoque += item.quantidade * ficha.quantidade
+            try:
+                _repor_estoque_produto(item.produto, item.quantidade)
+            except Exception:
+                pass
 
     # 3. Deletar opções de itens de pedido
     opcoes_deletadas = 0
@@ -1872,15 +1872,11 @@ def limpar_dados_teste(db: Session, estabelecimento_id: int):
         models.Pedido.estabelecimento_id == estabelecimento_id
     ).delete(synchronize_session=False)
 
-    # 7. Desvincular comandas das mesas e resetar mesas
+    # 7. Resetar status das mesas para livre
     mesas_resetadas = db.query(models.Mesa).filter(
         models.Mesa.estabelecimento_id == estabelecimento_id
     ).update({
-        models.Mesa.status: "livre",
-        models.Mesa.cliente_nome: None,
-        models.Mesa.comanda_id: None,
-        models.Mesa.garcom_id: None,
-        models.Mesa.aberta_em: None,
+        models.Mesa.status: "livre"
     }, synchronize_session=False)
 
     # 8. Deletar comandas de salão de teste
@@ -1905,12 +1901,12 @@ def limpar_dados_teste(db: Session, estabelecimento_id: int):
     caixas_ids = [c.id for c in caixas]
     vendas_deletadas = 0
     if caixas_ids:
+        filtros_venda = [models.MovimentacaoCaixa.tipo == "venda"]
+        if pedidos_numeros:
+            filtros_venda.append(models.MovimentacaoCaixa.descricao.in_(pedidos_numeros))
         vendas_query = db.query(models.MovimentacaoCaixa).filter(
             models.MovimentacaoCaixa.caixa_id.in_(caixas_ids),
-            or_(
-                models.MovimentacaoCaixa.tipo == "venda",
-                models.MovimentacaoCaixa.descricao.in_(pedidos_numeros) if pedidos_numeros else False
-            )
+            or_(*filtros_venda)
         )
         vendas_deletadas = vendas_query.delete(synchronize_session=False)
 

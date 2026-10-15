@@ -1051,16 +1051,20 @@ def limpar_dados_teste_endpoint(
 ):
     if atual.perfil not in ("proprietario", "gerente") and not atual.pode("*"):
         raise HTTPException(status_code=403, detail="Somente o proprietário ou gerente pode executar a limpeza de teste.")
-    resultado = crud.limpar_dados_teste(db, atual.estabelecimento_id)
-    crud.create_audit_log(
-        db, atual.estabelecimento_id, "sistema.limpeza_testes",
-        atual.usuario_id, "sistema", atual.estabelecimento_id, resultado
-    )
-    return {
-        "status": "sucesso",
-        "mensagem": "Limpeza cirúrgica de testes realizada com sucesso.",
-        "detalhes": resultado
-    }
+    try:
+        resultado = crud.limpar_dados_teste(db, atual.estabelecimento_id)
+        crud.create_audit_log(
+            db, atual.estabelecimento_id, "sistema.limpeza_testes",
+            atual.usuario_id, "sistema", atual.estabelecimento_id, resultado
+        )
+        return {
+            "status": "sucesso",
+            "mensagem": "Limpeza cirúrgica de testes realizada com sucesso.",
+            "detalhes": resultado
+        }
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Erro durante a limpeza: {str(exc)}")
 
 # --- Dashboard & Relatorios ---
 @app.get("/dashboard/resumo")
