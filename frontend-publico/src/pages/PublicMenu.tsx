@@ -109,6 +109,28 @@ const PublicMenu = () => {
     fetchData();
   }, []);
 
+  // Categorias disponíveis calculadas a partir dos produtos e categorias cadastradas
+  const categories = useMemo(() => {
+    const availableCategorySet = new Set(
+      produtos.map(p => p.categoria?.trim()).filter(Boolean)
+    );
+    const configuredNames = categoriasConfiguradas
+      .map(categoria => categoria.nome?.trim())
+      .filter((nome): nome is string => Boolean(nome) && availableCategorySet.has(nome));
+    const legacyNames = Array.from(availableCategorySet) as string[];
+    const uniqueCategories = [
+      ...configuredNames,
+      ...legacyNames.filter(nome => !configuredNames.includes(nome))
+    ];
+    return ['Todos', ...uniqueCategories];
+  }, [produtos, categoriasConfiguradas]);
+
+  useEffect(() => {
+    if (activeCategory !== 'Todos' && !categories.includes(activeCategory)) {
+      setActiveCategory('Todos');
+    }
+  }, [categories, activeCategory]);
+
   // Hooks não podem ser chamados após o return!
   // Produto escolhido no painel como Destaque do Dia.
   const destaqueDoDia = useMemo(() => {
@@ -130,29 +152,12 @@ const PublicMenu = () => {
     );
   }
 
-  const availableCategorySet = new Set(
-    produtos.map(p => p.categoria?.trim()).filter(Boolean)
-  );
-  const configuredNames = categoriasConfiguradas
-    .map(categoria => categoria.nome?.trim())
-    .filter(nome => Boolean(nome) && availableCategorySet.has(nome));
-  const legacyNames = Array.from(availableCategorySet) as string[];
-  const uniqueCategories = [...configuredNames, ...legacyNames.filter(nome => !configuredNames.includes(nome))];
-
-  const categories = ['Todos', ...uniqueCategories];
-
-  useEffect(() => {
-    if (activeCategory !== 'Todos' && !categories.includes(activeCategory)) {
-      setActiveCategory('Todos');
-    }
-  }, [categories, activeCategory]);
-
   const filteredProducts = activeCategory === 'Todos' 
     ? produtos 
-    : produtos.filter(p => p.categoria === activeCategory);
+    : produtos.filter(p => p.categoria?.trim() === activeCategory);
 
   const groupedProducts = filteredProducts.reduce((acc: any, produto: any) => {
-    const cat = produto.categoria || 'Outros';
+    const cat = produto.categoria?.trim() || 'Outros';
     if (!acc[cat]) acc[cat] = [];
     acc[cat].push(produto);
     return acc;
