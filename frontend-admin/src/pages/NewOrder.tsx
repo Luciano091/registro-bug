@@ -427,7 +427,7 @@ const NewOrder = () => {
                         </div>
                         {item.opcoes.length > 0 && (
                           <p className="mt-1 pl-7 text-[11px] text-slate-500 line-clamp-2">
-                            {item.opcoes.map(option => option.nome).join(' · ')}
+                            {item.opcoes.map(option => (option.quantidade > 1 ? `${option.quantidade}x ${option.nome}` : option.nome)).join(' · ')}
                           </p>
                         )}
                       </div>
