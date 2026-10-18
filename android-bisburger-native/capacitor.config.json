@@ -1,15 +1,15 @@
 {
   "appId": "br.com.ritmesa.bisburger",
   "appName": "BisBurger",
-  "webDir": "www",
+  "webDir": "dist-native",
   "server": {
-    "url": "https://bisburger.ritmesa.com.br/",
+    "hostname": "bisburger.ritmesa.com.br",
     "cleartext": false,
     "androidScheme": "https"
   },
   "android": {
     "allowMixedContent": false,
     "backgroundColor": "#080706",
-    "appendUserAgent": " BisBurgerApp/1.0.3"
+    "appendUserAgent": " BisBurgerApp/1.0.4-beta"
   }
 }

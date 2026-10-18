@@ -6,6 +6,7 @@ import android.os.Build;
 import androidx.core.app.ActivityCompat;
 import android.content.pm.PackageManager;
 import android.Manifest;
+import com.google.firebase.FirebaseApp;
 
 
 public class MainActivity extends BridgeActivity {
@@ -15,6 +16,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(DeliveryNotificationPlugin.class);
         registerPlugin(FirebaseTokenPlugin.class);
                 super.onCreate(savedInstanceState);
+        try { FirebaseApp.initializeApp(this); } catch (Exception e) {}
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.POST_NOTIFICATIONS}, 101);

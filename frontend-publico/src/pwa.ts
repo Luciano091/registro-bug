@@ -1,3 +1,5 @@
+import { Capacitor } from '@capacitor/core';
+
 export function registerPwa() {
   const hostname = window.location.hostname.toLowerCase();
   const isBisBurger = hostname === 'bisburger.ritmesa.com.br' || window.location.pathname === '/bisburger';
@@ -13,7 +15,7 @@ export function registerPwa() {
   appTitle.content = 'BisBurger';
   document.head.appendChild(appTitle);
 
-  if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  if (!Capacitor.isNativePlatform() && 'serviceWorker' in navigator && import.meta.env.PROD) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/sw.js').catch((error) => {
         console.error('Falha ao registrar o aplicativo BisBurger:', error);

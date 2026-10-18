@@ -1,8 +1,12 @@
 {
   "name": "bisburger-native",
   "private": true,
-  "version": "1.0.3",
+  "version": "1.0.4-beta",
   "scripts": {
+    "build:web": "cd ../frontend-publico && VITE_API_URL=https://registro-bug.onrender.com npm run build",
+    "prepare:web": "node scripts/prepare-web.mjs",
+    "build:android": "cd android && JAVA_HOME=../.jdk ./gradlew assembleRelease",
+    "build:beta": "npm run build:web && npm run prepare:web && cap sync android && npm run build:android && cp android/app/build/outputs/apk/release/app-release.apk BisBurger-1.0.4-beta-local.apk",
     "sync": "cap sync android",
     "open": "cap open android"
   },
