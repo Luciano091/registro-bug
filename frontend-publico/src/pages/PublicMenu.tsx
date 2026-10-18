@@ -241,31 +241,36 @@ const PublicMenu = () => {
             {/* Right Column */}
             <div className="flex flex-col min-w-0 flex-1">
               <div className="flex items-center">
-                <h1 aria-label={config?.nome_empresa || 'BisBurger'} className="text-[26px] font-black tracking-tight text-white md:text-4xl drop-shadow-md relative py-1">
+                <h1 aria-label={config?.nome_empresa || 'BisBurger'} className="text-[26px] font-black italic tracking-tight md:text-4xl drop-shadow-md relative py-1">
                   {(() => {
                     const name = config?.nome_empresa || 'BisBurger';
                     if (name.toLowerCase() === 'bisburger') {
                       return (
                         <>
-                          B
-                          <span className="relative inline-block mx-[0.5px]">
-                            <Crown className="w-[16px] h-[16px] text-[#facc15] fill-[#facc15] absolute -top-[9px] left-1/2 -translate-x-[45%] rotate-[12deg] drop-shadow-sm" strokeWidth={1} />
-                            ı
+                          <span className="text-[#e4a63c]">
+                            B
+                            <span className="relative inline-block mx-[0.5px]">
+                              <Crown className="w-[16px] h-[16px] text-[#e4a63c] fill-[#e4a63c] absolute -top-[9px] left-1/2 -translate-x-[45%] drop-shadow-sm not-italic" strokeWidth={1} />
+                              ı
+                            </span>
+                            s
                           </span>
-                          s<span className="text-[#facc15]">Burger</span>
+                          <span className="text-white">Burger</span>
                         </>
                       );
                     }
                     const iIndex = name.toLowerCase().indexOf('i');
-                    if (iIndex === -1) return name;
+                    if (iIndex === -1) return <span className="text-[#e4a63c]">{name}</span>;
                     return (
                       <>
-                        {name.substring(0, iIndex)}
-                        <span className="relative inline-block">
-                          <Crown className="w-[14px] h-[14px] text-[#facc15] fill-[#facc15] absolute -top-[11px] left-1/2 -translate-x-1/2 rotate-12 drop-shadow-sm" strokeWidth={1} />
-                          {name[iIndex]}
+                        <span className="text-[#e4a63c]">
+                          {name.substring(0, iIndex)}
+                          <span className="relative inline-block">
+                            <Crown className="w-[14px] h-[14px] text-[#e4a63c] fill-[#e4a63c] absolute -top-[11px] left-1/2 -translate-x-1/2 drop-shadow-sm not-italic" strokeWidth={1} />
+                            {name[iIndex]}
+                          </span>
                         </span>
-                        {name.substring(iIndex + 1)}
+                        <span className="text-white">{name.substring(iIndex + 1)}</span>
                       </>
                     );
                   })()}
