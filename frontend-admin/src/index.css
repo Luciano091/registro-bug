@@ -247,3 +247,7 @@
 }
 
 .admin-main .kds-inverse { color: #fff !important; }
+.admin-main .premium-btn,
+.admin-main .premium-btn * {
+  color: #ffffff !important;
+}
