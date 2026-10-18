@@ -86,6 +86,33 @@ try:
 except Exception:
     pass
 
+# Auto-sync past delivery status and free stuck drivers
+try:
+    with engine.begin() as conn:
+        from sqlalchemy import text
+        conn.execute(text("""
+            UPDATE entregas 
+            SET status = 'entregue', 
+                entregue_em = COALESCE(entregue_em, (SELECT data FROM pedidos WHERE pedidos.id = entregas.pedido_id))
+            WHERE status != 'entregue' 
+              AND pedido_id IN (SELECT id FROM pedidos WHERE status IN ('Finalizado', 'Concluído', 'Entregue'));
+        """))
+        conn.execute(text("""
+            UPDATE usuarios 
+            SET status_entrega = 'disponivel' 
+            WHERE perfil = 'entregador' 
+              AND id NOT IN (
+                  SELECT e.entregador_id 
+                  FROM entregas e 
+                  JOIN pedidos p ON p.id = e.pedido_id 
+                  WHERE e.entregador_id IS NOT NULL 
+                    AND e.status IN ('atribuida', 'em_rota')
+                    AND p.status NOT IN ('Finalizado', 'Cancelado', 'Concluído', 'Entregue')
+              );
+        """))
+except Exception:
+    pass
+
 cloudinary.config(
     cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
     api_key=os.getenv("CLOUDINARY_API_KEY"),

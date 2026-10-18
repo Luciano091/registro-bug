@@ -747,6 +747,37 @@ class FoundationTests(unittest.TestCase):
         self.assertEqual(reassigned.entrega.entregador_id, other_driver.id)
         self.assertEqual(reassigned.entrega.status, "atribuida")
 
+    def test_order_finalized_from_admin_panel_frees_driver_and_shows_in_history(self):
+        establishment = self.create_establishment("Painel Sync", "painel-sync", "painel@teste.com")
+        driver = crud.create_usuario(self.db, schemas.UsuarioCreate(nome="Roberto", email="roberto@teste.com", senha="12345678", perfil="entregador"), establishment.id)
+        product = crud.create_produto(self.db, schemas.ProdutoCreate(nome="Burg", categoria="Burgers", preco=30), establishment.id)
+        order1 = crud.create_pedido(self.db, schemas.PedidoCreate(cliente="Cliente 1", telefone="", endereco="Rua 1", tipo_entrega="Delivery", forma_pagamento="Pix", itens=[schemas.ItemPedidoCreate(produto_id=product.id, quantidade=1)]), establishment.id)
+        order2 = crud.create_pedido(self.db, schemas.PedidoCreate(cliente="Cliente 2", telefone="", endereco="Rua 2", tipo_entrega="Delivery", forma_pagamento="Pix", itens=[schemas.ItemPedidoCreate(produto_id=product.id, quantidade=1)]), establishment.id)
+        
+        order1.status = "Pronto"; order2.status = "Pronto"; self.db.commit()
+        driver_session = auth.UsuarioAutenticado(establishment.id, driver.id, driver.nome, driver.email, "entregador", frozenset(auth.PERMISSOES_POR_PERFIL["entregador"]))
+        
+        # 1. Driver aceita o pedido 1
+        crud.aceitar_entrega(self.db, order1.id, driver_session)
+        self.assertEqual(driver.status_entrega, "atribuido")
+        self.assertEqual(order1.entrega.status, "atribuida")
+        
+        # 2. Admin finaliza o pedido 1 pelo painel adm
+        crud.update_pedido_status(self.db, order1.id, "Finalizado", establishment.id)
+        self.assertEqual(order1.status, "Finalizado")
+        self.assertEqual(order1.entrega.status, "entregue")
+        self.assertIsNotNone(order1.entrega.entregue_em)
+        self.assertEqual(driver.status_entrega, "disponivel")
+        
+        # 3. O pedido 1 deve constar no histórico do entregador
+        history = crud.get_historico_entregas(self.db, establishment.id, driver.id)
+        self.assertIn(order1, history)
+        
+        # 4. O entregador agora DEVE conseguir aceitar o pedido 2 sem travar
+        accepted2 = crud.aceitar_entrega(self.db, order2.id, driver_session)
+        self.assertEqual(accepted2.id, order2.id)
+        self.assertEqual(driver.status_entrega, "atribuido")
+
     def test_push_device_registration_is_user_and_tenant_scoped(self):
         first = self.create_establishment("Push A", "push-a", "push-a@teste.com")
         second = self.create_establishment("Push B", "push-b", "push-b@teste.com")
