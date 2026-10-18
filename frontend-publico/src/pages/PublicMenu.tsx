@@ -234,8 +234,8 @@ const PublicMenu = () => {
           <div className="flex items-start gap-3 md:gap-4">
             
             {/* Logo */}
-            <div className="shrink-0 rounded-[20px] border border-white/10 bg-black/50 p-1 shadow-xl backdrop-blur-md mt-1">
-              <img src={config?.logo || "/logo.png"} alt={config?.nome_empresa || "Logo"} decoding="async" fetchPriority="high" className="h-[84px] w-[84px] rounded-[14px] object-cover md:h-[120px] md:w-[120px]" />
+            <div className="shrink-0 rounded-full border border-amber-500/20 bg-black/60 p-1 shadow-xl backdrop-blur-md mt-1">
+              <img src={config?.logo || "/logo.png"} alt={config?.nome_empresa || "Logo"} decoding="async" fetchPriority="high" className="h-[84px] w-[84px] rounded-full object-cover md:h-[120px] md:w-[120px]" />
             </div>
             
             {/* Right Column */}
