@@ -12,7 +12,7 @@ const AUTO_PRINT_KEY = 'ritmesa:auto_print_enabled';
 const friendlyPrinterError = (error: any) => {
   const rawMessage = String(error?.message || error || '');
   if (/failed to open serial port|cannot open|open.*serial/i.test(rawMessage)) {
-    return 'Não foi possível abrir a impressora. Confirme se ela está ligada e conectada ao Bluetooth.';
+    return 'Não foi possível abrir a impressora. Confirme se ela está ligada e conectada via cabo USB ou Bluetooth.';
   }
   if (/device has been lost|disconnected|networkerror/i.test(rawMessage)) {
     return 'A impressora foi desconectada. Ligue-a e conecte novamente.';
@@ -94,7 +94,7 @@ export class PrinterService {
       if (!this.port && options.requestPermission) {
         this.port = await (navigator as any).serial.requestPort();
       }
-      if (!this.port) throw new Error('Clique em "Conectar impressora" e selecione a MO-5812.');
+      if (!this.port) throw new Error('Clique em "Conectar" e selecione a sua impressora na lista.');
 
       if (!this.port.readable && !this.port.writable) await this.port.open({ baudRate: 9600 });
       if (!this.port.writable) throw new Error('A porta da impressora não está disponível para escrita.');
