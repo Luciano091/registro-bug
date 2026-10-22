@@ -5,6 +5,8 @@ import { useAppData } from '../contexts/AppDataContext';
 export const PrinterControl = () => {
   const {
     printerStatus,
+    printDriver,
+    setPrintDriver,
     autoPrintEnabled,
     printerError,
     lastPrintedOrder,
@@ -42,11 +44,11 @@ export const PrinterControl = () => {
     : printerError
       ? printerError
       : connected
-        ? lastPrintedOrder ? `Última impressão: #${lastPrintedOrder}` : autoPrintEnabled ? 'Impressão automática ativada' : 'Impressão automática desativada'
+        ? lastPrintedOrder ? `Última impressão: #${lastPrintedOrder}` : printDriver === 'system' ? 'Pronta (Atomo_Cabo_USB)' : autoPrintEnabled ? 'Impressão automática ativada' : 'Impressão automática desativada'
         : 'Ligue a impressora para conectar';
 
   return (
-    <div className={`relative flex h-12 w-[350px] max-w-full flex-nowrap items-center gap-2 overflow-hidden rounded-xl border bg-white px-2.5 py-1.5 shadow-sm ${pendingPrintOrderId || printerError ? 'border-red-200' : 'border-slate-200'}`} title={printerError || (connecting ? 'Conectando impressora' : connected ? 'Impressora conectada' : 'Impressora desconectada')}>
+    <div className={`relative flex h-12 w-[420px] max-w-full flex-nowrap items-center gap-2 overflow-hidden rounded-xl border bg-white px-2.5 py-1.5 shadow-sm ${pendingPrintOrderId || printerError ? 'border-red-200' : 'border-slate-200'}`} title={printerError || (connecting ? 'Conectando impressora' : connected ? 'Impressora conectada' : 'Impressora desconectada')}>
       <div className="flex min-w-0 flex-1 items-center gap-2 px-1">
         {connecting ? (
           <Loader2 className="shrink-0 animate-spin text-orange-500" size={17} />
@@ -56,7 +58,18 @@ export const PrinterControl = () => {
           <Printer className="shrink-0 text-slate-400" size={17} />
         )}
         <div className="min-w-0 flex-1 leading-tight">
-          <p className="truncate text-xs font-bold text-slate-700">{connecting ? 'Conectando...' : connected ? 'Conectada' : 'Impressora offline'}</p>
+          <div className="flex items-center gap-1.5">
+            <p className="truncate text-xs font-bold text-slate-700">{connecting ? 'Conectando...' : connected ? 'Conectada' : 'Impressora offline'}</p>
+            <select
+              value={printDriver}
+              onChange={e => setPrintDriver(e.target.value as any)}
+              className="text-[10px] font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded px-1 py-0.5 outline-none cursor-pointer"
+              title="Tipo de conexão da impressora"
+            >
+              <option value="system">USB (Cabo)</option>
+              <option value="serial">Bluetooth</option>
+            </select>
+          </div>
           <p className={`mt-0.5 truncate text-[10px] ${pendingPrintOrderId || printerError ? 'text-red-600' : 'text-slate-400'}`}>{statusDetail}</p>
         </div>
       </div>

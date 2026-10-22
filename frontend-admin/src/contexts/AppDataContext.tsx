@@ -4,7 +4,7 @@ import api from '../services/api';
 import { connectOperationStream } from '../services/realtime';
 import { notificationSoundBase64 } from '../notificationSound';
 import { PrinterService } from '../services/PrinterService';
-import type { PrinterStatus } from '../services/PrinterService';
+import type { PrinterStatus, PrintDriver } from '../services/PrinterService';
 import { formatOrderReceipt } from '../services/orderReceipt';
 
 const PRINTED_ORDERS_KEY = 'ritmesa:printed_order_ids';
@@ -26,6 +26,7 @@ interface AppDataContextType {
   caixa: any;
   realtimeConnected: boolean;
   printerStatus: PrinterStatus;
+  printDriver: PrintDriver;
   autoPrintEnabled: boolean;
   printerError: string | null;
   lastPrintedOrder: string | null;
@@ -43,6 +44,7 @@ interface AppDataContextType {
   refreshCaixa: () => Promise<void>;
   playNotificationSound: () => Promise<void>;
   connectPrinter: () => Promise<void>;
+  setPrintDriver: (driver: PrintDriver) => void;
   testPrinter: () => Promise<void>;
   setAutoPrintEnabled: (enabled: boolean) => Promise<void>;
   retryLastPrint: () => Promise<void>;
@@ -85,6 +87,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
   const ordersRequestId = useRef(0);
   const [realtimeConnected, setRealtimeConnected] = useState(false);
   const [printerStatus, setPrinterStatus] = useState<PrinterStatus>(PrinterService.getStatus());
+  const [printDriver, setPrintDriverState] = useState<PrintDriver>(PrinterService.getDriver());
   const [autoPrintEnabled, setAutoPrintEnabledState] = useState(PrinterService.getAutoPrintEnabled());
   const [printerError, setPrinterError] = useState<string | null>(null);
   const [lastPrintedOrder, setLastPrintedOrder] = useState<string | null>(null);
@@ -93,6 +96,13 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
   const queuedPrintIds = useRef(new Set<number>());
   const printedOrderIds = useRef(loadPrintedOrderIds());
   const failedPrintId = useRef<number | null>(Number(localStorage.getItem(FAILED_PRINT_KEY)) || null);
+
+  const setPrintDriver = useCallback((driver: PrintDriver) => {
+    PrinterService.setDriver(driver);
+    setPrintDriverState(driver);
+    setPrinterStatus(PrinterService.getStatus());
+    setPrinterError(null);
+  }, []);
 
 
   // Track whether first load happened
@@ -172,6 +182,10 @@ const showBrowserNotification = (title: string, body: string) => {
   const connectPrinter = useCallback(async () => {
     setPrinterError(null);
     try {
+      if (PrinterService.getDriver() === 'system') {
+        setPrinterStatus(PrinterService.getStatus());
+        return;
+      }
       await PrinterService.connect({ requestPermission: true });
       if (failedPrintId.current && autoPrintEnabledRef.current) await printNewOrder(failedPrintId.current, true);
     } catch (error: any) {
@@ -397,6 +411,8 @@ const showBrowserNotification = (title: string, body: string) => {
       caixa,
       realtimeConnected,
       printerStatus,
+      printDriver,
+      setPrintDriver,
       autoPrintEnabled,
       printerError,
       lastPrintedOrder,

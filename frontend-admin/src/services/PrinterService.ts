@@ -1,4 +1,5 @@
 export type PrinterConnectionState = 'unsupported' | 'disconnected' | 'connecting' | 'connected' | 'error';
+export type PrintDriver = 'system' | 'serial';
 
 export type PrinterStatus = {
   state: PrinterConnectionState;
@@ -8,6 +9,7 @@ export type PrinterStatus = {
 type StatusListener = (status: PrinterStatus) => void;
 
 const AUTO_PRINT_KEY = 'ritmesa:auto_print_enabled';
+const PRINT_DRIVER_KEY = 'ritmesa:print_driver';
 
 const friendlyPrinterError = (error: any) => {
   const rawMessage = String(error?.message || error || '');
@@ -49,11 +51,32 @@ export class PrinterService {
     this.disconnectListenerRegistered = true;
   }
 
-  static isSupported() {
-    return typeof navigator !== 'undefined' && 'serial' in navigator;
+  static getDriver(): PrintDriver {
+    return (localStorage.getItem(PRINT_DRIVER_KEY) as PrintDriver) || 'system';
   }
 
-  static getStatus() {
+  static setDriver(driver: PrintDriver) {
+    localStorage.setItem(PRINT_DRIVER_KEY, driver);
+    if (driver === 'system') {
+      this.setStatus({ state: 'connected', message: 'Impressora do Sistema (USB)' });
+    } else {
+      if (!this.port) {
+        this.setStatus({
+          state: typeof navigator !== 'undefined' && 'serial' in navigator ? 'disconnected' : 'unsupported',
+          message: 'Ligue e conecte a impressora Bluetooth'
+        });
+      }
+    }
+  }
+
+  static isSupported() {
+    return true;
+  }
+
+  static getStatus(): PrinterStatus {
+    if (this.getDriver() === 'system') {
+      return { state: 'connected', message: 'Impressora do Sistema (USB)' };
+    }
     return this.status;
   }
 
@@ -196,10 +219,96 @@ export class PrinterService {
     }
   }
 
+  static printViaSystem(text: string): Promise<void> {
+    return new Promise((resolve) => {
+      const cleanText = this.removeAccents(text)
+        .replace(/\x1B!\x38/g, '<strong>')
+        .replace(/\x1B!\x00/g, '</strong>');
+
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.bottom = '0';
+      iframe.style.right = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = 'none';
+      document.body.appendChild(iframe);
+
+      const doc = iframe.contentWindow?.document;
+      if (!doc) {
+        resolve();
+        return;
+      }
+
+      doc.open();
+      doc.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Comanda</title>
+          <style>
+            @page {
+              size: 58mm auto;
+              margin: 0;
+            }
+            @media print {
+              html, body {
+                width: 58mm;
+                margin: 0;
+                padding: 0;
+              }
+            }
+            body {
+              font-family: 'Courier New', Courier, monospace;
+              font-size: 11px;
+              line-height: 1.25;
+              color: #000;
+              margin: 0;
+              padding: 3mm 2mm;
+              white-space: pre-wrap;
+              word-break: break-word;
+            }
+            strong {
+              font-size: 14px;
+              font-weight: 900;
+              display: inline-block;
+            }
+          </style>
+        </head>
+        <body>${cleanText}</body>
+        </html>
+      `);
+      doc.close();
+
+      setTimeout(() => {
+        try {
+          iframe.contentWindow?.focus();
+          iframe.contentWindow?.print();
+        } catch (e) {
+          console.error('Erro na impressao do sistema:', e);
+        }
+        setTimeout(() => {
+          try {
+            document.body.removeChild(iframe);
+          } catch {}
+          resolve();
+        }, 1500);
+      }, 300);
+    });
+  }
+
   static async printReceipt(text: string, options: { requestPermission?: boolean } = {}) {
-    const operation = this.printQueue.then(() => this.writeReceipt(text, options.requestPermission !== false));
-    this.printQueue = operation.catch(() => undefined);
-    return operation;
+    if (this.getDriver() === 'system') {
+      return this.printViaSystem(text);
+    }
+    try {
+      const operation = this.printQueue.then(() => this.writeReceipt(text, options.requestPermission !== false));
+      this.printQueue = operation.catch(() => undefined);
+      return await operation;
+    } catch (err) {
+      console.warn("Falha no serial, tentando impressao do sistema como contingencia:", err);
+      return this.printViaSystem(text);
+    }
   }
 
   static async printTest() {
