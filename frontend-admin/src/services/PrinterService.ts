@@ -25,11 +25,13 @@ const friendlyPrinterError = (error: any) => {
   return rawMessage || 'Não foi possível conectar à impressora.';
 };
 
+const USB_BRIDGE_URL = 'http://127.0.0.1:9123';
+
 export class PrinterService {
   private static port: any | null = null;
   private static writer: any | null = null;
   private static status: PrinterStatus = {
-    state: typeof navigator !== 'undefined' && 'serial' in navigator ? 'disconnected' : 'unsupported',
+    state: 'disconnected',
   };
   private static listeners = new Set<StatusListener>();
   private static printQueue: Promise<void> = Promise.resolve();
@@ -51,18 +53,23 @@ export class PrinterService {
     this.disconnectListenerRegistered = true;
   }
 
+  static isUsbDriver(): boolean {
+    const driver = this.getDriver();
+    return driver === 'system' || (driver as string) === 'usb';
+  }
+
   static getDriver(): PrintDriver {
     const saved = localStorage.getItem(PRINT_DRIVER_KEY);
-    if (!saved || saved === 'system') {
-      return 'serial';
+    if (!saved) {
+      return 'system';
     }
     return saved as PrintDriver;
   }
 
   static setDriver(driver: PrintDriver) {
     localStorage.setItem(PRINT_DRIVER_KEY, driver);
-    if (driver === 'system') {
-      this.setStatus({ state: 'connected', message: 'Impressora do Sistema (USB)' });
+    if (this.isUsbDriver()) {
+      void this.connect({ requestPermission: false }).catch(() => {});
     } else {
       if (!this.port) {
         this.setStatus({
@@ -78,9 +85,6 @@ export class PrinterService {
   }
 
   static getStatus(): PrinterStatus {
-    if (this.getDriver() === 'system') {
-      return { state: 'connected', message: 'Impressora do Sistema (USB)' };
-    }
     return this.status;
   }
 
@@ -101,6 +105,23 @@ export class PrinterService {
   }
 
   static async connect(options: { requestPermission?: boolean } = {}) {
+    if (this.isUsbDriver()) {
+      this.setStatus({ state: 'connecting', message: 'Verificando cabo USB...' });
+      try {
+        const res = await fetch(`${USB_BRIDGE_URL}/`, { signal: AbortSignal.timeout(2500) });
+        const data = await res.json();
+        if (data.status === 'online') {
+          this.setStatus({ state: 'connected', message: 'Pronta (Cabo USB)' });
+          return true;
+        }
+        throw new Error('Impressora USB não detectada.');
+      } catch (err: any) {
+        const message = 'Conecte o cabo USB da impressora ao computador.';
+        this.setStatus({ state: 'error', message });
+        throw new Error(message);
+      }
+    }
+
     if (!this.isSupported()) {
       const message = 'Seu navegador não suporta impressão direta. Use Chrome ou Edge.';
       this.setStatus({ state: 'unsupported', message });
@@ -302,8 +323,24 @@ export class PrinterService {
   }
 
   static async printReceipt(text: string, options: { requestPermission?: boolean } = {}) {
-    if (this.getDriver() === 'system') {
-      return this.printViaSystem(text);
+    if (this.isUsbDriver()) {
+      try {
+        const res = await fetch(`${USB_BRIDGE_URL}/print`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text }),
+          signal: AbortSignal.timeout(6000),
+        });
+        const data = await res.json();
+        if (data.success) {
+          this.setStatus({ state: 'connected', message: 'Pronta (Cabo USB)' });
+          return;
+        }
+        throw new Error(data.error || 'Erro ao enviar para o cabo USB.');
+      } catch (err: any) {
+        this.setStatus({ state: 'error', message: 'Erro na impressão USB' });
+        throw new Error(err?.message || 'Falha ao imprimir via cabo USB.');
+      }
     }
     const operation = this.printQueue.then(() => this.writeReceipt(text, options.requestPermission !== false));
     this.printQueue = operation.catch(() => undefined);

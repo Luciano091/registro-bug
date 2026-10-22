@@ -182,10 +182,6 @@ const showBrowserNotification = (title: string, body: string) => {
   const connectPrinter = useCallback(async () => {
     setPrinterError(null);
     try {
-      if (PrinterService.getDriver() === 'system') {
-        setPrinterStatus(PrinterService.getStatus());
-        return;
-      }
       await PrinterService.connect({ requestPermission: true });
       if (failedPrintId.current && autoPrintEnabledRef.current) await printNewOrder(failedPrintId.current, true);
     } catch (error: any) {

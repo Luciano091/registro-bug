@@ -44,8 +44,8 @@ export const PrinterControl = () => {
     : printerError
       ? printerError
       : connected
-        ? lastPrintedOrder ? `Última impressão: #${lastPrintedOrder}` : printDriver === 'system' ? 'Pronta (Atomo_Cabo_USB)' : autoPrintEnabled ? 'Impressão automática ativada' : 'Impressão automática desativada'
-        : 'Ligue a impressora para conectar';
+        ? lastPrintedOrder ? `Última impressão: #${lastPrintedOrder}` : (printDriver === 'system' ? 'Pronta (Cabo USB)' : autoPrintEnabled ? 'Impressão automática ativada' : 'Impressão automática desativada')
+        : (printDriver === 'system' ? 'Conecte o cabo USB para usar' : 'Ligue a impressora para conectar');
 
   return (
     <div className={`relative flex h-12 w-[420px] max-w-full flex-nowrap items-center gap-2 overflow-hidden rounded-xl border bg-white px-2.5 py-1.5 shadow-sm ${pendingPrintOrderId || printerError ? 'border-red-200' : 'border-slate-200'}`} title={printerError || (connecting ? 'Conectando impressora' : connected ? 'Impressora conectada' : 'Impressora desconectada')}>
