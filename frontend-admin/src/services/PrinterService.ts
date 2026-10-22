@@ -90,14 +90,54 @@ export class PrinterService {
 
     try {
       const ports = await (navigator as any).serial.getPorts();
-      this.port = ports[0] || null;
-      if (!this.port && options.requestPermission) {
-        this.port = await (navigator as any).serial.requestPort();
-      }
-      if (!this.port) throw new Error('Clique em "Conectar" e selecione a sua impressora na lista.');
+      let portToUse = null;
 
-      if (!this.port.readable && !this.port.writable) await this.port.open({ baudRate: 9600 });
-      if (!this.port.writable) throw new Error('A porta da impressora não está disponível para escrita.');
+      // Se options.requestPermission for true (o usuário clicou em "Conectar"),
+      // tentamos reusar a porta existente SOMENTE se ela abrir com sucesso.
+      // Se falhar ou não houver porta, chamamos requestPort() para abrir a janelinha do navegador!
+      if (ports.length > 0 && !options.requestPermission) {
+        for (const p of ports) {
+          try {
+            if (!p.readable && !p.writable) await p.open({ baudRate: 9600 });
+            if (p.writable) {
+              portToUse = p;
+              break;
+            }
+          } catch {
+            // Porta antiga desconectada, tenta a próxima
+          }
+        }
+      }
+
+      if (options.requestPermission) {
+        // Tenta a porta existente primeiro
+        if (ports[0]) {
+          try {
+            if (!ports[0].readable && !ports[0].writable) await ports[0].open({ baudRate: 9600 });
+            if (ports[0].writable) {
+              portToUse = ports[0];
+            }
+          } catch {
+            // Se a porta antiga falhou ao abrir, descartamos para abrir a janela de seleção
+            portToUse = null;
+          }
+        }
+
+        // Se não conseguiu abrir a porta antiga ou não há portas salvas,
+        // abre a janela nativa do Chrome para o usuário selecionar a impressora!
+        if (!portToUse) {
+          portToUse = await (navigator as any).serial.requestPort();
+          if (!portToUse.readable && !portToUse.writable) {
+            await portToUse.open({ baudRate: 9600 });
+          }
+        }
+      }
+
+      if (!portToUse || !portToUse.writable) {
+        throw new Error('Nenhuma impressora selecionada. Clique em "Conectar" e escolha a impressora.');
+      }
+
+      this.port = portToUse;
       this.writer = this.port.writable.getWriter();
       this.setStatus({ state: 'connected' });
       return true;
