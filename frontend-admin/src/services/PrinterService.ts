@@ -52,7 +52,11 @@ export class PrinterService {
   }
 
   static getDriver(): PrintDriver {
-    return (localStorage.getItem(PRINT_DRIVER_KEY) as PrintDriver) || 'system';
+    const saved = localStorage.getItem(PRINT_DRIVER_KEY);
+    if (!saved || saved === 'system') {
+      return 'serial';
+    }
+    return saved as PrintDriver;
   }
 
   static setDriver(driver: PrintDriver) {
@@ -301,14 +305,9 @@ export class PrinterService {
     if (this.getDriver() === 'system') {
       return this.printViaSystem(text);
     }
-    try {
-      const operation = this.printQueue.then(() => this.writeReceipt(text, options.requestPermission !== false));
-      this.printQueue = operation.catch(() => undefined);
-      return await operation;
-    } catch (err) {
-      console.warn("Falha no serial, tentando impressao do sistema como contingencia:", err);
-      return this.printViaSystem(text);
-    }
+    const operation = this.printQueue.then(() => this.writeReceipt(text, options.requestPermission !== false));
+    this.printQueue = operation.catch(() => undefined);
+    return operation;
   }
 
   static async printTest() {
