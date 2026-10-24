@@ -1,6 +1,6 @@
 /**
  * Gemini AI Order Assistant for BisBurger WhatsApp Gateway
- * Handles automated order taking, menu queries, and direct order creation via Gemini 3.8 Flash.
+ * Handles automated order taking, menu queries, and direct order creation via Gemini Flash.
  */
 
 // In-memory sessions per chatId
@@ -80,10 +80,77 @@ export async function getLiveMenu(config, log) {
 }
 
 /**
+ * Normalize AI response object structure
+ */
+function normalizeAiResponse(obj) {
+  if (!obj || typeof obj !== 'object') return null;
+  const reply = typeof obj.reply === 'string'
+    ? obj.reply
+    : (typeof obj.message === 'string' ? obj.message : (typeof obj.resposta === 'string' ? obj.resposta : ''));
+
+  return {
+    reply: reply.trim(),
+    action: typeof obj.action === 'string' ? obj.action.trim() : 'NONE',
+    order: (obj.order && typeof obj.order === 'object') ? obj.order : null
+  };
+}
+
+/**
+ * Resilient parser for Gemini output
+ * Supports direct JSON, markdown blocks, embedded JSON, or conversational plain text.
+ */
+function parseAiOutput(rawText) {
+  if (!rawText || typeof rawText !== 'string') return null;
+  const trimmed = rawText.trim();
+
+  // 1. Direct JSON parse
+  try {
+    const obj = JSON.parse(trimmed);
+    if (obj && typeof obj === 'object') {
+      const normalized = normalizeAiResponse(obj);
+      if (normalized?.reply) return normalized;
+    }
+  } catch (_) {}
+
+  // 2. Markdown code block ```json ... ``` or ``` ... ```
+  const codeBlockMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  if (codeBlockMatch) {
+    try {
+      const obj = JSON.parse(codeBlockMatch[1].trim());
+      if (obj && typeof obj === 'object') {
+        const normalized = normalizeAiResponse(obj);
+        if (normalized?.reply) return normalized;
+      }
+    } catch (_) {}
+  }
+
+  // 3. Find JSON block between first "{" and last "}"
+  const firstBrace = trimmed.indexOf('{');
+  const lastBrace = trimmed.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    try {
+      const candidate = trimmed.slice(firstBrace, lastBrace + 1);
+      const obj = JSON.parse(candidate);
+      if (obj && typeof obj === 'object') {
+        const normalized = normalizeAiResponse(obj);
+        if (normalized?.reply) return normalized;
+      }
+    } catch (_) {}
+  }
+
+  // 4. Conversational plain text response (treat the entire text as reply)
+  return {
+    reply: trimmed,
+    action: 'NONE',
+    order: null
+  };
+}
+
+/**
  * Call Google Gemini with JSON mode and fallback models
  */
 async function callGemini(systemInstruction, history, userMessage, config, log) {
-  const models = ['gemini-flash-lite-latest', 'gemini-3.5-flash', 'gemini-3.1-flash-lite'];
+  const models = ['gemini-flash-lite-latest', 'gemini-3.5-flash'];
   const key = config.geminiApiKey;
 
   const contents = [];
@@ -117,7 +184,7 @@ async function callGemini(systemInstruction, history, userMessage, config, log) 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(12000)
+        signal: AbortSignal.timeout(10000)
       });
 
       if (!response.ok) {
@@ -129,8 +196,11 @@ async function callGemini(systemInstruction, history, userMessage, config, log) 
       const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!rawText) throw new Error(`Resposta vazia do modelo ${m}`);
 
-      const parsed = JSON.parse(rawText);
-      return parsed;
+      const parsed = parseAiOutput(rawText);
+      if (parsed && parsed.reply) {
+        return parsed;
+      }
+      throw new Error(`Não foi possível extrair resposta do modelo ${m}`);
     } catch (err) {
       lastError = err;
       if (log) log(`Tentativa com ${m} falhou: ${err.message}. Tentando próximo...`);
@@ -141,11 +211,64 @@ async function callGemini(systemInstruction, history, userMessage, config, log) 
 }
 
 /**
+ * Format user-friendly error message from backend submit response
+ */
+function formatSubmitErrorMessage(rawErrorMessage) {
+  let clean = rawErrorMessage || '';
+  try {
+    const match = clean.match(/\{[\s\S]*\}/);
+    if (match) {
+      const parsed = JSON.parse(match[0]);
+      if (parsed.detail) clean = parsed.detail;
+    }
+  } catch {}
+  clean = clean.replace(/^Erro na API \(\d+\):\s*/i, '').trim();
+
+  const isCaixaFechado = clean.includes('Caixa está fechado');
+  const isEstoque = clean.toLowerCase().includes('estoque');
+
+  if (isCaixaFechado) {
+    return {
+      pause: true,
+      text: '⚠️ Nosso Caixa está fechado no momento no sistema da loja. Vou chamar o atendente para te atender por aqui! 👋'
+    };
+  }
+  if (isEstoque) {
+    return {
+      pause: false,
+      text: `⚠️ Nosso sistema avisou: ${clean}.\n\nGostaria de escolher outro lanche do cardápio ou prefere falar com um atendente? 🍔`
+    };
+  }
+  return {
+    pause: false,
+    text: `Recebi a sua confirmação, mas nosso sistema avisou: "${clean}".\n\nPor favor, me informe como prefere prosseguir ou digite *atendente* para falarmos com você.`
+  };
+}
+
+/**
  * Submit confirmed order into Ritmesa backend
  */
 async function submitOrderToBackend(orderData, config, log) {
   const baseUrl = config.backendUrl.replace(/\/$/, '');
   const url = `${baseUrl}/public/${config.establishmentSlug}/pedidos`;
+
+  const validItems = (orderData.itens || [])
+    .filter(item => item && (item.produto_id || item.id))
+    .map(item => ({
+      produto_id: Number(item.produto_id || item.id),
+      quantidade: Number(item.quantidade) || 1,
+      observacao: item.observacao || null,
+      opcoes: (item.opcoes || [])
+        .filter(op => op && (op.opcao_id || op.id))
+        .map(op => ({
+          opcao_id: Number(op.opcao_id || op.id),
+          quantidade: Number(op.quantidade) || 1
+        }))
+    }));
+
+  if (validItems.length === 0) {
+    throw new Error('Nenhum item válido encontrado no pedido.');
+  }
 
   const payload = {
     uuid: `wpp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -157,15 +280,7 @@ async function submitOrderToBackend(orderData, config, log) {
     forma_pagamento: orderData.forma_pagamento || 'PIX',
     observacao: orderData.observacao || 'Pedido realizado via WhatsApp',
     origem: 'whatsapp',
-    itens: orderData.itens.map(item => ({
-      produto_id: Number(item.produto_id),
-      quantidade: Number(item.quantidade) || 1,
-      observacao: item.observacao || null,
-      opcoes: (item.opcoes || []).map(op => ({
-        opcao_id: Number(op.opcao_id),
-        quantidade: Number(op.quantidade) || 1
-      }))
-    }))
+    itens: validItems
   };
 
   if (log) log(`Enviando pedido para a API da BisBurger: ${payload.cliente} (${payload.itens.length} itens)`);
@@ -190,9 +305,10 @@ async function submitOrderToBackend(orderData, config, log) {
  * Main handler for WhatsApp messages with Gemini AI
  */
 export async function processGeminiOrder({ chatId, contactName, phoneNumber, incomingText, config, log }) {
-  // Check human request
-  const lower = incomingText.toLowerCase();
-  const wantsHuman = /^(6|opcao 6|atendente|humano|falar com atendente|pessoa|falar com uma pessoa)$/i.test(lower.trim());
+  const trimmedLower = incomingText.trim().toLowerCase();
+
+  // 1. Check human request
+  const wantsHuman = /^(6|opcao 6|opção 6|atendente|humano|falar com atendente|pessoa|falar com uma pessoa)$/i.test(trimmedLower);
   if (wantsHuman) {
     sessions.delete(chatId);
     return {
@@ -202,7 +318,7 @@ export async function processGeminiOrder({ chatId, contactName, phoneNumber, inc
     };
   }
 
-  // Get or initialize session
+  // 2. Get or initialize session
   const now = Date.now();
   let session = sessions.get(chatId);
   if (!session || now - session.lastActive > SESSION_EXPIRATION_MS) {
@@ -220,10 +336,53 @@ export async function processGeminiOrder({ chatId, contactName, phoneNumber, inc
   if (contactName && !session.contactName) session.contactName = contactName;
   if (phoneNumber && !session.phoneNumber) session.phoneNumber = phoneNumber;
 
-  // Load menu
+  // 3. Fast direct confirmation shortcut:
+  // If the user was shown the order summary and responds "1", "sim", "confirmar", etc.
+  const isDirectConfirmation = /^(1|sim|confirmar|confirmo|pode mandar|manda|fechar|ok|pode ser|correto|isso aí|isso)$/i.test(trimmedLower);
+  if (session.pendingOrder && Array.isArray(session.pendingOrder.itens) && session.pendingOrder.itens.length > 0 && isDirectConfirmation) {
+    const orderToSubmit = {
+      ...session.pendingOrder,
+      cliente: session.contactName || 'Cliente WhatsApp',
+      telefone: session.phoneNumber || chatId.split('@')[0]
+    };
+
+    try {
+      const created = await submitOrderToBackend(orderToSubmit, config, log);
+      const orderNum = created.numero || created.id;
+      session.pendingOrder = null;
+      session.history = []; // reset after completed order
+
+      let successMsg = `🎉 *Pedido #${orderNum} confirmado com sucesso!*\n\n`;
+      successMsg += `🍔 Seus lanches já entraram na nossa chapa!\n`;
+      successMsg += `⏱️ Previsão: 35 a 50 minutos.\n`;
+      
+      if (orderToSubmit.forma_pagamento?.toUpperCase().includes('PIX')) {
+        successMsg += `\n🔑 *Chave PIX:* 82998218008 (Telefone - BisBurger)\n_Envie o comprovante por aqui se puder._\n`;
+      }
+
+      successMsg += `\nAvisaremos por aqui assim que sair para entrega! 🛵💨`;
+      if (log) log(`PEDIDO CRIADO COM SUCESSO: #${orderNum} para ${orderToSubmit.cliente}`);
+
+      return {
+        intent: 'order_created',
+        pause: false,
+        text: successMsg
+      };
+    } catch (submitErr) {
+      if (log) log(`Erro ao cadastrar pedido no backend: ${submitErr.message}`);
+      const errInfo = formatSubmitErrorMessage(submitErr.message);
+      return {
+        intent: 'order_error',
+        pause: errInfo.pause,
+        text: errInfo.text
+      };
+    }
+  }
+
+  // 4. Load live menu
   const menu = await getLiveMenu(config, log);
 
-  // System Prompt for BisBurger Assistant
+  // 5. System Prompt for BisBurger Assistant Bia
   const systemInstruction = `
 Você é Bia, a atendente virtual oficial, calorosa, educada e muito ágil da hamburgueria ${config.businessName} em ${config.address}.
 Você atende clientes no WhatsApp e ajuda a tirar dúvidas do cardápio e fechar pedidos de forma rápida para entrega ou retirada.
@@ -252,12 +411,13 @@ COMO CONVERSAR E ATENDER:
    b) Tipo de entrega: "delivery" ou "retirada".
    c) Se for delivery: Endereço completo (Rua, número e bairro). Se faltar número ou bairro, pergunte com educação.
    d) Forma de pagamento: PIX, Dinheiro (pergunte se precisa de troco para quanto), Cartão de Crédito ou Débito.
-6. Assim que tiver TODOS os dados (itens + entrega + endereço + pagamento), apresente um RESUMO COMPLETO e BONITO com os valores e pergunte:
+6. Sempre que o cliente já tiver escolhido produtos, mantenha o campo "order" com os itens selecionados (usando os IDs numéricos reais do cardápio).
+7. Assim que tiver TODOS os dados (itens + entrega + endereço + pagamento), apresente um RESUMO COMPLETO e BONITO com os valores e pergunte:
    "👉 Digite *1* para CONFIRMAR o pedido ou me avise se quiser alterar algo."
    Nessa etapa, marque "action": "PROPOSE_CONFIRMATION" e preencha "order" com os dados estruturados.
-7. Quando o cliente responder confirmando (ex: "1", "confirmar", "sim", "pode mandar", "ok"):
+8. Quando o cliente responder confirmando (ex: "1", "confirmar", "sim", "pode mandar", "ok"):
    Marque "action": "CONFIRMED_CREATE_ORDER" e repita o objeto "order" completo.
-8. Se o cliente pedir para falar com um humano, marque "action": "HANDOFF_HUMAN".
+9. Se o cliente pedir para falar com um humano, marque "action": "HANDOFF_HUMAN".
 
 FORMATO DA SUA RESPOSTA (OBRIGATÓRIO SER APENAS ESSE JSON):
 {
@@ -282,20 +442,43 @@ FORMATO DA SUA RESPOSTA (OBRIGATÓRIO SER APENAS ESSE JSON):
     ]
   }
 }
-Se "action" for "NONE", o campo "order" pode ser null.
+Se "action" for "NONE", o campo "order" pode ser null se ainda não houver produtos selecionados.
 Se "action" for "PROPOSE_CONFIRMATION" ou "CONFIRMED_CREATE_ORDER", o campo "order" DEVE conter todos os dados estruturados e os IDs reais do cardápio.
 `;
 
   try {
     const aiResponse = await callGemini(systemInstruction, session.history, incomingText, config, log);
 
-    // Save history
+    // Save history with JSON string representation to maintain consistent model behavior
     session.history.push({ role: 'user', text: incomingText });
     if (aiResponse.reply) {
-      session.history.push({ role: 'model', text: aiResponse.reply });
+      session.history.push({
+        role: 'model',
+        text: JSON.stringify({
+          reply: aiResponse.reply,
+          action: aiResponse.action || 'NONE',
+          order: aiResponse.order || null
+        })
+      });
     }
     if (session.history.length > 16) {
       session.history = session.history.slice(-12);
+    }
+
+    // Accumulate order data if model identified items or delivery/payment info
+    if (aiResponse.order && typeof aiResponse.order === 'object') {
+      const existingItems = session.pendingOrder?.itens || [];
+      const newItems = Array.isArray(aiResponse.order.itens) && aiResponse.order.itens.length > 0
+        ? aiResponse.order.itens
+        : existingItems;
+
+      session.pendingOrder = {
+        ...(session.pendingOrder || {}),
+        ...aiResponse.order,
+        itens: newItems,
+        cliente: session.contactName || 'Cliente WhatsApp',
+        telefone: session.phoneNumber || chatId.split('@')[0]
+      };
     }
 
     // Process actions
@@ -305,19 +488,6 @@ Se "action" for "PROPOSE_CONFIRMATION" ou "CONFIRMED_CREATE_ORDER", o campo "ord
         intent: 'human',
         pause: true,
         text: aiResponse.reply || `Um atendente da ${config.businessName} já vai continuar com você aqui. 👋`
-      };
-    }
-
-    if (aiResponse.action === 'PROPOSE_CONFIRMATION' && aiResponse.order) {
-      session.pendingOrder = {
-        ...aiResponse.order,
-        cliente: session.contactName || 'Cliente WhatsApp',
-        telefone: session.phoneNumber || chatId.split('@')[0]
-      };
-      return {
-        intent: 'order_propose',
-        pause: false,
-        text: aiResponse.reply
       };
     }
 
@@ -351,13 +521,22 @@ Se "action" for "PROPOSE_CONFIRMATION" ou "CONFIRMED_CREATE_ORDER", o campo "ord
           };
         } catch (submitErr) {
           if (log) log(`Erro ao cadastrar pedido no backend: ${submitErr.message}`);
+          const errInfo = formatSubmitErrorMessage(submitErr.message);
           return {
             intent: 'order_error',
-            pause: false,
-            text: `Recebi a sua confirmação, mas nosso sistema de pedidos avisou: "${submitErr.message}".\n\nPor favor, confirme seus dados ou digite *atendente* para concluirmos manualmente.`
+            pause: errInfo.pause,
+            text: errInfo.text
           };
         }
       }
+    }
+
+    if (aiResponse.action === 'PROPOSE_CONFIRMATION') {
+      return {
+        intent: 'order_propose',
+        pause: false,
+        text: aiResponse.reply
+      };
     }
 
     return {
@@ -366,7 +545,11 @@ Se "action" for "PROPOSE_CONFIRMATION" ou "CONFIRMED_CREATE_ORDER", o campo "ord
       text: aiResponse.reply
     };
   } catch (err) {
-    if (log) log(`Falha crítica no Gemini: ${err.message}. Usando fallback clássico.`);
-    return null; // Will trigger fallback to classic assistant
+    if (log) log(`Falha crítica no Gemini: ${err.message}.`);
+    return {
+      intent: 'gemini_error',
+      pause: false,
+      text: 'Desculpe, tive uma pequena oscilação aqui. 😔 Poderia repetir sua mensagem, por favor?'
+    };
   }
 }
