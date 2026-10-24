@@ -26,6 +26,7 @@ export const config = Object.freeze({
   backendUrl: process.env.BACKEND_URL || 'https://registro-bug.onrender.com',
   gatewayToken: process.env.WHATSAPP_GATEWAY_TOKEN || '',
   establishmentSlug: process.env.ESTABLISHMENT_SLUG || 'bisburger',
+  geminiApiKey: process.env.GEMINI_API_KEY || '',
   handoffMinutes: integer('HANDOFF_MINUTES', 120),
   replyDelayMinMs: integer('REPLY_DELAY_MIN_MS', 1200),
   replyDelayMaxMs: integer('REPLY_DELAY_MAX_MS', 2600),

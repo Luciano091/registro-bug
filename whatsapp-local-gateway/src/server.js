@@ -3,6 +3,7 @@ import QRCode from 'qrcode';
 import wweb from 'whatsapp-web.js';
 import { config } from './config.js';
 import { audioReply, isAudioType, replyFor } from './assistant.js';
+import { processGeminiOrder } from './geminiOrderAssistant.js';
 import { dashboardHtml } from './dashboard.js';
 import { GatewayBridge } from './bridge.js';
 
@@ -160,8 +161,28 @@ const processMessages = async (chatId) => {
   }
 
   const combinedText = pending.messages.map((message) => message.body).join(' ');
-  const answer = replyFor(combinedText, config);
-  if (!answer.text) return;
+  
+  let answer = null;
+  if (config.geminiApiKey) {
+    try {
+      answer = await processGeminiOrder({
+        chatId,
+        contactName: pending.contactName,
+        phoneNumber: pending.phoneNumber,
+        incomingText: combinedText,
+        config,
+        log,
+      });
+    } catch (err) {
+      log(`Erro ao consultar assistente Gemini: ${err.message}. Usando assistente padrão.`);
+    }
+  }
+
+  if (!answer || !answer.text) {
+    answer = replyFor(combinedText, config);
+  }
+
+  if (!answer || !answer.text) return;
 
   try {
     const sentMessage = await sendBotMessage(chatId, answer.text);
@@ -282,7 +303,7 @@ client.on('message', async (message) => {
   if (previous?.timer) clearTimeout(previous.timer);
   const messages = [...(previous?.messages || []), { body: incomingText }];
   const timer = setTimeout(() => processMessages(message.from), 1100);
-  pendingMessages.set(message.from, { messages, contactName, timer });
+  pendingMessages.set(message.from, { messages, contactName, phoneNumber, timer });
 });
 
 app.get('/', (_request, response) => response.type('html').send(dashboardHtml));
