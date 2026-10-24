@@ -80,16 +80,56 @@ export async function getLiveMenu(config, log) {
 }
 
 /**
+ * Splits initial greeting message into 2 separate bubbles if it includes the menu link
+ * Bubble 1: Welcome message + cardápio link with photos preview
+ * Bubble 2: Independent bubble right after: "Ou me dizer diretamente o que vai querer pedir por aqui! 🛵💨"
+ */
+export function splitGreetingMessage(text, menuUrl = '') {
+  if (!text || typeof text !== 'string') return [text];
+  const hasCardapioLink = text.includes('/cardapio') || (menuUrl && text.includes(menuUrl));
+  if (!hasCardapioLink) {
+    return [text];
+  }
+
+  const urlRegex = /(?:https?:\/\/[^\s]+cardapio[^\s]*)/i;
+  const urlMatch = text.match(urlRegex);
+  if (!urlMatch) return [text];
+
+  const urlEndIndex = urlMatch.index + urlMatch[0].length;
+  const part1Raw = text.slice(0, urlEndIndex).trim();
+  const part2Raw = text.slice(urlEndIndex).trim();
+
+  if (part2Raw && /(?:me dizer|preferir|pode pedir|me fala|pedir por aqui|diretamente|o que deseja|o que vai)/i.test(part2Raw)) {
+    let part2 = part2Raw.replace(/^[\s,.\-–—]+/, '');
+    if (!/^ou\b/i.test(part2)) {
+      part2 = 'Ou ' + part2;
+    }
+    part2 = part2.charAt(0).toUpperCase() + part2.slice(1);
+    return [part1Raw, part2];
+  }
+
+  return [text];
+}
+
+/**
  * Normalize AI response object structure
  */
-function normalizeAiResponse(obj) {
+function normalizeAiResponse(obj, menuUrl = '') {
   if (!obj || typeof obj !== 'object') return null;
-  const reply = typeof obj.reply === 'string'
+  const rawReply = typeof obj.reply === 'string'
     ? obj.reply
     : (typeof obj.message === 'string' ? obj.message : (typeof obj.resposta === 'string' ? obj.resposta : ''));
 
+  let messages = [];
+  if (Array.isArray(obj.messages) && obj.messages.length > 0) {
+    messages = obj.messages.map(m => String(m).trim()).filter(Boolean);
+  } else if (rawReply.trim()) {
+    messages = splitGreetingMessage(rawReply.trim(), menuUrl);
+  }
+
   return {
-    reply: reply.trim(),
+    reply: rawReply.trim() || messages.join('\n\n'),
+    messages,
     action: typeof obj.action === 'string' ? obj.action.trim() : 'NONE',
     order: (obj.order && typeof obj.order === 'object') ? obj.order : null
   };
@@ -99,7 +139,7 @@ function normalizeAiResponse(obj) {
  * Resilient parser for Gemini output
  * Supports direct JSON, markdown blocks, embedded JSON, or conversational plain text.
  */
-function parseAiOutput(rawText) {
+function parseAiOutput(rawText, menuUrl = '') {
   if (!rawText || typeof rawText !== 'string') return null;
   const trimmed = rawText.trim();
 
@@ -107,7 +147,7 @@ function parseAiOutput(rawText) {
   try {
     const obj = JSON.parse(trimmed);
     if (obj && typeof obj === 'object') {
-      const normalized = normalizeAiResponse(obj);
+      const normalized = normalizeAiResponse(obj, menuUrl);
       if (normalized?.reply) return normalized;
     }
   } catch (_) {}
@@ -118,7 +158,7 @@ function parseAiOutput(rawText) {
     try {
       const obj = JSON.parse(codeBlockMatch[1].trim());
       if (obj && typeof obj === 'object') {
-        const normalized = normalizeAiResponse(obj);
+        const normalized = normalizeAiResponse(obj, menuUrl);
         if (normalized?.reply) return normalized;
       }
     } catch (_) {}
@@ -132,15 +172,17 @@ function parseAiOutput(rawText) {
       const candidate = trimmed.slice(firstBrace, lastBrace + 1);
       const obj = JSON.parse(candidate);
       if (obj && typeof obj === 'object') {
-        const normalized = normalizeAiResponse(obj);
+        const normalized = normalizeAiResponse(obj, menuUrl);
         if (normalized?.reply) return normalized;
       }
     } catch (_) {}
   }
 
   // 4. Conversational plain text response (treat the entire text as reply)
+  const messages = splitGreetingMessage(trimmed, menuUrl);
   return {
     reply: trimmed,
+    messages,
     action: 'NONE',
     order: null
   };
@@ -196,7 +238,7 @@ async function callGemini(systemInstruction, history, userMessage, config, log) 
       const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!rawText) throw new Error(`Resposta vazia do modelo ${m}`);
 
-      const parsed = parseAiOutput(rawText);
+      const parsed = parseAiOutput(rawText, config.menuUrl);
       if (parsed && parsed.reply) {
         return parsed;
       }
@@ -403,7 +445,11 @@ DADOS DO CLIENTE ATUAL:
 
 COMO CONVERSAR E ATENDER:
 1. Seja sempre simpático(a), use emojis com moderação (🍔, 🍟, 🥤, 🛵, ✨) e seja muito direto ao ponto (os clientes no delivery querem rapidez!).
-2. Ao receber uma saudação ou pedido de cardápio, dê as boas-vindas, informe o link com fotos (${config.menuUrl}) mas diga que ele também pode pedir diretamente com você!
+2. REGRA PARA SAUDAÇÃO INICIAL OU ENVIO DE CARDÁPIO:
+   Ao receber uma saudação (ex: "boa noite", "oi", "olá") ou quando for enviar o link do cardápio, NUNCA envie tudo misturado em um único bloco.
+   Envie SEMPRE duas mensagens separadas no array "messages":
+   - Mensagem 1: Boas-vindas calorosas com o link do cardápio com fotos (${config.menuUrl})
+   - Mensagem 2 (balão isolado logo em seguida): "Ou me dizer diretamente o que vai querer pedir por aqui! 🛵💨"
 3. Quando o cliente pedir lanches, identifique o [PRODUTO ID: X] exato no cardápio.
 4. Se o cliente pedir adicionais (ex: bacon extra, ovo, queijo), identifique o [OPCAO ID: Y] correspondente.
 5. Para FECHAR um pedido, você OBRIGATORIAMENTE precisa coletar:
@@ -422,6 +468,7 @@ COMO CONVERSAR E ATENDER:
 FORMATO DA SUA RESPOSTA (OBRIGATÓRIO SER APENAS ESSE JSON):
 {
   "reply": "Texto da sua mensagem que será enviada no WhatsApp para o cliente",
+  "messages": ["Mensagem 1", "Mensagem 2"],
   "action": "NONE" | "PROPOSE_CONFIRMATION" | "CONFIRMED_CREATE_ORDER" | "HANDOFF_HUMAN",
   "order": {
     "tipo_entrega": "delivery" | "retirada",
@@ -539,10 +586,15 @@ Se "action" for "PROPOSE_CONFIRMATION" ou "CONFIRMED_CREATE_ORDER", o campo "ord
       };
     }
 
+    const messagesToSend = (Array.isArray(aiResponse.messages) && aiResponse.messages.length > 0)
+      ? aiResponse.messages
+      : splitGreetingMessage(aiResponse.reply, config.menuUrl);
+
     return {
       intent: 'gemini_reply',
       pause: false,
-      text: aiResponse.reply
+      text: messagesToSend.join('\n\n'),
+      messages: messagesToSend
     };
   } catch (err) {
     if (log) log(`Falha crítica no Gemini: ${err.message}.`);

@@ -178,21 +178,30 @@ const processMessages = async (chatId) => {
     }
   }
 
-  if (!answer || !answer.text) {
+  if (!answer || (!answer.text && (!Array.isArray(answer.messages) || answer.messages.length === 0))) {
     answer = replyFor(combinedText, config);
   }
 
-  if (!answer || !answer.text) return;
+  if (!answer || (!answer.text && (!Array.isArray(answer.messages) || answer.messages.length === 0))) return;
 
   try {
-    const sentMessage = await sendBotMessage(chatId, answer.text);
-    bridge.outgoing({
-      chat_id: chatId,
-      external_id: sentMessage?.id?._serialized || null,
-      texto: answer.text,
-      remetente: 'bot',
-      criado_em: new Date().toISOString(),
-    });
+    const messagesToSend = Array.isArray(answer.messages) && answer.messages.length > 0
+      ? answer.messages
+      : (answer.text ? [answer.text] : []);
+
+    for (let i = 0; i < messagesToSend.length; i++) {
+      const msg = messagesToSend[i];
+      if (!msg?.trim()) continue;
+      const sentMessage = await sendBotMessage(chatId, msg);
+      bridge.outgoing({
+        chat_id: chatId,
+        external_id: sentMessage?.id?._serialized || null,
+        texto: msg,
+        remetente: 'bot',
+        criado_em: new Date().toISOString(),
+      });
+    }
+
     if (answer.pause) {
       handoffs.set(chatId, Date.now() + config.handoffMinutes * 60_000);
       bridge.mode(chatId, 'human', true);
