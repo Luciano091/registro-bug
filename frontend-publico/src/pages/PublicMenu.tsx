@@ -235,7 +235,7 @@ const PublicMenu = () => {
             
             {/* Logo */}
             <div className="shrink-0 rounded-full border border-amber-500/20 bg-black/60 p-1 shadow-xl backdrop-blur-md mt-1">
-              <img src={config?.logo || "/logo.png"} alt={config?.nome_empresa || "Logo"} decoding="async" fetchPriority="high" className="h-[84px] w-[84px] rounded-full object-cover md:h-[120px] md:w-[120px]" />
+              <img src={config?.logo || "/pwa/icon-512.png?v=2"} alt={config?.nome_empresa || "Logo"} decoding="async" fetchPriority="high" className="h-[84px] w-[84px] rounded-full object-cover md:h-[120px] md:w-[120px]" />
             </div>
             
             {/* Right Column */}

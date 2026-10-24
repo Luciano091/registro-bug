@@ -1,5 +1,5 @@
-const CACHE_NAME = 'bisburger-shell-v1';
-const APP_SHELL = ['/', '/manifest.webmanifest', '/pwa/icon-192.png', '/pwa/icon-512.png'];
+const CACHE_NAME = 'bisburger-shell-v2';
+const APP_SHELL = ['/', '/manifest.webmanifest', '/pwa/icon-192.png', '/pwa/icon-512.png', '/logo.png'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
@@ -29,13 +29,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Stale-while-revalidate for assets: return cached immediately if available, but always update in background
   event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request).then((response) => {
-      if (response.ok && new URL(event.request.url).origin === self.location.origin) {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-      }
-      return response;
-    }))
+    caches.match(event.request).then((cached) => {
+      const networkFetch = fetch(event.request).then((response) => {
+        if (response.ok && new URL(event.request.url).origin === self.location.origin) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+        }
+        return response;
+      }).catch(() => null);
+
+      return cached || networkFetch;
+    })
   );
 });

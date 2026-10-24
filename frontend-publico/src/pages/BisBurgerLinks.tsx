@@ -39,7 +39,7 @@ export default function BisBurgerLinks() {
       <div className="mx-auto w-full max-w-md">
         <div className="text-center">
           <img
-            src="/logo.png"
+            src="/pwa/icon-512.png?v=2"
             alt="Logo da BisBurger"
             className="mx-auto h-28 w-28 rounded-full border-4 border-[#fbbf24] object-cover shadow-[0_16px_40px_rgba(0,0,0,0.4)]"
           />
