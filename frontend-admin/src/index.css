@@ -166,7 +166,8 @@
     .login-footer { margin-top: 8px !important; }
   }
   @media (max-width: 767px) {
-    body.salon-modal-open .mobile-bottom-nav { display: none; }
+    body.salon-modal-open .mobile-bottom-nav,
+    body.checkout-modal-open .mobile-bottom-nav { display: none !important; }
     .admin-main > div { padding-left: 20px; padding-right: 20px; }
     .admin-main header { padding-bottom: 20px; }
     .dashboard-page .dashboard-header { padding-bottom: 16px; }

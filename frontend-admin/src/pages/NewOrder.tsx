@@ -58,6 +58,17 @@ const NewOrder = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    if (showCheckout) {
+      document.body.classList.add('checkout-modal-open');
+    } else {
+      document.body.classList.remove('checkout-modal-open');
+    }
+    return () => {
+      document.body.classList.remove('checkout-modal-open');
+    };
+  }, [showCheckout]);
+
+  useEffect(() => {
     if (!produtosLoaded) refreshProdutos();
   }, [produtosLoaded, refreshProdutos]);
 
@@ -192,7 +203,7 @@ const NewOrder = () => {
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto animate-in fade-in duration-500 min-h-screen text-slate-900 flex flex-col">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto animate-in fade-in duration-500 min-h-screen text-slate-900 flex flex-col pb-28 md:pb-8">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4 md:mb-5">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-slate-900 font-heading drop-shadow-sm">Novo Pedido</h2>
@@ -218,16 +229,23 @@ const NewOrder = () => {
       )}
 
       {showCheckout && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="glass border border-white/10 rounded-3xl w-full max-w-4xl animate-in zoom-in-95 shadow-2xl flex flex-col md:flex-row overflow-hidden bg-zinc-900">
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 z-[70] overflow-y-auto">
+          <div className="glass border border-white/10 rounded-2xl md:rounded-3xl w-full max-w-4xl max-h-[92dvh] shadow-2xl flex flex-col md:flex-row overflow-y-auto md:overflow-hidden bg-zinc-900 my-auto custom-scrollbar">
             
             {/* Esquerda: Informações do Cliente */}
-            <div className="flex-1 p-8 border-b md:border-b-0 md:border-r border-white/5">
-              <div className="flex justify-between items-center mb-6 md:hidden">
-                <h3 className="text-2xl font-bold font-heading">Finalizar Pedido</h3>
-                <button onClick={() => setShowCheckout(false)} className="text-zinc-400"><X size={24} /></button>
+            <div className="flex-1 p-5 sm:p-6 md:p-8 border-b md:border-b-0 md:border-r border-white/5 md:overflow-y-auto custom-scrollbar">
+              <div className="flex justify-between items-center mb-5 md:hidden">
+                <h3 className="text-xl font-bold font-heading text-white">Finalizar Pedido</h3>
+                <button 
+                  type="button" 
+                  onClick={() => setShowCheckout(false)} 
+                  className="text-zinc-400 hover:text-white p-2 rounded-full hover:bg-white/10 transition-colors"
+                  title="Fechar"
+                >
+                  <X size={22} />
+                </button>
               </div>
-              <h3 className="text-2xl font-bold mb-6 hidden md:block font-heading">Dados do Cliente</h3>
+              <h3 className="text-2xl font-bold mb-6 hidden md:block font-heading text-white">Dados do Cliente</h3>
               
               <div className="space-y-4">
                 <div>
@@ -249,18 +267,20 @@ const NewOrder = () => {
                   )}
                 </div>
                 
-                <div className="pt-4">
+                <div className="pt-2">
                   <label className="block text-sm text-zinc-300 mb-2">Tipo de Entrega</label>
                   <div className="flex gap-2 p-1 bg-dark-900 border border-white/5 rounded-xl">
                     <button 
+                      type="button"
                       onClick={() => setTipoEntrega('Retirada')}
-                      className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${tipoEntrega === 'Retirada' ? 'bg-white/10 text-white shadow-sm' : 'text-zinc-400'}`}
+                      className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${tipoEntrega === 'Retirada' ? 'bg-white/10 text-white shadow-sm font-bold' : 'text-zinc-400'}`}
                     >
                       Retirada
                     </button>
                     <button 
+                      type="button"
                       onClick={() => setTipoEntrega('Delivery')}
-                      className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${tipoEntrega === 'Delivery' ? 'bg-brand-500 text-white shadow-[0_0_10px_rgba(249,115,22,0.5)]' : 'text-zinc-400'}`}
+                      className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${tipoEntrega === 'Delivery' ? 'bg-brand-500 text-white shadow-[0_0_10px_rgba(249,115,22,0.5)] font-bold' : 'text-zinc-400'}`}
                     >
                       Delivery
                     </button>
@@ -287,38 +307,45 @@ const NewOrder = () => {
             </div>
 
             {/* Direita: Pagamento e Total */}
-            <div className="flex-1 p-8 bg-black/20 flex flex-col">
+            <div className="flex-1 p-5 sm:p-6 md:p-8 bg-black/20 flex flex-col md:overflow-y-auto custom-scrollbar">
               <div className="flex justify-between items-center mb-6 hidden md:flex">
-                <h3 className="text-2xl font-bold font-heading">Pagamento</h3>
-                <button onClick={() => setShowCheckout(false)} className="text-zinc-400 hover:text-white transition-colors bg-white/5 p-2 rounded-full hover:bg-white/10"><X size={20} /></button>
+                <h3 className="text-2xl font-bold font-heading text-white">Pagamento</h3>
+                <button 
+                  type="button"
+                  onClick={() => setShowCheckout(false)} 
+                  className="text-zinc-400 hover:text-white transition-colors bg-white/5 p-2 rounded-full hover:bg-white/10"
+                  title="Fechar"
+                >
+                  <X size={20} />
+                </button>
               </div>
-              <h3 className="text-2xl font-bold mb-6 md:hidden font-heading">Pagamento</h3>
+              <h3 className="text-xl font-bold mb-4 md:hidden font-heading text-white">Forma de Pagamento</h3>
 
-              <div className="space-y-3 mb-8 flex-1">
-                <label className="block text-sm text-zinc-300 mb-1">Forma de Pagamento</label>
+              <div className="space-y-2.5 mb-6 flex-1">
                 {['PIX', 'Cartão de Crédito', 'Cartão de Débito', 'Dinheiro'].map(metodo => (
-                  <label key={metodo} onClick={() => setFormaPagamento(metodo)} className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${formaPagamento === metodo ? 'border-brand-500 bg-brand-500/10 shadow-[0_0_10px_rgba(249,115,22,0.15)]' : 'border-white/10 bg-dark-900 hover:border-white/20'}`}>
+                  <label key={metodo} onClick={() => setFormaPagamento(metodo)} className={`flex items-center gap-3 p-3.5 sm:p-4 rounded-xl border cursor-pointer transition-all ${formaPagamento === metodo ? 'border-brand-500 bg-brand-500/10 shadow-[0_0_10px_rgba(249,115,22,0.15)]' : 'border-white/10 bg-dark-900 hover:border-white/20'}`}>
                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${formaPagamento === metodo ? 'border-brand-500' : 'border-zinc-600'}`}>
                       {formaPagamento === metodo && <div className="w-2.5 h-2.5 bg-brand-500 rounded-full" />}
                     </div>
-                    <span className={formaPagamento === metodo ? 'text-white font-medium' : 'text-zinc-300'}>{metodo}</span>
+                    <span className={formaPagamento === metodo ? 'text-white font-medium text-sm sm:text-base' : 'text-zinc-300 text-sm sm:text-base'}>{metodo}</span>
                   </label>
                 ))}
               </div>
 
-              <div className="border-t border-white/10 pt-6 mt-auto">
+              <div className="border-t border-white/10 pt-5 mt-auto pb-6 md:pb-0">
                 {tipoEntrega === 'Delivery' && <div className="mb-3 flex justify-between text-sm text-zinc-400"><span>Taxa de entrega</span><strong className="text-zinc-200">{deliveryFee.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</strong></div>}
-                <div className="flex justify-between items-end mb-6">
+                <div className="flex justify-between items-end mb-5">
                   <div>
-                    <p className="text-zinc-300 text-sm mb-1">Total a Pagar</p>
-                    <p className="text-3xl font-bold gradient-text font-heading">{total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                    <p className="text-zinc-300 text-xs sm:text-sm mb-1">Total a Pagar</p>
+                    <p className="text-2xl sm:text-3xl font-bold gradient-text font-heading">{total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
                   </div>
                 </div>
                 
                 <button 
+                  type="button"
                   onClick={handleSubmitOrder}
                   disabled={isSubmitting || !cliente || (tipoEntrega === 'Delivery' && !endereco)}
-                  className="w-full premium-btn py-4 rounded-xl font-bold flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-lg"
+                  className="w-full premium-btn py-3.5 sm:py-4 rounded-xl font-bold flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-base sm:text-lg shadow-lg"
                 >
                   {isSubmitting ? 'Processando...' : 'Confirmar Pedido'}
                 </button>
