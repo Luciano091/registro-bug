@@ -42,6 +42,7 @@ if engine.dialect.name == "postgresql":
 
 with SessionLocal() as migration_db:
     crud.ensure_initial_establishment(migration_db)
+    crud.recuperar_cashback_pedidos_concluidos(migration_db)
 
 # Auto-migrate uuid column for offline mode
 try:
@@ -1584,9 +1585,15 @@ def reset_password(payload: schemas.PasswordResetConfirm, db: Session = Depends(
 
 @app.get("/admin/clientes/busca", response_model=schemas.Cliente)
 def search_cliente(telefone: str, db: Session = Depends(get_db), estabelecimento_id: int = Depends(auth.require_permission("pedidos.criar"))):
-    import re
-    telefone_limpo = re.sub(r'\D', '', telefone)
-    cliente = db.query(models.Cliente).filter(models.Cliente.telefone == telefone_limpo, models.Cliente.estabelecimento_id == estabelecimento_id).first()
+    from sqlalchemy import or_
+    telefone_limpo = crud.normalizar_telefone(telefone)
+    cliente = db.query(models.Cliente).filter(
+        or_(
+            models.Cliente.telefone == telefone_limpo,
+            models.Cliente.telefone == f"55{telefone_limpo}" if telefone_limpo else "",
+        ),
+        models.Cliente.estabelecimento_id == estabelecimento_id,
+    ).first()
     if not cliente:
         raise HTTPException(status_code=404, detail="Cliente não encontrado")
     return cliente

@@ -343,6 +343,15 @@ async function submitOrderToBackend(orderData, config, log) {
   return result;
 }
 
+function normalizePhone(raw) {
+  if (!raw) return '';
+  const clean = String(raw).replace(/\D/g, '');
+  if ((clean.length === 12 || clean.length === 13) && clean.startsWith('55')) {
+    return clean.slice(2);
+  }
+  return clean;
+}
+
 /**
  * Main handler for WhatsApp messages with Gemini AI
  */
@@ -385,7 +394,7 @@ export async function processGeminiOrder({ chatId, contactName, phoneNumber, inc
     const orderToSubmit = {
       ...session.pendingOrder,
       cliente: session.contactName || 'Cliente WhatsApp',
-      telefone: session.phoneNumber || chatId.split('@')[0]
+      telefone: normalizePhone(session.phoneNumber || chatId.split('@')[0])
     };
 
     try {
@@ -524,7 +533,7 @@ Se "action" for "PROPOSE_CONFIRMATION" ou "CONFIRMED_CREATE_ORDER", o campo "ord
         ...aiResponse.order,
         itens: newItems,
         cliente: session.contactName || 'Cliente WhatsApp',
-        telefone: session.phoneNumber || chatId.split('@')[0]
+        telefone: normalizePhone(session.phoneNumber || chatId.split('@')[0])
       };
     }
 
@@ -542,7 +551,7 @@ Se "action" for "PROPOSE_CONFIRMATION" ou "CONFIRMED_CREATE_ORDER", o campo "ord
       const orderToSubmit = aiResponse.order || session.pendingOrder;
       if (orderToSubmit && Array.isArray(orderToSubmit.itens) && orderToSubmit.itens.length > 0) {
         orderToSubmit.cliente = session.contactName || 'Cliente WhatsApp';
-        orderToSubmit.telefone = session.phoneNumber || chatId.split('@')[0];
+        orderToSubmit.telefone = normalizePhone(session.phoneNumber || chatId.split('@')[0]);
 
         try {
           const created = await submitOrderToBackend(orderToSubmit, config, log);

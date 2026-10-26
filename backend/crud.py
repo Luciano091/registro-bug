@@ -6,6 +6,7 @@ import uuid as uuid_lib
 import json
 import math
 import unicodedata
+import re
 
 # --- Produtos ---
 def get_produtos(db: Session, estabelecimento_id: int, skip: int = 0, limit: int = 100, somente_ativos: bool = False, canal: str = None):
@@ -402,19 +403,29 @@ def get_cliente_by_google_id(db: Session, google_id: str):
 def get_cliente_by_email(db: Session, email: str):
     return db.query(models.Cliente).filter(models.Cliente.email == email).first()
 
+def normalizar_telefone(telefone: str | None) -> str | None:
+    """Normaliza telefones brasileiros removendo caracteres especiais e DDI 55."""
+    if not telefone:
+        return None
+    limpo = re.sub(r"\D", "", str(telefone))
+    if len(limpo) in (12, 13) and limpo.startswith("55"):
+        limpo = limpo[2:]
+    return limpo if len(limpo) >= 10 else limpo
+
 def vincular_cliente_por_telefone(db: Session, cliente: models.Cliente, telefone: str, estabelecimento_id: int):
     """Move saldo e pedidos de cadastros convidados para a conta autenticada."""
-    import re
-
-    telefone_limpo = re.sub(r"\D", "", telefone or "")
-    if len(telefone_limpo) < 10:
+    telefone_limpo = normalizar_telefone(telefone)
+    if not telefone_limpo or len(telefone_limpo) < 10:
         raise ValueError("Informe um telefone válido com DDD.")
     if cliente.estabelecimento_id != estabelecimento_id:
         raise ValueError("Cliente não pertence a este estabelecimento.")
 
     convidados = db.query(models.Cliente).filter(
         models.Cliente.estabelecimento_id == estabelecimento_id,
-        models.Cliente.telefone == telefone_limpo,
+        or_(
+            models.Cliente.telefone == telefone_limpo,
+            models.Cliente.telefone == f"55{telefone_limpo}",
+        ),
         models.Cliente.id != cliente.id,
         models.Cliente.google_id.is_(None),
         models.Cliente.email.is_(None),
@@ -507,8 +518,7 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate, estabelecimento_id:
     # Calcular totais
 
     # ---------------- CASHBACK & CLIENTE LOGIC ----------------
-    import re
-    telefone_limpo = re.sub(r'\D', '', pedido.telefone) if pedido.telefone else None
+    telefone_limpo = normalizar_telefone(pedido.telefone)
     cliente_id = pedido.cliente_id
     db_cliente = None
     
@@ -530,7 +540,10 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate, estabelecimento_id:
             )
         if not db_cliente:
             db_cliente = db.query(models.Cliente).filter(
-                models.Cliente.telefone == telefone_limpo,
+                or_(
+                    models.Cliente.telefone == telefone_limpo,
+                    models.Cliente.telefone == f"55{telefone_limpo}",
+                ),
                 models.Cliente.estabelecimento_id == estabelecimento_id,
             ).first()
 
@@ -544,7 +557,7 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate, estabelecimento_id:
             db.add(db_cliente)
             db.flush()
         else:
-            if telefone_limpo and not db_cliente.telefone:
+            if not db_cliente.telefone or db_cliente.telefone.startswith("55"):
                 db_cliente.telefone = telefone_limpo
             if pedido.endereco and not db_cliente.endereco:
                 db_cliente.endereco = pedido.endereco
@@ -710,10 +723,56 @@ def create_pedido(db: Session, pedido: schemas.PedidoCreate, estabelecimento_id:
     db.refresh(db_pedido)
     return db_pedido
 
+def confirmar_pagamento_ao_finalizar(db: Session, pedido: models.Pedido, estabelecimento_id: int):
+    """
+    Confirma pagamento e credita o cashback do cliente de forma idempotente quando o pedido
+    é concluído (Finalizado / Entregue).
+    """
+    if not pedido or pedido.pagamento_confirmado_em or pedido.status == "Cancelado":
+        return pedido
+
+    confirmado_em = models.get_now()
+
+    # 1. Registrar no caixa se estiver aberto e ainda não existir movimentação deste pedido
+    venda_existente = db.query(models.MovimentacaoCaixa).join(models.Caixa).filter(
+        models.Caixa.estabelecimento_id == estabelecimento_id,
+        models.MovimentacaoCaixa.tipo == "venda",
+        models.MovimentacaoCaixa.descricao == f"Pedido #{pedido.numero}",
+    ).order_by(models.MovimentacaoCaixa.id).first()
+
+    if not venda_existente:
+        caixa = get_caixa_aberto(db, estabelecimento_id)
+        if caixa:
+            db.add(models.MovimentacaoCaixa(
+                caixa_id=caixa.id,
+                tipo="venda",
+                valor=pedido.total,
+                forma_pagamento=pedido.forma_pagamento or "Não informado",
+                descricao=f"Pedido #{pedido.numero}",
+                data=confirmado_em,
+            ))
+
+    # 2. Creditar 2% de cashback para o cliente
+    if pedido.cliente_id:
+        reward = round(float(pedido.total or 0.0) * 0.02, 2)
+        if reward > 0:
+            db_cliente = db.query(models.Cliente).filter(
+                models.Cliente.id == pedido.cliente_id,
+                models.Cliente.estabelecimento_id == estabelecimento_id,
+            ).first()
+            if db_cliente:
+                db_cliente.saldo_cashback = round(float(db_cliente.saldo_cashback or 0.0) + reward, 2)
+
+    pedido.pagamento_confirmado_em = confirmado_em
+    return pedido
+
 def update_pedido_status(db: Session, pedido_id: int, status: str, estabelecimento_id: int):
     db_pedido = db.query(models.Pedido).filter(models.Pedido.id == pedido_id, models.Pedido.estabelecimento_id == estabelecimento_id).first()
     if db_pedido:
         db_pedido.status = status
+        if status in ("Finalizado", "Entregue", "Concluído"):
+            if not db_pedido.pagamento_confirmado_em:
+                confirmar_pagamento_ao_finalizar(db, db_pedido, estabelecimento_id)
         if db_pedido.entrega:
             agora = models.get_now()
             if status in ("Finalizado", "Entregue", "Concluído"):
@@ -762,6 +821,12 @@ def confirmar_pagamento_pedido(db: Session, pedido_id: int, estabelecimento_id: 
     ).order_by(models.MovimentacaoCaixa.id).first()
     if venda_existente:
         pedido.pagamento_confirmado_em = venda_existente.data or models.get_now()
+        if pedido.cliente_id:
+            reward = round(float(pedido.total or 0.0) * 0.02, 2)
+            if reward > 0:
+                db_cliente = db.query(models.Cliente).filter(models.Cliente.id == pedido.cliente_id).first()
+                if db_cliente:
+                    db_cliente.saldo_cashback = round(float(db_cliente.saldo_cashback or 0.0) + reward, 2)
         db.commit()
         db.refresh(pedido)
         return pedido
@@ -775,14 +840,11 @@ def confirmar_pagamento_pedido(db: Session, pedido_id: int, estabelecimento_id: 
 
     # -------------- CASHBACK REWARD --------------
     if pedido.cliente_id:
-        # Avoid giving cashback on shipping fees or service fees if you prefer, but usually it's on the total.
-        # Let's give 2% of the TOTAL (minus any used cashback to avoid infinite loops, but total already discounts cashback).
-        # We also need to avoid double-crediting if the payment is somehow confirmed twice, but this function checks `if pedido.pagamento_confirmado_em: return`.
-        reward = round(float(pedido.total) * 0.02, 2)
+        reward = round(float(pedido.total or 0.0) * 0.02, 2)
         if reward > 0:
             db_cliente = db.query(models.Cliente).filter(models.Cliente.id == pedido.cliente_id).first()
             if db_cliente:
-                db_cliente.saldo_cashback = (db_cliente.saldo_cashback or 0.0) + reward
+                db_cliente.saldo_cashback = round(float(db_cliente.saldo_cashback or 0.0) + reward, 2)
     # ---------------------------------------------
     pedido.pagamento_confirmado_em = confirmado_em
     db.add(models.MovimentacaoCaixa(
@@ -1216,6 +1278,8 @@ def atualizar_status_entrega(db: Session, pedido_id: int, novo_status: str, usua
         entrega.status = "entregue"; entrega.entregue_em = agora; pedido.status = "Finalizado"
         if entrega.entregador:
             entrega.entregador.status_entrega = "disponivel"
+        if not pedido.pagamento_confirmado_em:
+            confirmar_pagamento_ao_finalizar(db, pedido, usuario.estabelecimento_id)
     elif novo_status == "falha":
         if entrega.status not in ("atribuida", "em_rota"): raise ValueError("Esta entrega não pode ser devolvida à expedição.")
         entrega.status = "falha"; pedido.status = "Pronto"
@@ -1775,6 +1839,20 @@ def cancelar_pedido(db: Session, pedido_id: int, motivo: str, estornado: bool, e
         pedido.entrega.status = "cancelada"
         if pedido.entrega.entregador:
             pedido.entrega.entregador.status_entrega = "disponivel"
+    if pedido.cliente_id:
+        db_cliente = db.query(models.Cliente).filter(
+            models.Cliente.id == pedido.cliente_id,
+            models.Cliente.estabelecimento_id == estabelecimento_id,
+        ).first()
+        if db_cliente:
+            # Reverter recompensa de cashback se o pagamento já havia sido confirmado
+            if pedido.pagamento_confirmado_em:
+                reward = round(float(pedido.total or 0.0) * 0.02, 2)
+                if reward > 0:
+                    db_cliente.saldo_cashback = max(0.0, round(float(db_cliente.saldo_cashback or 0.0) - reward, 2))
+            # Devolver saldo de cashback utilizado pelo cliente neste pedido
+            if pedido.cashback_usado and float(pedido.cashback_usado) > 0:
+                db_cliente.saldo_cashback = round(float(db_cliente.saldo_cashback or 0.0) + float(pedido.cashback_usado), 2)
     if estornado and not pedido.estornado:
         db.add(models.MovimentacaoCaixa(
             caixa_id=venda.caixa_id, tipo="estorno", valor=pedido.total,
@@ -2022,4 +2100,48 @@ def limpar_dados_teste(db: Session, estabelecimento_id: int):
         "mesas_liberadas": mesas_resetadas,
         "logs_auditoria_removidos": logs_deletados,
     }
+
+
+def recuperar_cashback_pedidos_concluidos(db: Session):
+    """
+    Sincronização executada na inicialização do backend:
+    1. Normaliza telefones de clientes no banco (removendo DDI 55).
+    2. Vincula e unifica contas convidadas duplicadas com contas autenticadas.
+    3. Confirma pagamento e credita o cashback pendente para pedidos já finalizados/entregues.
+    """
+    try:
+        # 1. Normalizar telefones de clientes
+        clientes = db.query(models.Cliente).filter(models.Cliente.telefone.is_not(None)).all()
+        for c in clientes:
+            norm = normalizar_telefone(c.telefone)
+            if norm and norm != c.telefone:
+                c.telefone = norm
+        db.commit()
+
+        # 2. Unificar cadastros de clientes autenticados (com Google ou Email) que têm telefone
+        auth_clientes = db.query(models.Cliente).filter(
+            or_(models.Cliente.google_id.is_not(None), models.Cliente.email.is_not(None)),
+            models.Cliente.telefone.is_not(None)
+        ).all()
+        for a in auth_clientes:
+            try:
+                vincular_cliente_por_telefone(db, a, a.telefone, a.estabelecimento_id)
+            except Exception:
+                db.rollback()
+        db.commit()
+
+        # 3. Recuperar cashback de pedidos finalizados que estavam com pagamento_confirmado_em nulo
+        pedidos_pendentes = db.query(models.Pedido).filter(
+            models.Pedido.status.in_(("Finalizado", "Entregue", "Concluído")),
+            models.Pedido.pagamento_confirmado_em.is_(None)
+        ).all()
+        for p in pedidos_pendentes:
+            try:
+                confirmar_pagamento_ao_finalizar(db, p, p.estabelecimento_id)
+            except Exception:
+                db.rollback()
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        print(f"[Aviso] Falha ao sincronizar cashback histórico: {exc}")
 
