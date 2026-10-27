@@ -32,7 +32,7 @@ const NetworkBanner = () => {
   if (isOnline && !isSyncing) return null;
   
   return (
-    <div className={`absolute top-0 left-0 w-full z-[100] py-1.5 px-4 flex justify-center items-center gap-2 text-sm font-bold shadow-lg transition-colors ${!isOnline ? 'bg-red-500/90 backdrop-blur-sm text-white' : 'bg-emerald-500/90 backdrop-blur-sm text-white'}`}>
+    <div className={`print:hidden absolute top-0 left-0 w-full z-[100] py-1.5 px-4 flex justify-center items-center gap-2 text-sm font-bold shadow-lg transition-colors ${!isOnline ? 'bg-red-500/90 backdrop-blur-sm text-white' : 'bg-emerald-500/90 backdrop-blur-sm text-white'}`}>
       {!isOnline ? (
         <>
           <WifiOff size={16} /> Você está Offline. Os pedidos estão sendo salvos localmente no caixa.
@@ -257,7 +257,7 @@ function AppContent() {
 
         {/* Main Content */}
         <main className="admin-main min-w-0 flex-1 overflow-y-auto relative pb-20 md:pb-0 z-10">
-          <div className={`mobile-brand md:hidden ${session?.perfil === 'entregador' ? 'driver-mobile-brand' : ''}`}>
+          <div className={`mobile-brand md:hidden print:hidden ${session?.perfil === 'entregador' ? 'driver-mobile-brand' : ''}`}>
             {estabelecimento.logo ? (
               <img src={estabelecimento.logo} alt={`Logo de ${estabelecimento.nome_empresa || 'estabelecimento'}`} className="mobile-tenant-logo" />
             ) : (

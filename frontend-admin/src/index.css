@@ -201,6 +201,16 @@
 
 /* Print Styles */
 @media print {
+  html, body, #root, .admin-shell, .admin-main, main {
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    position: static !important;
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
   .kds-page { padding: 0 !important; background: white !important; }
   .kds-page > header, .kds-page > section:first-of-type, .kds-page > div { display: none !important; }
   .kds-page > section:last-of-type { display: block !important; }
@@ -209,13 +219,6 @@
   body {
     background: white !important;
     color: black !important;
-  }
-  
-  /* Make main content take full width */
-  main {
-    padding: 0 !important;
-    margin: 0 !important;
-    overflow: visible !important;
   }
   
   /* Clean up cards for printing */

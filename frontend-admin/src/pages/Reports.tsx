@@ -63,7 +63,26 @@ const Reports = () => {
   }, [periodo, customStart, customEnd]);
 
   const exportPDF = () => {
-    window.print();
+    if (!data || isLoading) {
+      alert("Aguarde o carregamento do relatório para gerar o PDF.");
+      return;
+    }
+    const oldTitle = document.title;
+    const estabNome = localStorage.getItem('estabelecimentoNome') || 'BisBurger';
+    const cleanEstab = estabNome.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const periodoFormatado = periodo === 'custom' ? `${customStart}_a_${customEnd}` : periodo;
+    document.title = `Relatorio_${cleanEstab}_${periodoFormatado}`;
+    
+    try {
+      window.print();
+    } catch (err) {
+      console.error("Erro ao abrir impressão do PDF:", err);
+      alert("Não foi possível acionar a impressão do navegador.");
+    } finally {
+      setTimeout(() => {
+        document.title = oldTitle;
+      }, 1500);
+    }
   };
 
   const exportCSV = () => {
@@ -177,7 +196,7 @@ const Reports = () => {
             <button onClick={exportCSV} className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-3.5 text-xs font-bold text-zinc-700 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 sm:flex-none" title="Exportar vendas para planilha">
               <FileSpreadsheet size={15} /> Vendas CSV
             </button>
-            <button onClick={exportPDF} className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-zinc-900 px-3.5 text-xs font-bold text-white shadow-sm transition hover:bg-zinc-800 sm:flex-none" title="Baixar relatório em PDF">
+            <button onClick={exportPDF} disabled={isLoading || !data} className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-zinc-900 px-3.5 text-xs font-bold text-white shadow-sm transition hover:bg-zinc-800 disabled:opacity-50 sm:flex-none" title="Imprimir ou salvar relatório oficial em PDF">
               <Download size={15} /> PDF
             </button>
           </div>
