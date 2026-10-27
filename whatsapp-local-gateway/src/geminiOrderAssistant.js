@@ -192,7 +192,7 @@ function parseAiOutput(rawText, menuUrl = '') {
  * Call Google Gemini with JSON mode and fallback models
  */
 async function callGemini(systemInstruction, history, userMessage, config, log) {
-  const models = ['gemini-flash-lite-latest', 'gemini-3.5-flash'];
+  const models = ['gemini-flash-lite-latest', 'gemini-3.5-flash-lite', 'gemini-3.5-flash'];
   const key = config.geminiApiKey;
 
   const contents = [];
@@ -226,7 +226,7 @@ async function callGemini(systemInstruction, history, userMessage, config, log) 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(10000)
+        signal: AbortSignal.timeout(16000)
       });
 
       if (!response.ok) {
