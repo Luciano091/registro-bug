@@ -341,7 +341,6 @@ const syncPanel = async () => {
     for (const item of data.modes || []) {
       if (item.modo === 'human') handoffs.set(item.chat_id, Number.POSITIVE_INFINITY);
       else handoffs.delete(item.chat_id);
-      await syncContactIdentity(item.chat_id);
     }
     for (const queued of data.outbox || []) {
       botSendingChats.add(queued.chat_id);
@@ -361,7 +360,7 @@ const syncPanel = async () => {
   }
 };
 
-setInterval(() => void syncPanel(), 2500);
+setInterval(() => void syncPanel(), 3500);
 setInterval(() => bridge.heartbeat({
   connection: state.connection,
   connected_number: state.connectedNumber,

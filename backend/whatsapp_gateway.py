@@ -369,7 +369,15 @@ def gateway_sync(slug: str, db: Session = Depends(get_db)):
     establishment = _establishment(db, slug)
     now = models.get_now()
     retry_before = now - datetime.timedelta(seconds=30)
-    messages = db.query(models.WhatsAppChatMessage).join(models.WhatsAppConversation).filter(
+
+    outbox_rows = db.query(
+        models.WhatsAppChatMessage.id,
+        models.WhatsAppChatMessage.texto,
+        models.WhatsAppConversation.chat_id,
+    ).join(
+        models.WhatsAppConversation,
+        models.WhatsAppConversation.id == models.WhatsAppChatMessage.conversa_id,
+    ).filter(
         models.WhatsAppConversation.estabelecimento_id == establishment.id,
         or_(
             models.WhatsAppChatMessage.status == "queued",
@@ -377,25 +385,41 @@ def gateway_sync(slug: str, db: Session = Depends(get_db)):
             (models.WhatsAppChatMessage.ultima_tentativa_em < retry_before),
         ),
     ).order_by(models.WhatsAppChatMessage.criado_em.asc()).limit(20).all()
-    for message in messages:
-        message.status = "dispatching"
-        message.ultima_tentativa_em = now
-    conversations = db.query(models.WhatsAppConversation).filter(
+
+    outbox = []
+    message_ids = []
+    for r in outbox_rows:
+        outbox.append({
+            "id": r.id,
+            "chat_id": r.chat_id,
+            "texto": r.texto,
+        })
+        message_ids.append(r.id)
+
+    if message_ids:
+        db.query(models.WhatsAppChatMessage).filter(
+            models.WhatsAppChatMessage.id.in_(message_ids)
+        ).update(
+            {
+                models.WhatsAppChatMessage.status: "dispatching",
+                models.WhatsAppChatMessage.ultima_tentativa_em: now,
+            },
+            synchronize_session=False,
+        )
+        db.commit()
+
+    conversation_modes = db.query(
+        models.WhatsAppConversation.chat_id,
+        models.WhatsAppConversation.atendimento_modo,
+    ).filter(
         models.WhatsAppConversation.estabelecimento_id == establishment.id,
     ).all()
-    db.commit()
+
     return {
-        "outbox": [
-            {
-                "id": message.id,
-                "chat_id": message.conversa.chat_id,
-                "texto": message.texto,
-            }
-            for message in messages
-        ],
+        "outbox": outbox,
         "modes": [
-            {"chat_id": item.chat_id, "modo": item.atendimento_modo}
-            for item in conversations
+            {"chat_id": r.chat_id, "modo": r.atendimento_modo}
+            for r in conversation_modes
         ],
     }
 

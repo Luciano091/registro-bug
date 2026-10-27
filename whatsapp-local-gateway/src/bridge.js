@@ -24,7 +24,7 @@ export class GatewayBridge {
     const response = await fetch(`${this.baseUrl}/whatsapp/gateway${path}`, {
       ...options,
       headers: { ...this.headers(), ...(options.headers || {}) },
-      signal: AbortSignal.timeout(12_000),
+      signal: AbortSignal.timeout(25_000),
     });
     if (!response.ok) {
       const body = await response.text();
@@ -54,11 +54,19 @@ export class GatewayBridge {
     try {
       while (this.events.length) {
         const event = this.events[0];
-        await this.request(event.path, {
-          method: 'POST',
-          body: JSON.stringify(event.payload),
-        });
-        this.events.shift();
+        try {
+          await this.request(event.path, {
+            method: 'POST',
+            body: JSON.stringify(event.payload),
+          });
+          this.events.shift();
+        } catch (err) {
+          event.attempts = (event.attempts || 0) + 1;
+          if (event.attempts >= 3) {
+            this.events.shift();
+          }
+          throw err;
+        }
       }
     } catch (error) {
       this.reportError(error);
@@ -100,8 +108,8 @@ export class GatewayBridge {
 
   async sync() {
     if (!this.enabled) return { outbox: [], modes: [] };
+    void this.flushEvents();
     try {
-      await this.flushEvents();
       return await this.request(`/sync?slug=${encodeURIComponent(this.slug)}`);
     } catch (error) {
       this.reportError(error);
