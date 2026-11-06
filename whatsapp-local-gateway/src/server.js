@@ -11,12 +11,17 @@ const { Client, LocalAuth } = wweb;
 const app = express();
 app.use(express.json({ limit: '32kb' }));
 
+const CLOSED_MESSAGE = 'Olá! No momento a BisBurger está fechada. 🍔🛵';
+const closedNotifiedChats = new Map();
+const CLOSED_NOTIFY_INTERVAL_MS = 2 * 60 * 60 * 1000;
+
 const state = {
   connection: 'starting',
   qr: null,
   automationEnabled: true,
   logs: [],
   connectedNumber: null,
+  caixaAberto: false,
 };
 
 const handoffs = new Map();
@@ -29,6 +34,17 @@ const log = (message) => {
   const entry = { time: new Date().toLocaleTimeString('pt-BR'), message };
   state.logs = [entry, ...state.logs].slice(0, 80);
   console.log(`[${entry.time}] ${message}`);
+};
+
+const updateCaixaStatus = (isOpen) => {
+  if (typeof isOpen !== 'boolean') return;
+  if (state.caixaAberto !== isOpen) {
+    state.caixaAberto = isOpen;
+    log(`Status do caixa: ${state.caixaAberto ? 'ABERTO (Robô ativo)' : 'FECHADO (Robô em modo aviso)'}.`);
+    if (state.caixaAberto) {
+      closedNotifiedChats.clear();
+    }
+  }
 };
 
 const bridge = new GatewayBridge(config, log);
@@ -157,6 +173,28 @@ const processMessages = async (chatId) => {
   if (isRateLimited(chatId)) {
     handoffs.set(chatId, Date.now() + config.handoffMinutes * 60_000);
     log(`Automação pausada por limite de segurança para ${chatId}.`);
+    return;
+  }
+
+  if (!state.caixaAberto) {
+    const now = Date.now();
+    const lastNotified = closedNotifiedChats.get(chatId) || 0;
+    if (now - lastNotified > CLOSED_NOTIFY_INTERVAL_MS) {
+      closedNotifiedChats.set(chatId, now);
+      try {
+        const sentMessage = await sendBotMessage(chatId, CLOSED_MESSAGE);
+        bridge.outgoing({
+          chat_id: chatId,
+          external_id: sentMessage?.id?._serialized || null,
+          texto: CLOSED_MESSAGE,
+          remetente: 'bot',
+          criado_em: new Date().toISOString(),
+        });
+        log(`Aviso de fechado enviado para ${pending.contactName || chatId} (caixa fechado).`);
+      } catch (error) {
+        log(`Falha ao enviar aviso de fechado para ${chatId}: ${error.message}`);
+      }
+    }
     return;
   }
 
@@ -291,6 +329,27 @@ client.on('message', async (message) => {
 
   if (receivedAudio) {
     if (!state.automationEnabled || isInHandoff(message.from) || isRateLimited(message.from)) return;
+    if (!state.caixaAberto) {
+      const now = Date.now();
+      const lastNotified = closedNotifiedChats.get(message.from) || 0;
+      if (now - lastNotified > CLOSED_NOTIFY_INTERVAL_MS) {
+        closedNotifiedChats.set(message.from, now);
+        try {
+          const sentMessage = await sendBotMessage(message.from, CLOSED_MESSAGE);
+          bridge.outgoing({
+            chat_id: message.from,
+            external_id: sentMessage?.id?._serialized || null,
+            texto: CLOSED_MESSAGE,
+            remetente: 'bot',
+            criado_em: new Date().toISOString(),
+          });
+          log(`Aviso de fechado enviado para ${contactName} (caixa fechado - áudio).`);
+        } catch (error) {
+          log(`Falha ao enviar aviso de fechado para ${message.from}: ${error.message}`);
+        }
+      }
+      return;
+    }
     try {
       const text = audioReply();
       const sentMessage = await sendBotMessage(message.from, text);
@@ -322,6 +381,7 @@ app.get('/api/status', (_request, response) => response.json({
   qr: state.qr,
   automationEnabled: state.automationEnabled,
   connectedNumber: state.connectedNumber,
+  caixaAberto: state.caixaAberto,
   logs: state.logs,
 }));
 
@@ -338,6 +398,22 @@ const syncPanel = async () => {
   syncingOutbox = true;
   try {
     const data = await bridge.sync();
+    if (typeof data.caixa_aberto === 'boolean') {
+      updateCaixaStatus(data.caixa_aberto);
+    } else {
+      try {
+        const baseUrl = config.backendUrl.replace(/\/$/, '');
+        const res = await fetch(`${baseUrl}/public/${config.establishmentSlug}/configuracao`, {
+          signal: AbortSignal.timeout(4000),
+        });
+        if (res.ok) {
+          const publicCfg = await res.json();
+          if (typeof publicCfg.loja_aberta === 'boolean') {
+            updateCaixaStatus(publicCfg.loja_aberta);
+          }
+        }
+      } catch {}
+    }
     for (const item of data.modes || []) {
       if (item.modo === 'human') handoffs.set(item.chat_id, Number.POSITIVE_INFINITY);
       else handoffs.delete(item.chat_id);

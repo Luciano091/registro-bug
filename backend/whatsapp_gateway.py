@@ -415,12 +415,18 @@ def gateway_sync(slug: str, db: Session = Depends(get_db)):
         models.WhatsAppConversation.estabelecimento_id == establishment.id,
     ).all()
 
+    caixa_aberto = db.query(models.Caixa.id).filter(
+        models.Caixa.estabelecimento_id == establishment.id,
+        models.Caixa.status == "aberto",
+    ).first() is not None
+
     return {
         "outbox": outbox,
         "modes": [
             {"chat_id": r.chat_id, "modo": r.atendimento_modo}
             for r in conversation_modes
         ],
+        "caixa_aberto": caixa_aberto,
     }
 
 
