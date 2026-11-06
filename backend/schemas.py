@@ -779,6 +779,17 @@ class WhatsAppManualMessageCreate(BaseModel):
 class WhatsAppConversationModeUpdate(BaseModel):
     modo: str
 
+
+class WhatsAppCampaignTarget(BaseModel):
+    telefone: str
+    nome: Optional[str] = None
+    chat_id: Optional[str] = None
+    texto: str
+
+
+class WhatsAppCampaignSendRequest(BaseModel):
+    targets: List[WhatsAppCampaignTarget]
+
 # --- Insumo ---
 class InsumoCreate(BaseModel):
     nome: str

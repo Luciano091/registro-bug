@@ -3,7 +3,7 @@ import hmac
 import os
 
 from fastapi import APIRouter, Depends, Header, HTTPException
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, selectinload
 
 import auth
@@ -370,7 +370,8 @@ def gateway_sync(slug: str, db: Session = Depends(get_db)):
     now = models.get_now()
     retry_before = now - datetime.timedelta(seconds=30)
 
-    outbox_rows = db.query(
+    # 1. Mensagens manuais e urgentes (remetente != "campanha") - enviadas imediatamente
+    manual_rows = db.query(
         models.WhatsAppChatMessage.id,
         models.WhatsAppChatMessage.texto,
         models.WhatsAppConversation.chat_id,
@@ -379,12 +380,48 @@ def gateway_sync(slug: str, db: Session = Depends(get_db)):
         models.WhatsAppConversation.id == models.WhatsAppChatMessage.conversa_id,
     ).filter(
         models.WhatsAppConversation.estabelecimento_id == establishment.id,
+        models.WhatsAppChatMessage.remetente != "campanha",
         or_(
             models.WhatsAppChatMessage.status == "queued",
             (models.WhatsAppChatMessage.status == "dispatching") &
             (models.WhatsAppChatMessage.ultima_tentativa_em < retry_before),
         ),
-    ).order_by(models.WhatsAppChatMessage.criado_em.asc()).limit(20).all()
+    ).order_by(models.WhatsAppChatMessage.criado_em.asc()).limit(10).all()
+
+    # 2. Mensagens de campanha: liberação controlada e pausada (máx 1 a cada 35 segundos)
+    campaign_rows = []
+    if not manual_rows:
+        last_campaign_time = db.query(
+            func.max(models.WhatsAppChatMessage.ultima_tentativa_em)
+        ).join(
+            models.WhatsAppConversation,
+            models.WhatsAppConversation.id == models.WhatsAppChatMessage.conversa_id,
+        ).filter(
+            models.WhatsAppConversation.estabelecimento_id == establishment.id,
+            models.WhatsAppChatMessage.remetente == "campanha",
+            models.WhatsAppChatMessage.status.in_(("dispatching", "sent")),
+        ).scalar()
+
+        min_interval = datetime.timedelta(seconds=35)
+        if last_campaign_time is None or (now - last_campaign_time) >= min_interval:
+            campaign_rows = db.query(
+                models.WhatsAppChatMessage.id,
+                models.WhatsAppChatMessage.texto,
+                models.WhatsAppConversation.chat_id,
+            ).join(
+                models.WhatsAppConversation,
+                models.WhatsAppConversation.id == models.WhatsAppChatMessage.conversa_id,
+            ).filter(
+                models.WhatsAppConversation.estabelecimento_id == establishment.id,
+                models.WhatsAppChatMessage.remetente == "campanha",
+                or_(
+                    models.WhatsAppChatMessage.status == "queued",
+                    (models.WhatsAppChatMessage.status == "dispatching") &
+                    (models.WhatsAppChatMessage.ultima_tentativa_em < retry_before),
+                ),
+            ).order_by(models.WhatsAppChatMessage.criado_em.asc()).limit(1).all()
+
+    outbox_rows = manual_rows + campaign_rows
 
     outbox = []
     message_ids = []
@@ -428,6 +465,256 @@ def gateway_sync(slug: str, db: Session = Depends(get_db)):
         ],
         "caixa_aberto": caixa_aberto,
     }
+
+
+@router.get("/campaigns/targets")
+def get_campaign_targets(
+    db: Session = Depends(get_db),
+    establishment_id: int = Depends(auth.require_permission("whatsapp.visualizar")),
+):
+    import re
+    # 1. Pega todos os pedidos com telefone do estabelecimento
+    pedidos = db.query(
+        models.Pedido.telefone,
+        models.Pedido.cliente,
+        models.Pedido.data,
+        models.Pedido.total,
+        models.Pedido.cliente_id,
+    ).filter(
+        models.Pedido.estabelecimento_id == establishment_id,
+        models.Pedido.status != "Cancelado",
+        models.Pedido.telefone.isnot(None),
+        models.Pedido.telefone != "",
+    ).order_by(models.Pedido.data.desc()).all()
+
+    # 2. Pega clientes cadastrados
+    clientes_db = db.query(models.Cliente).filter(
+        models.Cliente.estabelecimento_id == establishment_id,
+    ).all()
+    clientes_by_phone = {}
+    clientes_by_id = {}
+    for c in clientes_db:
+        clientes_by_id[c.id] = c
+        if c.telefone:
+            clean_p = re.sub(r"\D", "", c.telefone)
+            if clean_p:
+                clientes_by_phone[clean_p] = c
+
+    # 3. Pega conversas existentes do WhatsApp para mapear chat_id exato
+    conversas_db = db.query(
+        models.WhatsAppConversation.chat_id,
+        models.WhatsAppConversation.telefone,
+    ).filter(
+        models.WhatsAppConversation.estabelecimento_id == establishment_id,
+    ).all()
+    chat_id_by_phone = {}
+    for cv in conversas_db:
+        if cv.telefone:
+            clean_cv = re.sub(r"\D", "", cv.telefone)
+            if clean_cv:
+                chat_id_by_phone[clean_cv] = cv.chat_id
+        if cv.chat_id and ("@c.us" in cv.chat_id or "@lid" in cv.chat_id):
+            num = cv.chat_id.split("@")[0]
+            chat_id_by_phone[num] = cv.chat_id
+
+    # 4. Agrupa histórico por telefone
+    agrupado = {}
+    for p in pedidos:
+        raw_tel = (p.telefone or "").strip()
+        tel_digits = re.sub(r"\D", "", raw_tel)
+        if not tel_digits or len(tel_digits) < 8:
+            continue
+        
+        chave = tel_digits[-8:]
+        if chave not in agrupado:
+            agrupado[chave] = {
+                "raw_tel": raw_tel,
+                "tel_digits": tel_digits,
+                "nome": p.cliente or "Cliente",
+                "cliente_id": p.cliente_id,
+                "ultimo_pedido": p.data,
+                "total_gasto": 0.0,
+                "total_pedidos": 0,
+            }
+        agrupado[chave]["total_gasto"] += float(p.total or 0.0)
+        agrupado[chave]["total_pedidos"] += 1
+        if p.data and p.data > agrupado[chave]["ultimo_pedido"]:
+            agrupado[chave]["ultimo_pedido"] = p.data
+        if p.cliente and agrupado[chave]["nome"] in ("Cliente", "Sem nome"):
+            agrupado[chave]["nome"] = p.cliente
+
+    # 5. Adiciona cadastrados sem pedidos
+    for c in clientes_db:
+        if not c.telefone:
+            continue
+        c_digits = re.sub(r"\D", "", c.telefone)
+        if not c_digits or len(c_digits) < 8:
+            continue
+        chave = c_digits[-8:]
+        if chave not in agrupado:
+            agrupado[chave] = {
+                "raw_tel": c.telefone,
+                "tel_digits": c_digits,
+                "nome": c.nome or "Cliente",
+                "cliente_id": c.id,
+                "ultimo_pedido": c.data_cadastro,
+                "total_gasto": 0.0,
+                "total_pedidos": 0,
+            }
+
+    agora = models.get_now()
+    clientes_resultado = []
+    counts = {
+        "total": 0,
+        "cashback": 0,
+        "inactive_15": 0,
+        "inactive_30": 0,
+        "vip_sumido": 0,
+    }
+
+    for chave, item in agrupado.items():
+        c_obj = None
+        if item["cliente_id"] and item["cliente_id"] in clientes_by_id:
+            c_obj = clientes_by_id[item["cliente_id"]]
+        elif item["tel_digits"] in clientes_by_phone:
+            c_obj = clientes_by_phone[item["tel_digits"]]
+        
+        saldo_cashback = round(float(c_obj.saldo_cashback), 2) if (c_obj and c_obj.saldo_cashback) else 0.0
+        nome_final = (c_obj.nome if c_obj and c_obj.nome else item["nome"]).strip()
+        primeiro_nome = nome_final.split()[0].title() if nome_final else "Cliente"
+
+        if item["ultimo_pedido"]:
+            delta = agora.date() - item["ultimo_pedido"].date()
+            dias_ausente = max(0, delta.days)
+        else:
+            dias_ausente = 0
+
+        full_digits = item["tel_digits"]
+        if not full_digits.startswith("55") and len(full_digits) in (10, 11):
+            full_digits = "55" + full_digits
+        chat_id = chat_id_by_phone.get(full_digits) or chat_id_by_phone.get(item["tel_digits"]) or f"{full_digits}@c.us"
+
+        tags = []
+        if saldo_cashback > 0:
+            tags.append("cashback")
+            counts["cashback"] += 1
+        if dias_ausente >= 15:
+            tags.append("inactive_15")
+            counts["inactive_15"] += 1
+        if dias_ausente >= 30:
+            tags.append("inactive_30")
+            counts["inactive_30"] += 1
+        if item["total_pedidos"] >= 3 and dias_ausente >= 20:
+            tags.append("vip_sumido")
+            counts["vip_sumido"] += 1
+
+        counts["total"] += 1
+
+        clientes_resultado.append({
+            "nome": nome_final,
+            "primeiro_nome": primeiro_nome,
+            "telefone": item["raw_tel"],
+            "telefone_limpo": full_digits,
+            "chat_id": chat_id,
+            "saldo_cashback": saldo_cashback,
+            "total_pedidos": item["total_pedidos"],
+            "total_gasto": round(item["total_gasto"], 2),
+            "ultimo_pedido": item["ultimo_pedido"].isoformat() if item["ultimo_pedido"] else None,
+            "dias_ausente": dias_ausente,
+            "tags": tags,
+        })
+
+    pending_campaign = db.query(models.WhatsAppChatMessage).join(
+        models.WhatsAppConversation,
+        models.WhatsAppConversation.id == models.WhatsAppChatMessage.conversa_id,
+    ).filter(
+        models.WhatsAppConversation.estabelecimento_id == establishment_id,
+        models.WhatsAppChatMessage.remetente == "campanha",
+        models.WhatsAppChatMessage.status.in_(("queued", "dispatching")),
+    ).count()
+
+    sent_today = db.query(models.WhatsAppChatMessage).join(
+        models.WhatsAppConversation,
+        models.WhatsAppConversation.id == models.WhatsAppChatMessage.conversa_id,
+    ).filter(
+        models.WhatsAppConversation.estabelecimento_id == establishment_id,
+        models.WhatsAppChatMessage.remetente == "campanha",
+        models.WhatsAppChatMessage.status == "sent",
+        models.WhatsAppChatMessage.criado_em >= agora.replace(hour=0, minute=0, second=0),
+    ).count()
+
+    return {
+        "counts": counts,
+        "queue_status": {
+            "pending_count": pending_campaign,
+            "sent_today": sent_today,
+            "intervalo_segundos": 35,
+        },
+        "clients": sorted(clientes_resultado, key=lambda x: (x["dias_ausente"], -x["saldo_cashback"]), reverse=True),
+    }
+
+
+@router.post("/campaigns/send")
+def send_campaign_batch(
+    payload: schemas.WhatsAppCampaignSendRequest,
+    db: Session = Depends(get_db),
+    establishment_id: int = Depends(auth.require_permission("whatsapp.enviar")),
+):
+    if not payload.targets:
+        raise HTTPException(status_code=400, detail="Nenhum destinatário informado.")
+    if len(payload.targets) > 50:
+        raise HTTPException(status_code=400, detail="Por segurança, o limite máximo por lote é de 50 mensagens.")
+
+    now = models.get_now()
+    queued_count = 0
+
+    for target in payload.targets:
+        text = (target.texto or "").strip()
+        if not text:
+            continue
+        
+        chat_id = target.chat_id
+        if not chat_id:
+            tel = "".join(filter(str.isdigit, target.telefone or ""))
+            if not tel.startswith("55") and len(tel) in (10, 11):
+                tel = "55" + tel
+            chat_id = f"{tel}@c.us"
+
+        conv = _conversation(db, establishment_id, chat_id, target.telefone, target.nome)
+        
+        msg = models.WhatsAppChatMessage(
+            conversa_id=conv.id,
+            direcao="out",
+            remetente="campanha",
+            texto=text,
+            status="queued",
+            criado_em=now,
+        )
+        conv.ultima_mensagem = text
+        conv.ultima_interacao = now
+        db.add(msg)
+        queued_count += 1
+
+    db.commit()
+    return {"status": "ok", "queued_count": queued_count}
+
+
+@router.post("/campaigns/cancel")
+def cancel_campaign_queue(
+    db: Session = Depends(get_db),
+    establishment_id: int = Depends(auth.require_permission("whatsapp.enviar")),
+):
+    deleted = db.query(models.WhatsAppChatMessage).filter(
+        models.WhatsAppChatMessage.conversa_id.in_(
+            db.query(models.WhatsAppConversation.id).filter(
+                models.WhatsAppConversation.estabelecimento_id == establishment_id
+            )
+        ),
+        models.WhatsAppChatMessage.remetente == "campanha",
+        models.WhatsAppChatMessage.status == "queued",
+    ).delete(synchronize_session=False)
+    db.commit()
+    return {"status": "ok", "cancelled_count": deleted}
 
 
 @router.post("/gateway/outbox/{message_id}/status", dependencies=[Depends(_gateway_auth)])

@@ -2,9 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import {
   ArrowLeft, Bot, CheckCheck, Clock3, MessageCircle, Phone, RefreshCw,
-  Search, Send, Trash2, UserRound, Wifi, WifiOff,
+  Search, Send, Trash2, UserRound, Wifi, WifiOff, Sparkles,
 } from 'lucide-react';
 import api from '../services/api';
+import CustomerRecovery from './CustomerRecovery';
 
 type Gateway = {
   online: boolean;
@@ -58,6 +59,7 @@ const displayMessage = (text: string) => {
 };
 
 export default function Inbox() {
+  const [viewTab, setViewTab] = useState<'conversas' | 'recuperacao'>('conversas');
   const [gateway, setGateway] = useState<Gateway>({ online: false, connection: 'offline', needs_qr: false });
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -171,6 +173,10 @@ export default function Inbox() {
     }
   };
 
+  if (viewTab === 'recuperacao') {
+    return <CustomerRecovery onBackToInbox={() => setViewTab('conversas')} />;
+  }
+
   return (
     <div className="flex h-[calc(100vh-80px)] min-h-0 overflow-hidden bg-slate-100 md:h-full">
       <section className={`${selectedId ? 'hidden md:flex' : 'flex'} w-full flex-col border-r border-slate-200 bg-white md:w-[360px] md:min-w-[320px]`}>
@@ -185,7 +191,26 @@ export default function Inbox() {
               {gateway.online ? 'Conectado' : gateway.needs_qr ? 'Ler QR Code' : 'Offline'}
             </div>
           </div>
-          <div className="relative mt-4">
+
+          <div className="mt-3 flex rounded-xl bg-slate-100 p-1">
+            <button
+              type="button"
+              onClick={() => setViewTab('conversas')}
+              className="flex-1 rounded-lg py-1.5 text-center text-xs font-bold transition bg-white text-slate-900 shadow-sm"
+            >
+              💬 Atendimento
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewTab('recuperacao')}
+              className="flex-1 flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-center text-xs font-bold transition text-slate-500 hover:text-orange-600"
+            >
+              <Sparkles size={13} className="text-orange-500" />
+              <span>Recuperar</span>
+            </button>
+          </div>
+
+          <div className="relative mt-3">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
             <input value={query} onChange={event => setQuery(event.target.value)} placeholder="Buscar conversa..." className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-10 text-sm outline-none focus:border-brand-400" />
             <button onClick={() => void loadInbox()} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-slate-400 hover:bg-white hover:text-slate-700" aria-label="Atualizar"><RefreshCw size={15} /></button>
