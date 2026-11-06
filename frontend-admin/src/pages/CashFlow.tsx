@@ -36,6 +36,8 @@ export default function CashFlow() {
   
   // Movimentacao State
   const [showMovModal, setShowMovModal] = useState(false);
+  const [showFecharModal, setShowFecharModal] = useState(false);
+  const [isClosingCaixa, setIsClosingCaixa] = useState(false);
   const [movTipo, setMovTipo] = useState<"sangria" | "suprimento">("sangria");
   const [movValor, setMovValor] = useState("");
   const [movDescricao, setMovDescricao] = useState("");
@@ -74,15 +76,23 @@ export default function CashFlow() {
     }
   };
 
-  const handleFecharCaixa = async () => {
+  const handleFecharCaixa = () => {
     if (!caixa) return;
-    if (!window.confirm("Tem certeza que deseja fechar o caixa? Nenhuma nova venda poderá ser registrada até que seja aberto novamente.")) return;
+    setShowFecharModal(true);
+  };
+
+  const confirmFecharCaixa = async () => {
+    if (!caixa || isClosingCaixa) return;
+    setIsClosingCaixa(true);
     try {
       await api.post(`/caixa/${caixa.id}/fechar`);
+      setShowFecharModal(false);
       setCaixaData(null);
       fetchCaixa();
     } catch (error: any) {
       alert(error.response?.data?.detail || "Erro ao fechar caixa");
+    } finally {
+      setIsClosingCaixa(false);
     }
   };
 
@@ -302,6 +312,58 @@ export default function CashFlow() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showFecharModal && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in"
+          onClick={() => !isClosingCaixa && setShowFecharModal(false)}
+        >
+          <div 
+            className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl border border-slate-100 animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3.5 mb-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600">
+                <Lock size={20} />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Fechar o Caixa?</h3>
+                <p className="text-xs text-slate-500">Operador: <span className="font-semibold text-slate-700">{caixa.operador}</span></p>
+              </div>
+            </div>
+
+            <p className="text-sm text-slate-600 leading-relaxed mb-6">
+              Ao fechar o caixa, nenhuma nova venda ou pedido pelo WhatsApp poderá ser registrado até que seja aberto novamente.
+            </p>
+
+            <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                disabled={isClosingCaixa}
+                onClick={() => setShowFecharModal(false)}
+                className="flex-1 rounded-xl border border-slate-200 bg-white py-2.5 px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={isClosingCaixa}
+                onClick={confirmFecharCaixa}
+                className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-red-600 py-2.5 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700 disabled:opacity-50"
+              >
+                {isClosingCaixa ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    <span>Fechando...</span>
+                  </>
+                ) : (
+                  <span>Sim, fechar</span>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}
